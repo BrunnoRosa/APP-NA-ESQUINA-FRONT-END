@@ -1,56 +1,212 @@
-# Welcome to your Expo app 👋
+App na Esquina 🏪
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Plataforma completa de e-commerce e gestão de entregas para mercadinhos de bairro. O sistema permite que clientes encontrem produtos em estabelecimentos próximos, comparem preços e distâncias, realizem pedidos e acompanhem o status em tempo real. Para os comerciantes, oferece um painel de gestão de catálogo e controle de pedidos.
 
-## Get started
+🛠️ Tecnologias Utilizadas
 
-1. Install dependencies
+Back-end (API REST)
 
-   ```bash
-   npm install
-   ```
+Linguagem & Framework: Java 21 / Spring Boot 3.4+
 
-2. Start the app
+Segurança: Spring Security com autenticação Stateless via JSON Web Tokens (JWT)
 
-   ```bash
-   npx expo start
-   ```
+Persistência de Dados: Spring Data JPA / Hibernate
 
-In the output, you'll find options to open the app in a
+Banco de Dados: MySQL
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+Documentação: Springdoc OpenAPI 3.1 (Swagger UI)
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+Utilitários: Lombok, Maven
 
-## Get a fresh project
+Front-end (Mobile / Web)
 
-When you're ready, run:
+Framework: React Native (Expo)
 
-```bash
-npm run reset-project
-```
+Navegação: React Navigation (Stack / Tabs)
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Comunicação HTTP: Axios
 
-### Other setup steps
+Gerenciamento de Estado: React Context API (AuthContext)
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+📋 Funcionalidades Principais
 
-## Learn more
+Perfil Cliente
 
-To learn more about developing your project with Expo, look at the following resources:
+Busca Global de Produtos: Pesquisa de itens em múltiplos mercadinhos simultaneamente, com ordenação por menor preço ou menor distância ($Km$).
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Carrinho de Compras: Adição de itens e envio direto do pedido para o estabelecimento.
 
-## Join the community
+Acompanhamento de Pedidos: Tela com atualização periódica em tempo real (polling a cada 5 segundos) e confirmação de recebimento.
 
-Join our community of developers creating universal apps.
+Perfil Comerciante
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Dashboard do Estabelecimento: Resumo financeiro, contagem de pedidos e navegação rápida.
+
+Gestão do Catálogo: Cadastro, edição, alteração de destaque e remoção de produtos com atualização em banco.
+
+Painel de Pedidos: Recepção e avanço de etapas de pedidos (PENDENTE ➔ EM_PREPARO ➔ SAIU_PARA_ENTREGA ➔ CONCLUIDO / CANCELADO).
+
+🚀 Como Executar o Projeto
+
+Pré-requisitos
+
+Java 21 ou superior instalado
+
+MySQL Server rodando
+
+Node.js (v18+) e npm/yarn instalados
+
+Expo Go instalado no smartphone (opcional para testes mobile)
+
+1. Configurando e Executando o Back-end
+
+Clone o repositório e acesse a pasta do back-end:
+
+cd app_na_esquina
+
+
+Configure o acesso ao MySQL no arquivo src/main/resources/application.properties:
+
+spring.datasource.url=jdbc:mysql://localhost:3306/app_na_esquina?createDatabaseIfNotExist=true&useSSL=false
+spring.datasource.username=SEU_USUARIO
+spring.datasource.password=SUA_SENHA
+spring.jpa.hibernate.ddl-auto=update
+
+
+Execute a aplicação Spring Boot:
+
+mvnw spring-boot:run
+
+
+Aceda à documentação da API (Swagger UI):
+👉 http://localhost:8080/swagger-ui/index.html
+
+2. Configurando e Executando o Front-end
+
+Acesse a pasta do projeto React Native:
+
+cd app_na_esquina_frontend
+
+
+Instale as dependências:
+
+npm install
+
+
+Certifique-se de que a URL base da API no arquivo src/services/api.js aponta para o endereço IP da sua máquina:
+
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'http://192.168.X.X:8080', // Substitua pelo IP da sua máquina
+});
+
+export default api;
+
+
+Inicie o servidor do Expo:
+
+npx expo start
+
+
+📌 Principais Endpoints da API
+
+Método
+
+Endpoint
+
+Descrição
+
+Requer Auth
+
+POST
+
+/api/auth/login
+
+Autenticação e geração do Token JWT
+
+❌
+
+POST
+
+/api/usuarios
+
+Cadastro de novos clientes / comerciantes
+
+❌
+
+GET
+
+/api/produtos/buscar
+
+Busca global com ordenação de preço/distância
+
+❌
+
+GET
+
+/api/produtos/mercadinho/{id}
+
+Lista produtos de um mercadinho específico
+
+✅
+
+POST
+
+/api/produtos
+
+Cadastro de novo produto no catálogo
+
+✅
+
+PUT
+
+/api/produtos/{id}
+
+Atualização dos dados do produto
+
+✅
+
+DELETE
+
+/api/produtos/{id}
+
+Exclusão de produto do catálogo
+
+✅
+
+POST
+
+/api/pedidos
+
+Criação e finalização de pedido
+
+✅
+
+GET
+
+/api/pedidos/cliente/{id}
+
+Lista pedidos realizados pelo cliente
+
+✅
+
+GET
+
+/api/pedidos/mercadinho/{id}
+
+Lista pedidos recebidos pelo mercadinho
+
+✅
+
+PUT
+
+/api/pedidos/{id}/status
+
+Alteração do status do pedido
+
+✅
+
+📄 Licença
+
+Este projeto foi desenvolvido como Trabalho de Conclusão de Curso (TCC) no SENAI. Todos os direitos reservados.

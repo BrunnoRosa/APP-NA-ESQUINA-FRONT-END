@@ -1,0 +1,81 @@
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import api, { registerAuthErrorHandler } from '../services/api';
+
+const AuthContext = createContext({});
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Função centralizada de logout que limpa tudo e zera o estado
+  async function logout() {
+    try {
+      await AsyncStorage.removeItem('@AppNaEsquina:token');
+      await AsyncStorage.removeItem('@AppNaEsquina:user');
+      delete api.defaults.headers.common['Authorization'];
+    } catch (error) {
+      console.log('Erro ao limpar dados no logout:', error);
+    } finally {
+      setUser(null); // Isso faz o App.js trocar para a tela de Login imediatamente
+    }
+  }
+
+  useEffect(() => {
+    // Registra o callback no api.js para ser chamado se houver um erro 401 global
+    registerAuthErrorHandler(() => {
+      setUser(null); // Atualiza o estado do React na mesma hora
+    });
+
+    async function loadStorageData() {
+      try {
+        const storedToken = await AsyncStorage.getItem('@AppNaEsquina:token');
+        const storedUser = await AsyncStorage.getItem('@AppNaEsquina:user');
+
+        if (storedToken && storedUser) {
+          api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+          setUser(JSON.parse(storedUser));
+        }
+      } catch (error) {
+        console.log('Erro ao carregar dados do storage:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadStorageData();
+  }, []);
+
+  async function login(email, senha) {
+    const response = await api.post('/api/auth/login', { email, senha });
+    const { token, idUsuario, perfil } = response.data; 
+    const userData = { email, idUsuario, perfil };
+
+    setUser(userData);
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+    await AsyncStorage.setItem('@AppNaEsquina:token', token);
+    await AsyncStorage.setItem('@AppNaEsquina:user', JSON.stringify(userData));
+  }
+
+  return (
+    <AuthContext.Provider 
+      value={{ 
+        signed: !!user, 
+        user, 
+        loading, 
+        login, 
+        logout,
+        // Aliases para evitar quebras se algum componente chamar signIn/signOut
+        signIn: login,
+        signOut: logout
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export function useAuth() {
+  return useContext(AuthContext);
+}
