@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import Header from '../../../components/Layout/Header';
 import ProdutoCard from '../../../components/ProdutoCard';
 import { useCarrinho } from '../../../context/CarrinhoContext';
@@ -23,7 +24,7 @@ export default function DetalhesMercadinho({ route, navigation }) {
 
   const carregarDadosMercadinho = useCallback(async () => {
     try {
-      setLoading(true);
+      // O setLoading(true) foi removido para evitar que a tela pisque a cada 5 segundos
       const id = idMercadinho || 1;
 
       if (!mercadinhoParam) {
@@ -40,11 +41,27 @@ export default function DetalhesMercadinho({ route, navigation }) {
     }
   }, [idMercadinho, mercadinhoParam]);
 
-  useEffect(() => {
-    carregarDadosMercadinho();
-  }, [carregarDadosMercadinho]);
+  // Executa o Polling a cada 5 segundos enquanto a tela estiver em foco
+  useFocusEffect(
+    useCallback(() => {
+      // 1. Chama imediatamente ao entrar na tela
+      carregarDadosMercadinho();
 
-  const destaques = produtos.filter((p) => p.emDestaque);
+      // 2. Configura a atualização automática (5 em 5 segundos)
+      const intervalId = setInterval(() => {
+        carregarDadosMercadinho();
+      }, 5000);
+
+      // 3. Limpa o intervalo ao sair da tela
+      return () => {
+        clearInterval(intervalId);
+      };
+    }, [carregarDadosMercadinho])
+  );
+
+  // Filtra apenas produtos ativos. Se a sua API já traz apenas ativos, isso serve de garantia extra.
+  const produtosAtivos = produtos.filter((p) => p.ativo !== false);
+  const destaques = produtosAtivos.filter((p) => p.emDestaque);
 
   return (
     <View style={styles.wrapper}>
@@ -78,7 +95,7 @@ export default function DetalhesMercadinho({ route, navigation }) {
             {destaques.length > 0 && (
               <>
                 <Text style={styles.sectionTitle}>Destaques da Loja ⭐</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={true} style={{ marginBottom: 16 }}>
                   {destaques.map((item) => (
                     <View key={String(item.idProduto || item.id)} style={{ width: 260, marginRight: 12 }}>
                       <ProdutoCard
@@ -91,11 +108,11 @@ export default function DetalhesMercadinho({ route, navigation }) {
               </>
             )}
 
-            <Text style={styles.sectionTitle}>Todos os Produtos ({produtos.length})</Text>
-            {produtos.length === 0 ? (
+            <Text style={styles.sectionTitle}>Todos os Produtos ({produtosAtivos.length})</Text>
+            {produtosAtivos.length === 0 ? (
               <Text style={styles.emptyText}>Nenhum produto cadastrado nesta loja.</Text>
             ) : (
-              produtos.map((item) => (
+              produtosAtivos.map((item) => (
                 <ProdutoCard
                   key={String(item.idProduto || item.id)}
                   produto={item}

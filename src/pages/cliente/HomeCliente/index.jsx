@@ -24,9 +24,11 @@ export default function HomeCliente({ navigation }) {
 
   const { adicionarAoCarrinho } = useCarrinho();
 
+  // Função centralizada para buscar os dados
   const carregarDados = useCallback(async () => {
     try {
-      setLoading(true);
+      // Removemos o setLoading(true) daqui para que a tela não "pisque" a cada 5 segundos no polling.
+      // Se quiser mostrar o loading apenas na primeira vez, pode gerenciar isso com outro estado.
       const [resMercadinhos, resProdutos] = await Promise.all([
         api.get('/api/mercadinhos'),
         api.get('/api/produtos'),
@@ -41,14 +43,29 @@ export default function HomeCliente({ navigation }) {
     }
   }, []);
 
+  // Polling a cada 5 segundos enquanto a tela estiver em foco
   useFocusEffect(
     useCallback(() => {
+      // 1. Chama imediatamente assim que a tela ganha foco
       carregarDados();
+
+      // 2. Configura o intervalo para rodar a cada 5 segundos
+      const intervalId = setInterval(() => {
+        carregarDados();
+      }, 5000);
+
+      // 3. Função de limpeza: para o intervalo quando a tela perde o foco
+      return () => {
+        clearInterval(intervalId);
+      };
     }, [carregarDados])
   );
 
   // Filtragem dinâmica de produtos de acordo com a categoria selecionada
   const produtosExibidos = todosProdutos.filter((p) => {
+    // Se o produto não estiver ativo, ele não deve ser exibido (ajuste a propriedade 'ativo' conforme o seu backend)
+    if (p.ativo === false) return false; 
+    
     if (categoriaAtiva === 'TODOS') return true;
     return p.categoria?.toUpperCase() === categoriaAtiva;
   });
@@ -57,7 +74,6 @@ export default function HomeCliente({ navigation }) {
     <View style={styles.container}>
       <Header navigation={navigation} title="Sua Região" />
 
-      {/* AQUI FOI ADICIONADO O PADDING BOTTOM PARA A ROLAGEM */}
       <ScrollView 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
