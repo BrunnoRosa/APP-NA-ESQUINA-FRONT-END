@@ -19,8 +19,8 @@ export const styles = StyleSheet.create({
   },
   destaqueTag: {
     position: 'absolute',
-    top: 8,
-    left: 8,
+    top: 6,
+    right: 8, // Alterado de left para right para não ficar em cima da imagem do produto
     backgroundColor: '#FFF8E1',
     borderColor: '#FFE082',
     borderWidth: 1,
@@ -54,17 +54,31 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#212529',
     marginBottom: 2,
+    paddingRight: 60, // Evita que o nome do produto encoste no badge de Destaque
+  },
+  // Novo container para alinhar Nome do Mercadinho e Distância em linha
+  storeInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 2,
+    flexWrap: 'wrap',
   },
   mercadinhoNome: {
     fontSize: 12,
-    color: '#007BFF',
+    color: '#6C757D', // Ajustado para cinza elegante (já que o azul destaca a distância)
     fontWeight: '500',
-    marginBottom: 6,
+    marginRight: 8,
+  },
+  distanciaText: {
+    fontSize: 12,
+    color: '#007BFF',
+    fontWeight: 'bold',
   },
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 4,
   },
   preco: {
     fontSize: 16,

@@ -14,23 +14,42 @@ import { useCarrinho } from '../../../context/CarrinhoContext';
 import api from '../../../services/api';
 import { styles } from './styles';
 
-const CATEGORIAS = ['TODAS', 'MERCEARIA', 'HORTIFRUTI', 'BEBIDAS', 'PADARIA', 'LIMPEZA'];
-
 export default function BuscarProdutos({ navigation }) {
   const [termo, setTermo] = useState('');
+  const [categorias, setCategorias] = useState(['TODAS']);
   const [categoriaAtiva, setCategoriaAtiva] = useState('TODAS');
   const [ordenarPor, setOrdenarPor] = useState('preco'); // 'preco' ou 'distancia'
   const [produtos, setProdutos] = useState([]);
   const [loading, setLoading] = useState(false);
+  
+  // Coordenadas mockadas ou obtidas por Geolocation/Contexto do Usuário
+  const [userCoords, setUserCoords] = useState({ lat: -23.55052, lng: -46.633308 });
 
   const { adicionarAoCarrinho } = useCarrinho();
+
+  // Carrega as categorias diretamente da API para bater com a tb_categorias do banco
+  useEffect(() => {
+    async function carregarCategorias() {
+      try {
+        const response = await api.get('/api/categorias');
+        const nomesCategorias = response.data.map((cat) => cat.nome.toUpperCase());
+        setCategorias(['TODAS', ...nomesCategorias]);
+      } catch (error) {
+        console.error('Erro ao carregar categorias:', error);
+        // Fallback para categorias padrão
+        setCategorias(['TODAS', 'BEBIDAS', 'ALIMENTOS', 'LATICÍNIOS', 'LIMPEZA', 'HIGIENE', 'PADARIA', 'HORTIFRUTI']);
+      }
+    }
+    carregarCategorias();
+  }, []);
 
   const buscar = useCallback(async () => {
     try {
       setLoading(true);
       const catParam = categoriaAtiva === 'TODAS' ? '' : categoriaAtiva;
+      
       const response = await api.get(
-        `/api/produtos/buscar?nome=${encodeURIComponent(termo)}&categoria=${catParam}&ordenarPor=${ordenarPor}`
+        `/api/produtos/buscar?nome=${encodeURIComponent(termo)}&categoria=${catParam}&ordenarPor=${ordenarPor}&lat=${userCoords.lat}&lng=${userCoords.lng}`
       );
       setProdutos(response.data || []);
     } catch (error) {
@@ -38,7 +57,7 @@ export default function BuscarProdutos({ navigation }) {
     } finally {
       setLoading(false);
     }
-  }, [termo, categoriaAtiva, ordenarPor]);
+  }, [termo, categoriaAtiva, ordenarPor, userCoords]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -73,14 +92,14 @@ export default function BuscarProdutos({ navigation }) {
           )}
         </View>
 
-        {/* Filtro por Categorias */}
+        {/* Filtro por Categorias Dinâmico */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.categoriesScroll}
           contentContainerStyle={{ alignItems: 'center' }}
         >
-          {CATEGORIAS.map((cat) => (
+          {categorias.map((cat) => (
             <TouchableOpacity
               key={cat}
               style={[
@@ -121,7 +140,7 @@ export default function BuscarProdutos({ navigation }) {
         ) : (
           <FlatList
             data={produtos}
-            keyExtractor={(item) => String(item.idProduto || item.id)}
+            keyExtractor={(item) => String(item.idProduto || item.id || item.idProdutoBase)}
             renderItem={({ item }) => (
               <ProdutoCard
                 produto={item}
@@ -134,7 +153,6 @@ export default function BuscarProdutos({ navigation }) {
               </Text>
             }
             showsVerticalScrollIndicator={false}
-            // AQUI FOI ALTERADO DE 20 PARA 120
             contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
           />
         )}

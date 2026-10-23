@@ -21,7 +21,7 @@ export default function GerenciarProdutos({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
 
-  // Estados de Cadastro
+  // Estados de Cadastro Avulso
   const [nome, setNome] = useState('');
   const [preco, setPreco] = useState('');
 
@@ -59,6 +59,12 @@ export default function GerenciarProdutos({ navigation }) {
     }, [carregarProdutos])
   );
 
+  // Navega para a tela de busca no Catálogo Global
+  const handleIrParaCatalogoGlobal = () => {
+    const idMercadinho = user?.idMercadinho || user?.id || 1;
+    navigation.navigate('AtivarProdutoCatalogo', { idMercadinho });
+  };
+
   const handleCadastrar = async () => {
     if (!nome.trim() || !preco.trim()) {
       exibirAlerta('Atenção', 'Preencha o nome e o preço do produto.');
@@ -73,7 +79,7 @@ export default function GerenciarProdutos({ navigation }) {
         nome: nome.trim(),
         preco: parseFloat(preco.replace(',', '.')),
         idMercadinho: Number(idMercadinho),
-        categoria: 'OUTROS', 
+        categoria: 'OUTROS',
         descricao: '',
         imagemUrl: '',
       };
@@ -172,8 +178,27 @@ export default function GerenciarProdutos({ navigation }) {
         <Text style={styles.title}>Gerir Produtos 📦</Text>
       </View>
 
+      {/* Opção 1: Buscar do Catálogo Global (Mais rápido) */}
+      <TouchableOpacity
+        style={styles.btnCatalogoGlobal}
+        onPress={handleIrParaCatalogoGlobal}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.btnCatalogoGlobalText}>
+          🔍 Buscar no Catálogo Global (+100 itens)
+        </Text>
+      </TouchableOpacity>
+
+      {/* Divisor Visual */}
+      <View style={styles.dividerRow}>
+        <View style={styles.dividerLine} />
+        <Text style={styles.dividerText}>ou cadastre um produto avulso</Text>
+        <View style={styles.dividerLine} />
+      </View>
+
+      {/* Opção 2: Formulário de Cadastro Avulso */}
       <View style={styles.formCard}>
-        <Text style={styles.sectionTitle}>Novo Produto</Text>
+        <Text style={styles.sectionTitle}>Novo Produto Avulso</Text>
         <TextInput
           style={styles.input}
           placeholder="Nome do produto (ex: Feijão Preto 1kg)"
@@ -195,12 +220,12 @@ export default function GerenciarProdutos({ navigation }) {
           {salvando ? (
             <ActivityIndicator size="small" color="#FFF" />
           ) : (
-            <Text style={styles.btnCadastrarText}>+ Adicionar ao Catálogo</Text>
+            <Text style={styles.btnCadastrarText}>+ Cadastrar Avulso</Text>
           )}
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.sectionTitle}>Catálogo da Loja</Text>
+      <Text style={styles.sectionTitle}>Produtos no Seu Estoque</Text>
 
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -217,8 +242,8 @@ export default function GerenciarProdutos({ navigation }) {
             return (
               <View style={[styles.productCard, !isAtivo && { opacity: 0.65, backgroundColor: '#F8F9FA' }]}>
                 <View style={styles.productMain}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Text style={styles.productName}>{item.nome}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+                    <Text style={styles.productName} numberOfLines={1}>{item.nome}</Text>
                     {!isAtivo && (
                       <Text style={{ fontSize: 10, color: '#DC3545', fontWeight: 'bold', backgroundColor: '#F8D7DA', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
                         INATIVO
@@ -261,6 +286,7 @@ export default function GerenciarProdutos({ navigation }) {
         />
       )}
 
+      {/* Modal de Edição */}
       <Modal
         visible={modalEditVisivel}
         transparent

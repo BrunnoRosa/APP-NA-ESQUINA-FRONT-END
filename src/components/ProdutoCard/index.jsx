@@ -8,6 +8,24 @@ export default function ProdutoCard({ produto, onAdicionar, onPress }) {
     currency: 'BRL',
   });
 
+  // Extrai o nome do mercadinho (suporta objetos aninhados ou propriedades diretas do DTO)
+  const nomeMercadinho =
+    produto?.nomeMercadinho ||
+    produto?.mercadinho?.nome ||
+    produto?.mercadinhoNome;
+
+  // Extrai e formata a distância em Km
+  const distanciaRaw =
+    produto?.distanciaEmKm ??
+    produto?.distanciaKm ??
+    produto?.distancia ??
+    produto?.mercadinho?.distancia;
+
+  const distanciaFormatada =
+    typeof distanciaRaw === 'number'
+      ? `${distanciaRaw.toFixed(1)} km`
+      : null;
+
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.8} onPress={onPress}>
       {produto?.emDestaque && (
@@ -32,10 +50,21 @@ export default function ProdutoCard({ produto, onAdicionar, onPress }) {
           {produto?.nome || 'Produto'}
         </Text>
 
-        {produto?.nomeMercadinho && (
-          <Text style={styles.mercadinhoNome} numberOfLines={1}>
-            🏪 {produto.nomeMercadinho}
-          </Text>
+        {/* Linha com Mercadinho e Distância */}
+        {(nomeMercadinho || distanciaFormatada) && (
+          <View style={styles.storeInfoRow}>
+            {nomeMercadinho && (
+              <Text style={styles.mercadinhoNome} numberOfLines={1}>
+                🏪 {nomeMercadinho}
+              </Text>
+            )}
+
+            {distanciaFormatada && (
+              <Text style={styles.distanciaText}>
+                📍 {distanciaFormatada}
+              </Text>
+            )}
+          </View>
         )}
 
         <View style={styles.footerRow}>

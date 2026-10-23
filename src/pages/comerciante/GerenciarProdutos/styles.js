@@ -173,4 +173,41 @@ export const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: 'bold',
   },
+  // Botão Catálogo Global
+  btnCatalogoGlobal: {
+    backgroundColor: '#007BFF',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  btnCatalogoGlobalText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
+
+  // Divisor entre Catálogo e Cadastro Avulso
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#DEE2E6',
+  },
+  dividerText: {
+    fontSize: 12,
+    color: '#6C757D',
+    marginHorizontal: 8,
+    fontWeight: '500',
+  },
 });
