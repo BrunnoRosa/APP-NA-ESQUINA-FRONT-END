@@ -13,6 +13,7 @@ const ICONES = {
   GerenciarProdutos: 'cube',
   GerenciarPedidos: 'receipt',
   GerenciarVitrine: 'star',
+  Conta: 'person',
 };
 
 export default function TabNavigator({ state, descriptors, navigation }) {
@@ -37,6 +38,8 @@ export default function TabNavigator({ state, descriptors, navigation }) {
         return 'Pedidos';
       case 'GerenciarVitrine':
         return 'Destaques';
+      case 'Conta':
+        return 'Conta';
       default:
         return routeName;
     }

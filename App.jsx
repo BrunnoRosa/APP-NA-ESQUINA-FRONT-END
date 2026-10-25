@@ -19,6 +19,7 @@ import RecuperarSenha from './src/pages/auth/RecuperarSenha';
 // Telas do Cliente
 import BuscarProdutos from './src/pages/cliente/BuscarProdutos';
 import Carrinho from './src/pages/cliente/Carrinho';
+import Conta from './src/pages/cliente/Conta';
 import DetalhesMercadinho from './src/pages/cliente/DetalhesMercadinho';
 import HomeCliente from './src/pages/cliente/HomeCliente';
 import MeusPedidos from './src/pages/cliente/MeusPedidos';
@@ -43,6 +44,7 @@ function ClienteTabs() {
       <Tab.Screen name="HomeCliente" component={HomeCliente} />
       <Tab.Screen name="BuscarProdutos" component={BuscarProdutos} />
       <Tab.Screen name="MeusPedidos" component={MeusPedidos} />
+      <Tab.Screen name="Conta" component={Conta} />
     </Tab.Navigator>
   );
 }
