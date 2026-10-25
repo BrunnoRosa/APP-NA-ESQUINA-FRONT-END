@@ -11,6 +11,7 @@ import { CarrinhoProvider } from './src/context/CarrinhoContext';
 import TabNavigator from './src/components/Layout/TabNavigator';
 
 // Telas de Autenticação
+import Abertura from './src/pages/auth/Abertura';
 import Cadastro from './src/pages/auth/Cadastro';
 import Login from './src/pages/auth/Login';
 import RecuperarSenha from './src/pages/auth/RecuperarSenha';
@@ -79,6 +80,7 @@ function Routes() {
         {!signed ? (
           // Rotas Públicas
           <>
+            <Stack.Screen name="Abertura" component={Abertura} />
             <Stack.Screen name="Login" component={Login} />
             <Stack.Screen name="Cadastro" component={Cadastro} />
             <Stack.Screen name="RecuperarSenha" component={RecuperarSenha} />

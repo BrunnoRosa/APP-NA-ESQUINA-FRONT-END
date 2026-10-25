@@ -1,4 +1,6 @@
 import { StyleSheet } from 'react-native';
+import { cores } from '../../../theme';
+
 
 export const styles = StyleSheet.create({
   container: {
@@ -27,10 +29,10 @@ export const styles = StyleSheet.create({
   tabLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#6C757D',
+    color: cores.textoInativo,
   },
   tabLabelActive: {
-    color: '#007BFF',
+    color: cores.textoAtivo,
     fontWeight: 'bold',
   },
 });

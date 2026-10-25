@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { cores } from '../../../theme';
 
 export const styles = StyleSheet.create({
   container: {
@@ -30,7 +31,7 @@ export const styles = StyleSheet.create({
     marginBottom: 16,
   },
   button: {
-    backgroundColor: '#007BFF',
+    backgroundColor: cores.primaria,
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
