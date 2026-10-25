@@ -1,20 +1,37 @@
-import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import Header from '../../../components/Layout/Header';
+import { useCallback, useState } from 'react';
+import { cores } from '../../../theme';
+
+import {
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import CabecalhoInicio from '../../../components/CabecalhoInicio';
 import MercadinhoCard from '../../../components/MercadinhoCard';
 import ProdutoCard from '../../../components/ProdutoCard';
 import { useCarrinho } from '../../../context/CarrinhoContext';
 import api from '../../../services/api';
 import { styles } from './styles';
 
-const CATEGORIAS = ['TODOS', 'MERCEARIA', 'HORTIFRUTI', 'BEBIDAS', 'PADARIA', 'LIMPEZA'];
+const CATEGORIAS = [
+  { chave: 'HORTIFRUTI', nome: 'Hortifruti', emoji: '🍌' },
+  { chave: 'PADARIA', nome: 'Padaria', emoji: '🥖' },
+  { chave: 'LIMPEZA', nome: 'Limpeza', emoji: '🧴' },
+  { chave: 'BEBIDAS', nome: 'Bebidas', emoji: '🥤' },
+  { chave: 'ALIMENTOS', nome: 'Alimentos', emoji: '🍚' },
+  { chave: 'HIGIENE', nome: 'Higiene', emoji: '🧼' },
+  { chave: 'OUTROS', nome: 'Outros', emoji: '📦' },
+];
+
+const ATALHOS = [
+  { chave: 'promocoes', nome: 'Promoções', icone: 'pricetag' },
+  { chave: 'produtos', nome: 'Produtos', icone: 'cube' },
+  { chave: 'mercados', nome: 'Mercados', icone: 'storefront' },
+];
 
 export default function HomeCliente({ navigation }) {
   const [mercadinhos, setMercadinhos] = useState([]);
@@ -72,53 +89,36 @@ export default function HomeCliente({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Header navigation={navigation} title="Sua Região" />
-
+      
       <ScrollView 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
       >
-        {/* Banner */}
-        <View style={styles.bannerCard}>
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: '#FFF', fontSize: 18, fontWeight: 'bold' }}>
-              Compre do Bairro 🛍️
-            </Text>
-            <Text style={{ color: '#E3F2FD', fontSize: 12, marginTop: 2 }}>
-              Entrega rápida e produtos fresquinhos do mercadinho mais próximo.
-            </Text>
-          </View>
-          <Text style={{ fontSize: 36 }}>🛒</Text>
-        </View>
+      {/* Cabeçalho amarelo: margens negativas "cancelam" o padding de 16 da rolagem */}
+      <View style={{ marginHorizontal: -16, marginTop: -16 }}>
+        <CabecalhoInicio navigation={navigation} />
+      </View>
 
-        {/* Filtro de Categorias */}
-        <Text style={styles.sectionTitle}>Categorias</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoriesScroll}
-          contentContainerStyle={{ alignItems: 'center' }}
-        >
-          {CATEGORIAS.map((cat) => (
+      {/* Folha branca com os atalhos */}
+      <View style={styles.folha}>
+        <View style={styles.atalhosLinha}>
+          {ATALHOS.map((atalho) => (
             <TouchableOpacity
-              key={cat}
-              style={[
-                styles.categoryChip,
-                categoriaAtiva === cat && styles.categoryChipActive,
-              ]}
-              onPress={() => setCategoriaAtiva(cat)}
+              key={atalho.chave}
+              style={styles.atalhoItem}
+              activeOpacity={0.7}
+              onPress={() => {
+                if (atalho.chave === 'produtos') navigation.navigate('BuscarProdutos');
+              }}
             >
-              <Text
-                style={[
-                  styles.categoryText,
-                  categoriaAtiva === cat && styles.categoryTextActive,
-                ]}
-              >
-                {cat}
-              </Text>
+              <View style={styles.atalhoCirculo}>
+                <Ionicons name={atalho.icone} size={30} color={cores.primaria} />
+              </View>
+              <Text style={styles.atalhoNome}>{atalho.nome}</Text>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </View>
+      </View>
 
         {loading ? (
           <View style={styles.loadingContainer}>

@@ -1,5 +1,5 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createContext, useContext, useEffect, useState } from 'react';
 import api, { registerAuthErrorHandler } from '../services/api';
 
 const AuthContext = createContext({});
@@ -48,8 +48,8 @@ export const AuthProvider = ({ children }) => {
 
   async function login(email, senha, lembrar = true) {
     const response = await api.post('/api/auth/login', { email, senha });
-    const { token, idUsuario, perfil } = response.data;
-    const userData = { email, idUsuario, perfil };
+    const { token, idUsuario, nome, perfil } = response.data;
+    const userData = { email, idUsuario, nome, perfil };
 
     setUser(userData);
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;

@@ -21,4 +21,8 @@ export const cores = {
   icone: '#ACB5BB',           // olho e placeholders (medido)
   fundoSeletor: '#F5F6F9',          // fundo do seletor de perfil (medido)
   textoSeletorInativo: '#7D7D91',   // opção não escolhida (medido)
+  degradeInicioTopo: '#FFEF8D',
+  degradeInicioBase: '#FFBD3E',
+  textoEndereco: '#5A5749',
+  textoSaudacao: '#434242',
 };

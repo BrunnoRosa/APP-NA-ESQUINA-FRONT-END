@@ -1,9 +1,11 @@
 import { StyleSheet } from 'react-native';
 
+import { cores } from '../../../theme';
+
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: cores.fundo,
   },
   content: {
     padding: 16,
@@ -74,4 +76,61 @@ export const styles = StyleSheet.create({
     color: '#6C757D',
     marginVertical: 20,
   },
+
+    sessaoItem: {
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  sessaoCirculo: {
+    width: 88,                  // tamanho estimado a partir da imagem
+    height: 88,
+    borderRadius: 44,           // metade do tamanho = círculo
+    backgroundColor: cores.fundoCirculo,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  sessaoCirculoAtivo: {
+    borderColor: cores.primaria, // contorno vermelho na sessão escolhida (decisão nossa)
+  },
+  sessaoEmoji: {
+    fontSize: 40,
+  },
+  sessaoNome: {
+    marginTop: 6,
+    fontSize: 13,
+    color: cores.textoSecundario,
+  },
+
+  folha: {
+  backgroundColor: cores.fundo,
+  borderTopLeftRadius: 28,
+  borderTopRightRadius: 28,
+  marginTop: -28,          // sobe por cima do degradê
+  marginHorizontal: -16,   // ocupa a largura toda
+  paddingHorizontal: 16,
+  paddingTop: 24,
+  paddingBottom: 8,
+},
+atalhosLinha: {
+  flexDirection: 'row',
+  justifyContent: 'space-around',
+},
+atalhoItem: {
+  alignItems: 'center',
+  gap: 8,
+},
+atalhoCirculo: {
+  width: 72,
+  height: 72,
+  borderRadius: 36,
+  backgroundColor: cores.fundoCirculo,
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+atalhoNome: {
+  fontSize: 13,
+  color: cores.textoSecundario,
+},
 });
