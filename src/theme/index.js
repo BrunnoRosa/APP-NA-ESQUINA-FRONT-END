@@ -4,6 +4,7 @@ export const cores = {
   fundo: '#FFFFFF',
   fundoCartaoLogin: '#FFFCF7',
   fundoCartao: '#F0F0F0',
+  fundoCirculo: '#F4F4F4',    // círculos das Sessões (medido)
   fundoBusca: '#F5F5F5',
   textoTitulo: '#404040',
   textoSecundario: '#585858',
@@ -13,6 +14,7 @@ export const cores = {
   sucesso: '#1AC500',         // selo verde "Aberto até..."
   degradeTopo: '#FDAC27',     // degradê do login
   degradeBase: '#FB8701',
+<<<<<<< HEAD
 };// Cores do app Na Esquina.
 export const cores = {
   primaria: '#FF3131',        // vermelho da marca
@@ -29,5 +31,7 @@ export const cores = {
   sucesso: '#1AC500',         // selo verde "Aberto até..."
   degradeTopo: '#FDAC27',     // degradê do login
   degradeBase: '#FB8701',
+=======
+>>>>>>> 3ef5172 (fase 5: tela de abertura com logo e foto de fundo)
   fundoBotaoSecundario: '#FFF4EF', // botão "Criar nova conta" (medido)
 };
