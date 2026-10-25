@@ -112,25 +112,78 @@ export const styles = StyleSheet.create({
   paddingHorizontal: 16,
   paddingTop: 24,
   paddingBottom: 8,
-},
-atalhosLinha: {
-  flexDirection: 'row',
-  justifyContent: 'space-around',
-},
-atalhoItem: {
-  alignItems: 'center',
-  gap: 8,
-},
-atalhoCirculo: {
-  width: 72,
-  height: 72,
-  borderRadius: 36,
-  backgroundColor: cores.fundoCirculo,
+  },
+  atalhosLinha: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  atalhoItem: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  atalhoCirculo: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: cores.fundoCirculo,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  atalhoNome: {
+    fontSize: 13,
+    color: cores.textoSecundario,
+  },
+
+  tituloLinha: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 12,
+  },
+  tituloSecao: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: cores.textoTitulo,
+  },
+  verMais: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: cores.primaria,
+  },
+  botaoCarrinho: {
+  position: 'absolute',
+  right: 16,
+  bottom: 90, // acima da barra de abas; ajuste se ficar escondido
+  width: 56,
+  height: 56,
+  borderRadius: 28,
+  backgroundColor: cores.primaria,
   justifyContent: 'center',
   alignItems: 'center',
-},
-atalhoNome: {
-  fontSize: 13,
-  color: cores.textoSecundario,
-},
+  elevation: 6, // sombra no Android
+  shadowColor: '#000', // sombra no iOS e na web
+  shadowOpacity: 0.25,
+  shadowRadius: 6,
+  shadowOffset: { width: 0, height: 3 },
+  },
+  badgeCarrinho: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: cores.primaria,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeCarrinhoTexto: {
+    color: cores.primaria,
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
 });
