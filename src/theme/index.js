@@ -15,4 +15,8 @@ export const cores = {
   degradeTopo: '#FDAC27',     // degradê do login
   degradeBase: '#FB8701',
   fundoBotaoSecundario: '#FFF4EF', // botão "Criar nova conta" (medido)
+  textoLogin: '#232447',      // título "Login" (medido)
+  textoCampo: '#1A1C1E',      // texto digitado (medido)
+  bordaCampo: '#F3F4F3',      // contorno dos campos (medido)
+  icone: '#ACB5BB',           // olho e placeholders (medido)
 };
