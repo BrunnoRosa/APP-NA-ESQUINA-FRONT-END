@@ -1,35 +1,32 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { styles } from './styles';
 
-export default function TabNavigator({ state, descriptors, navigation }) {
-  const getTabIcon = (routeName) => {
-    switch (routeName) {
-      case 'HomeCliente':
-        return '🏪';
-      case 'BuscarProdutos':
-        return '🔍';
-      case 'MeusPedidos':
-        return '📋';
-      case 'DashboardComerciante':
-        return '📊';
-      case 'GerenciarProdutos':
-        return '📦';
-      case 'GerenciarPedidos':
-        return '🚚';
-      case 'GerenciarVitrine':
-        return '⭐';
-      default:
-        return '🏠';
-    }
-  };
+import { Ionicons } from '@expo/vector-icons';
+import { cores } from '../../../theme';
 
+// Cada tela tem um ícone base. Fora da aba ativa usamos a versão "-outline" (só contorno).
+const ICONES = {
+  HomeCliente: 'home',
+  BuscarProdutos: 'search',
+  MeusPedidos: 'receipt',
+  DashboardComerciante: 'stats-chart',
+  GerenciarProdutos: 'cube',
+  GerenciarPedidos: 'receipt',
+  GerenciarVitrine: 'star',
+};
+
+export default function TabNavigator({ state, descriptors, navigation }) {
+   const getTabIcon = (routeName, focused) => {
+    const base = ICONES[routeName] || 'home';
+    return focused ? base : `${base}-outline`;
+  };
+  
   const getTabLabel = (routeName) => {
     switch (routeName) {
       case 'HomeCliente':
         return 'Início';
       case 'BuscarProdutos':
-        return 'Buscar';
+        return 'Pesquisar';
       case 'MeusPedidos':
         return 'Pedidos';
       case 'DashboardComerciante':
@@ -73,8 +70,12 @@ export default function TabNavigator({ state, descriptors, navigation }) {
             onPress={onPress}
             style={styles.tabItem}
           >
-            <Text style={styles.tabIcon}>{getTabIcon(route.name)}</Text>
-            <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]}>
+            <Ionicons
+              name={getTabIcon(route.name, isFocused)}
+              size={24}
+              color={isFocused ? cores.textoAtivo : cores.textoInativo}
+            />
+              <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]}>
               {getTabLabel(route.name)}
             </Text>
           </TouchableOpacity>

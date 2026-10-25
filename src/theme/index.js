@@ -8,6 +8,7 @@ export const cores = {
   textoTitulo: '#404040',
   textoSecundario: '#585858',
   textoInativo: '#5B5B5B',
+  textoAtivo: '#000000',      // aba ativa (medido)
   textoRotulo: '#6C7278',
   sucesso: '#1AC500',         // selo verde "Aberto até..."
   degradeTopo: '#FDAC27',     // degradê do login
