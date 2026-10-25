@@ -1,7 +1,9 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -11,15 +13,28 @@ import {
   View,
 } from 'react-native';
 import api from '../../../services/api';
+import { cores } from '../../../theme';
 import { styles } from './styles';
+
+// Campo reutilizável: rótulo em cima + caixa de texto.
+// "estiloExterno" permite ajustar a largura quando dois campos ficam lado a lado.
+function Campo({ rotulo, estiloExterno, ...props }) {
+  return (
+    <View style={estiloExterno}>
+      <Text style={styles.rotulo}>{rotulo}</Text>
+      <TextInput style={styles.campo} placeholderTextColor={cores.icone} {...props} />
+    </View>
+  );
+}
 
 export default function Cadastro({ navigation }) {
   // Estados do Usuário
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [mostrarSenha, setMostrarSenha] = useState(false);
   const [telefone, setTelefone] = useState('');
-  const [perfil, setPerfil] = useState('CLIENTE'); 
+  const [perfil, setPerfil] = useState('CLIENTE');
   const [loading, setLoading] = useState(false);
 
   // Estados do Mercadinho (só usados se perfil for COMERCIANTE)
@@ -62,7 +77,7 @@ export default function Cadastro({ navigation }) {
       // 2. Se for comerciante, cria o Mercadinho em seguida
       if (perfil === 'COMERCIANTE') {
         // Obtenha o ID do usuário criado (depende de como seu backend retorna isso no /register)
-        const idComerciante = userResponse.data.id; 
+        const idComerciante = userResponse.data.id;
 
         // Faz a requisição usando a rota correta do seu backend para salvar o mercadinho
         await api.post('/api/mercadinhos', {
@@ -70,12 +85,12 @@ export default function Cadastro({ navigation }) {
           cnpj,
           endereco,
           // Convertendo para números de exemplo (ajuste conforme usar mapa/GPS)
-          latitude: -12.9714, 
+          latitude: -12.9714,
           longitude: -38.5014,
           // Formato esperado pelo LocalTime no Java (HH:mm:ss)
-          horarioAbertura: horarioAbertura + ":00", 
+          horarioAbertura: horarioAbertura + ":00",
           horarioFechamento: horarioFechamento + ":00",
-          idComerciante: idComerciante 
+          idComerciante: idComerciante
         });
       }
 
@@ -91,50 +106,163 @@ export default function Cadastro({ navigation }) {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ justifyContent: 'center', flexGrow: 1 }}>
-        <Text style={styles.title}>Criar Conta</Text>
-        <Text style={styles.subtitle}>Junte-se ao Na Esquina</Text>
+    <View style={styles.container}>
+      <Image
+        source={require('../../../../assets/images/fundo-abertura.jpg')}
+        style={styles.fotoFundo}
+        resizeMode="cover"
+      />
+      <View style={styles.camadaLaranja} />
 
-        <TextInput style={styles.input} placeholder="Nome completo" value={nome} onChangeText={setNome} />
-        <TextInput style={styles.input} placeholder="E-mail" keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
-        <TextInput style={styles.input} placeholder="Telefone / WhatsApp" keyboardType="phone-pad" value={telefone} onChangeText={setTelefone} />
-        <TextInput style={styles.input} placeholder="Senha" secureTextEntry value={senha} onChangeText={setSenha} />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.conteudo}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <Image
+            source={require('../../../../assets/images/logo-na-esquina.png')}
+            style={styles.logo}
+            resizeMode="contain"
+            accessibilityLabel="Logo Na Esquina"
+          />
 
-        <Text style={styles.label}>Tipo de Perfil:</Text>
-        <View style={styles.roleContainer}>
-          <TouchableOpacity style={[styles.roleButton, perfil === 'CLIENTE' && styles.roleButtonSelected]} onPress={() => setPerfil('CLIENTE')}>
-            <Text style={[styles.roleText, perfil === 'CLIENTE' && styles.roleTextSelected]}>Cliente / Morador</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.roleButton, perfil === 'COMERCIANTE' && styles.roleButtonSelected]} onPress={() => setPerfil('COMERCIANTE')}>
-            <Text style={[styles.roleText, perfil === 'COMERCIANTE' && styles.roleTextSelected]}>Comerciante</Text>
-          </TouchableOpacity>
-        </View>
+          <View style={styles.cartao}>
+            {/* Seletor de perfil */}
+            <View style={styles.seletor}>
+              <TouchableOpacity
+                style={[styles.opcao, perfil === 'CLIENTE' && styles.opcaoAtiva]}
+                onPress={() => setPerfil('CLIENTE')}
+                accessibilityRole="button"
+                accessibilityState={{ selected: perfil === 'CLIENTE' }}
+              >
+                <Text style={[styles.opcaoTexto, perfil === 'CLIENTE' && styles.opcaoTextoAtivo]}>
+                  Cliente
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.opcao, perfil === 'COMERCIANTE' && styles.opcaoAtiva]}
+                onPress={() => setPerfil('COMERCIANTE')}
+                accessibilityRole="button"
+                accessibilityState={{ selected: perfil === 'COMERCIANTE' }}
+              >
+                <Text style={[styles.opcaoTexto, perfil === 'COMERCIANTE' && styles.opcaoTextoAtivo]}>
+                  Dono do comércio
+                </Text>
+              </TouchableOpacity>
+            </View>
 
-        {/* --- RENDERIZAÇÃO CONDICIONAL DOS CAMPOS DO MERCADINHO --- */}
-        {perfil === 'COMERCIANTE' && (
-          <View style={{ marginTop: 15, marginBottom: 15 }}>
-            <Text style={styles.label}>Dados do Mercadinho:</Text>
-            <TextInput style={styles.input} placeholder="Nome Fantasia" value={nomeFantasia} onChangeText={setNomeFantasia} />
-            <TextInput style={styles.input} placeholder="CNPJ" keyboardType="numeric" value={cnpj} onChangeText={setCnpj} />
-            <TextInput style={styles.input} placeholder="Endereço Completo" value={endereco} onChangeText={setEndereco} />
-            
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <TextInput style={[styles.input, { width: '48%' }]} placeholder="Abre às (Ex: 08:00)" value={horarioAbertura} onChangeText={setHorarioAbertura} />
-              <TextInput style={[styles.input, { width: '48%' }]} placeholder="Fecha às (Ex: 20:00)" value={horarioFechamento} onChangeText={setHorarioFechamento} />
+            <Campo rotulo="Nome completo" placeholder="Digite seu nome" value={nome} onChangeText={setNome} />
+            <Campo
+              rotulo="Email"
+              placeholder="Digite seu e-mail"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              value={email}
+              onChangeText={setEmail}
+            />
+            <Campo
+              rotulo="Telefone / WhatsApp"
+              placeholder="Digite seu telefone"
+              keyboardType="phone-pad"
+              value={telefone}
+              onChangeText={setTelefone}
+            />
+
+            <Text style={styles.rotulo}>Senha</Text>
+            <View style={styles.campoSenha}>
+              <TextInput
+                style={styles.campoSenhaInput}
+                placeholder="Digite sua senha"
+                placeholderTextColor={cores.icone}
+                secureTextEntry={!mostrarSenha}
+                autoCapitalize="none"
+                value={senha}
+                onChangeText={setSenha}
+              />
+              <TouchableOpacity
+                onPress={() => setMostrarSenha(!mostrarSenha)}
+                accessibilityRole="button"
+                accessibilityLabel={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+              >
+                <Ionicons
+                  name={mostrarSenha ? 'eye-outline' : 'eye-off-outline'}
+                  size={20}
+                  color={cores.icone}
+                />
+              </TouchableOpacity>
+            </View>
+
+            {/* --- CAMPOS DO MERCADINHO (só para Dono do comércio) --- */}
+            {perfil === 'COMERCIANTE' && (
+              <View>
+                <Text style={styles.subtitulo}>Dados do mercadinho</Text>
+                <Campo
+                  rotulo="Nome fantasia"
+                  placeholder="Nome do mercadinho"
+                  value={nomeFantasia}
+                  onChangeText={setNomeFantasia}
+                />
+                <Campo
+                  rotulo="CNPJ"
+                  placeholder="Somente números"
+                  keyboardType="numeric"
+                  value={cnpj}
+                  onChangeText={setCnpj}
+                />
+                <Campo
+                  rotulo="Endereço completo"
+                  placeholder="Rua, número, bairro"
+                  value={endereco}
+                  onChangeText={setEndereco}
+                />
+                <View style={styles.linhaHorarios}>
+                  <Campo
+                    estiloExterno={{ flex: 1 }}
+                    rotulo="Abre às"
+                    placeholder="08:00"
+                    value={horarioAbertura}
+                    onChangeText={setHorarioAbertura}
+                  />
+                  <Campo
+                    estiloExterno={{ flex: 1 }}
+                    rotulo="Fecha às"
+                    placeholder="20:00"
+                    value={horarioFechamento}
+                    onChangeText={setHorarioFechamento}
+                  />
+                </View>
+              </View>
+            )}
+            {/* ------------------------------------------------------ */}
+
+            <TouchableOpacity
+              style={styles.botao}
+              onPress={handleCadastro}
+              disabled={loading}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+            >
+              {loading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.botaoTexto}>Cadastrar</Text>
+              )}
+            </TouchableOpacity>
+
+            <View style={styles.rodape}>
+              <Text style={styles.textoRodape}>Já possui uma conta? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                <Text style={styles.linkVermelho}>Entrar</Text>
+              </TouchableOpacity>
             </View>
           </View>
-        )}
-        {/* --------------------------------------------------------- */}
-
-        <TouchableOpacity style={styles.button} onPress={handleCadastro} disabled={loading}>
-          {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.buttonText}>Cadastrar</Text>}
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('Login')}>
-          <Text style={styles.backButtonText}>Já tem uma conta? Voltar ao Login</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }

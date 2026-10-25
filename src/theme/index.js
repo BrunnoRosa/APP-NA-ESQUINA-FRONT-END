@@ -19,4 +19,6 @@ export const cores = {
   textoCampo: '#1A1C1E',      // texto digitado (medido)
   bordaCampo: '#F3F4F3',      // contorno dos campos (medido)
   icone: '#ACB5BB',           // olho e placeholders (medido)
+  fundoSeletor: '#F5F6F9',          // fundo do seletor de perfil (medido)
+  textoSeletorInativo: '#7D7D91',   // opção não escolhida (medido)
 };
