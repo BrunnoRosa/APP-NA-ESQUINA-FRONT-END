@@ -4,6 +4,7 @@ export const cores = {
   fundo: '#FFFFFF',
   fundoCartaoLogin: '#FFFCF7',
   fundoCartao: '#F0F0F0',
+  fundoCirculo: '#F4F4F4',    // círculos das Sessões (medido)
   fundoBusca: '#F5F5F5',
   textoTitulo: '#404040',
   textoSecundario: '#585858',
@@ -13,4 +14,5 @@ export const cores = {
   sucesso: '#1AC500',         // selo verde "Aberto até..."
   degradeTopo: '#FDAC27',     // degradê do login
   degradeBase: '#FB8701',
+  fundoBotaoSecundario: '#FFF4EF', // botão "Criar nova conta" (medido)
 };
