@@ -81,11 +81,18 @@ export default function HomeCliente({ navigation }) {
 
   // Filtragem dinâmica de produtos de acordo com a categoria selecionada
   const produtosExibidos = todosProdutos.filter((p) => {
-    // Se o produto não estiver ativo, ele não deve ser exibido (ajuste a propriedade 'ativo' conforme o seu backend)
-    if (p.ativo === false) return false; 
-    
+    // Se o produto não estiver ativo, ele não deve ser exibido
+    if (p.ativo === false) return false;
+
     if (categoriaAtiva === 'TODOS') return true;
-    return p.categoria?.nome?.toUpperCase() === categoriaAtiva;
+
+    // Extrai o nome da categoria seja ela uma String ou um Objeto
+    const nomeCategoria = typeof p.categoria === 'object'
+      ? p.categoria?.nome || p.categoria?.descricao
+      : p.categoria;
+
+    // Converte para String antes de chamar toUpperCase()
+    return String(nomeCategoria || '').toUpperCase() === categoriaAtiva;
   });
 
   return (
