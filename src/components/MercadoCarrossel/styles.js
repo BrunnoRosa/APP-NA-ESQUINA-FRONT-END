@@ -31,6 +31,9 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
+  seloFechado: {
+  backgroundColor: '#9A9A9A',
+  },
   seloTexto: {
     color: '#FFFFFF',
     fontSize: 11,

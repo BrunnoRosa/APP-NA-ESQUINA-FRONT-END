@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons'; // 🆕 NOVO
 import { useFocusEffect } from '@react-navigation/native'; // 🆕 NOVO
+import { LinearGradient } from 'expo-linear-gradient'; // 🆕 NOVO
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -17,7 +18,7 @@ import ProdutoCard from '../../../components/ProdutoCard';
 import { useCarrinho } from '../../../context/CarrinhoContext';
 import api from '../../../services/api';
 import { cores } from '../../../theme'; // 🆕 NOVO
-import { calcularDistanciaKm } from '../../../utils/mercado'; // 🆕 NOVO
+import { calcularDistanciaKm, ordenarAbertasPrimeiro } from '../../../utils/mercado'; // ✏️ ALTERADO
 import { styles } from './styles';
 
 // ✏️ ALTERADO: categorias iguais às do backend (enum CategoriaProduto).
@@ -106,145 +107,156 @@ export default function BuscarProdutos({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* ✏️ ALTERADO: topo novo (busca + botão de filtro + logo), no lugar do Header azul */}
-      <View style={styles.topo}>
-        <View style={styles.campoBusca}>
-          <TextInput
-            style={styles.inputBusca}
-            placeholder="Pesquisar"
-            placeholderTextColor={cores.textoSecundario}
-            value={termo}
-            onChangeText={setTermo}
-          />
-          {termo.length > 0 && (
-            <TouchableOpacity onPress={() => setTermo('')} style={styles.limpar}>
-              <Ionicons name="close-circle" size={18} color={cores.icone} />
+      {/* ✏️ ALTERADO: o topo (busca + filtro + logo) fica DENTRO do degradê amarelo.
+          Atenção: o LinearGradient abre aqui e só fecha depois da logo. */}
+      <LinearGradient
+        colors={[cores.degradeInicioTopo, cores.degradeInicioBase]}
+        style={styles.cabecalho}
+      >
+        <View style={styles.topo}>
+          <View style={styles.campoBusca}>
+            <TextInput
+              style={styles.inputBusca}
+              placeholder="Pesquisar"
+              placeholderTextColor={cores.textoSecundario}
+              value={termo}
+              onChangeText={setTermo}
+            />
+            {termo.length > 0 && (
+              <TouchableOpacity onPress={() => setTermo('')} style={styles.limpar}>
+                <Ionicons name="close-circle" size={18} color={cores.icone} />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={styles.botaoFiltro}
+              onPress={() => setMostrarFiltros((v) => !v)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="options-outline" size={18} color="#FFFFFF" />
             </TouchableOpacity>
-          )}
-          <TouchableOpacity
-            style={styles.botaoFiltro}
-            onPress={() => setMostrarFiltros((v) => !v)}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="options-outline" size={18} color="#FFFFFF" />
-          </TouchableOpacity>
+          </View>
+
+          <Image
+            source={require('../../../../assets/images/logo-na-esquina.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </View>
+      </LinearGradient>
+      {/* 🆕 NOVO: o degradê fechou na linha acima */}
 
-        <Image
-          source={require('../../../../assets/images/logo-na-esquina.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-      </View>
-
-      {/* ✏️ ALTERADO: categorias e ordenação só aparecem ao tocar no botão de filtro */}
-      {mostrarFiltros && (
-        <View style={styles.filtros}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.categoriesScroll}
-            contentContainerStyle={{ alignItems: 'center' }}
-          >
-            {categorias.map((cat) => (
-              <TouchableOpacity
-                key={cat}
-                style={[styles.categoryChip, categoriaAtiva === cat && styles.categoryChipActive]}
-                onPress={() => setCategoriaAtiva(cat)}
-              >
-                <Text
-                  style={[styles.categoryText, categoriaAtiva === cat && styles.categoryTextActive]}
+      {/* 🆕 NOVO: folha branca que contém todo o resto da tela (fecha no fim do arquivo) */}
+      <View style={styles.folha}>
+        {/* ✏️ ALTERADO: categorias e ordenação só aparecem ao tocar no botão de filtro */}
+        {mostrarFiltros && (
+          <View style={styles.filtros}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.categoriesScroll}
+              contentContainerStyle={{ alignItems: 'center' }}
+            >
+              {categorias.map((cat) => (
+                <TouchableOpacity
+                  key={cat}
+                  style={[styles.categoryChip, categoriaAtiva === cat && styles.categoryChipActive]}
+                  onPress={() => setCategoriaAtiva(cat)}
                 >
-                  {cat}
+                  <Text
+                    style={[styles.categoryText, categoriaAtiva === cat && styles.categoryTextActive]}
+                  >
+                    {cat}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <View style={styles.sortRow}>
+              <Text style={styles.resultsCount}>{produtos.length} resultado(s)</Text>
+              <TouchableOpacity style={styles.sortBtn} onPress={alternarOrdenacao}>
+                <Text style={styles.sortBtnText}>
+                  {ordenarPor === 'preco' ? '💰 Menor Preço' : '📍 Menor Distância'}
                 </Text>
               </TouchableOpacity>
-            ))}
-          </ScrollView>
-
-          <View style={styles.sortRow}>
-            <Text style={styles.resultsCount}>{produtos.length} resultado(s)</Text>
-            <TouchableOpacity style={styles.sortBtn} onPress={alternarOrdenacao}>
-              <Text style={styles.sortBtnText}>
-                {ordenarPor === 'preco' ? '💰 Menor Preço' : '📍 Menor Distância'}
-              </Text>
-            </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      )}
+        )}
 
-      {modoBusca ? (
-        /* Resultados de produtos (lógica original mantida) */
-        loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={cores.primaria} />{/* ✏️ ALTERADO: cor vermelha */}
-          </View>
+        {modoBusca ? (
+          /* Resultados de produtos (lógica original mantida) */
+          loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={cores.primaria} />{/* ✏️ ALTERADO: cor vermelha */}
+            </View>
+          ) : (
+            <FlatList
+              data={produtos}
+              keyExtractor={(item) => String(item.idProduto || item.id || item.idProdutoBase)}
+              renderItem={({ item }) => (
+                <ProdutoCard produto={item} onAdicionar={() => adicionarAoCarrinho(item)} />
+              )}
+              ListEmptyComponent={
+                <Text style={styles.emptyText}>Nenhum produto encontrado para esta busca.</Text>
+              }
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+            />
+          )
         ) : (
-          <FlatList
-            data={produtos}
-            keyExtractor={(item) => String(item.idProduto || item.id || item.idProdutoBase)}
-            renderItem={({ item }) => (
-              <ProdutoCard produto={item} onAdicionar={() => adicionarAoCarrinho(item)} />
+          /* 🆕 NOVO: blocos "Lojas em Destaque" e "Perto de você" */
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+            <Text style={styles.tituloSecao}>Lojas em Destaque</Text>
+            {lojas.length === 0 ? (
+              <Text style={styles.emptyText}>Nenhuma loja cadastrada ainda.</Text>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.carrossel}
+              >
+                {ordenarAbertasPrimeiro(lojas).map((m) => (
+                  <LojaCard
+                    key={String(m.idMercadinho || m.id)}
+                    mercadinho={m}
+                    tipo="destaque"
+                    onPress={() => abrirLoja(m)}
+                  />
+                ))}
+              </ScrollView>
             )}
-            ListEmptyComponent={
-              <Text style={styles.emptyText}>Nenhum produto encontrado para esta busca.</Text>
-            }
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
-          />
-        )
-      ) : (
-        /* 🆕 NOVO: blocos "Lojas em Destaque" e "Perto de você" */
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
-          <Text style={styles.tituloSecao}>Lojas em Destaque</Text>
-          {lojas.length === 0 ? (
-            <Text style={styles.emptyText}>Nenhuma loja cadastrada ainda.</Text>
-          ) : (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.carrossel}
-            >
-              {lojas.map((m) => (
-                <LojaCard
-                  key={String(m.idMercadinho || m.id)}
-                  mercadinho={m}
-                  tipo="destaque"
-                  onPress={() => abrirLoja(m)}
-                />
-              ))}
-            </ScrollView>
-          )}
 
-          <View style={styles.divisor} />
+            <View style={styles.divisor} />
 
-          <Text style={styles.tituloSecao}>Perto de você</Text>
-          <Text style={styles.subtituloSecao}>(raio de 1km)</Text>
-          {lojasPerto.length === 0 ? (
-            <Text style={styles.emptyText}>Nenhuma loja por perto.</Text>
-          ) : (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.carrossel}
-            >
-              {lojasPerto.map((m) => (
-                <LojaCard
-                  key={String(m.idMercadinho || m.id)}
-                  mercadinho={m}
-                  tipo="perto"
-                  distanciaKm={calcularDistanciaKm(
-                    userCoords.lat,
-                    userCoords.lng,
-                    m.latitude,
-                    m.longitude
-                  )}
-                  onPress={() => abrirLoja(m)}
-                />
-              ))}
-            </ScrollView>
-          )}
-        </ScrollView>
-      )}
+            <Text style={styles.tituloSecao}>Perto de você</Text>
+            <Text style={styles.subtituloSecao}>(raio de 1km)</Text>
+            {lojasPerto.length === 0 ? (
+              <Text style={styles.emptyText}>Nenhuma loja por perto.</Text>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.carrossel}
+              >
+                {ordenarAbertasPrimeiro(lojasPerto).map((m) => (
+                  <LojaCard
+                    key={String(m.idMercadinho || m.id)}
+                    mercadinho={m}
+                    tipo="perto"
+                    distanciaKm={calcularDistanciaKm(
+                      userCoords.lat,
+                      userCoords.lng,
+                      m.latitude,
+                      m.longitude
+                    )}
+                    onPress={() => abrirLoja(m)}
+                  />
+                ))}
+              </ScrollView>
+            )}
+          </ScrollView>
+        )}
+      </View>
+      {/* 🆕 NOVO: a folha branca fechou na linha acima */}
     </View>
   );
 }

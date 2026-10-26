@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { estaAberto, formatarHora } from '../../utils/mercado';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
 import { cores } from '../../theme';
 import { styles } from './styles';
@@ -6,6 +7,8 @@ import { styles } from './styles';
 export default function MercadoCarrossel({ mercadinho, onPress }) {
   const nome = mercadinho?.nomeFantasia || mercadinho?.nome || 'Mercadinho';
   const endereco = mercadinho?.endereco || 'Endereço não informado';
+  const aberto = estaAberto(mercadinho?.horarioAbertura, mercadinho?.horarioFechamento);
+  const fecha = formatarHora(mercadinho?.horarioFechamento);
   // Só mostra a distância se o backend tiver mandado
   const distancia =
     typeof mercadinho?.distanciaKm === 'number'
@@ -20,8 +23,11 @@ export default function MercadoCarrossel({ mercadinho, onPress }) {
         ) : (
           <Ionicons name="storefront" size={34} color={cores.primaria} />
         )}
-        <View style={styles.selo}>
-          <Text style={styles.seloTexto}>Aberto</Text>
+        
+        <View style={[styles.selo, !aberto && styles.seloFechado]}>
+        <Text style={styles.seloTexto}>
+            {aberto ? (fecha ? `Aberto até às ${fecha}` : 'Aberto') : 'Fechado'}
+        </Text>
         </View>
       </View>
 

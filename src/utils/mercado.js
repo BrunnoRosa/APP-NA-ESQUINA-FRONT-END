@@ -45,3 +45,12 @@ export function estaAberto(abertura, fechamento) {
   // Se fecha depois da meia-noite (ex.: 18h às 02h)
   return ini <= fim ? atual >= ini && atual < fim : atual >= ini || atual < fim;
 }
+
+// Lojas abertas primeiro. As demais mantêm a ordem original.
+export function ordenarAbertasPrimeiro(lojas) {
+  return [...lojas].sort((a, b) => {
+    const aAberta = estaAberto(a.horarioAbertura, a.horarioFechamento);
+    const bAberta = estaAberto(b.horarioAbertura, b.horarioFechamento);
+    return Number(bAberta) - Number(aAberta);
+  });
+}

@@ -2,13 +2,27 @@ import { StyleSheet } from 'react-native';
 import { cores } from '../../../theme';
 
 export const styles = StyleSheet.create({
-  // ✏️ ALTERADO: fundo branco do tema
   container: {
     flex: 1,
     backgroundColor: cores.fundo,
   },
 
-  // 🆕 NOVO: topo com busca e logo
+  // 🆕 NOVO: área do degradê amarelo (o espaço extra embaixo é coberto pela folha)
+  cabecalho: {
+    paddingBottom: 40,
+  },
+
+  // 🆕 NOVO: folha branca de cantos arredondados que sobe sobre o degradê
+  folha: {
+    flex: 1,
+    backgroundColor: cores.fundo,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    marginTop: -28,
+    overflow: 'hidden', // corta o conteúdo nos cantos arredondados
+  },
+
+  // Topo com busca e logo
   topo: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -20,7 +34,7 @@ export const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: cores.fundoBusca,
+    backgroundColor: '#FFFFFF', // ✏️ ALTERADO (antes: cores.fundoBusca, cinza)
     borderRadius: 24,
     paddingLeft: 16,
     paddingRight: 4,
@@ -49,12 +63,12 @@ export const styles = StyleSheet.create({
     height: 62,
   },
 
-  // 🆕 NOVO: títulos das seções
+  // Títulos das seções
   tituloSecao: {
     fontSize: 22,
     fontWeight: 'bold',
     color: cores.textoSecundario,
-    marginTop: 12,
+    marginTop: 20, // ✏️ ALTERADO (antes 12): afasta o título da curva da folha
     marginBottom: 12,
     paddingHorizontal: 16,
   },
@@ -75,17 +89,17 @@ export const styles = StyleSheet.create({
     marginVertical: 20,
   },
 
-  // Filtros (já existiam; só ajustei cores e margens)
+  // Filtros
   filtros: {
     paddingHorizontal: 16,
-    marginTop: 8,
+    marginTop: 20, // ✏️ ALTERADO (antes 8): mesma razão do título
   },
   categoriesScroll: {
     marginBottom: 12,
     flexGrow: 0,
   },
   categoryChip: {
-    backgroundColor: cores.fundoCirculo, // ✏️ ALTERADO
+    backgroundColor: cores.fundoCirculo,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
@@ -94,7 +108,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   categoryChipActive: {
-    backgroundColor: cores.primaria, // ✏️ ALTERADO: vermelho no lugar do azul
+    backgroundColor: cores.primaria,
   },
   categoryText: {
     fontSize: 13,
@@ -114,7 +128,7 @@ export const styles = StyleSheet.create({
     color: cores.textoSecundario,
   },
   sortBtn: {
-    backgroundColor: cores.fundoVerMais, // ✏️ ALTERADO
+    backgroundColor: cores.fundoVerMais,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
@@ -122,7 +136,7 @@ export const styles = StyleSheet.create({
   sortBtnText: {
     fontSize: 12,
     fontWeight: '600',
-    color: cores.primaria, // ✏️ ALTERADO
+    color: cores.primaria,
   },
 
   loadingContainer: {

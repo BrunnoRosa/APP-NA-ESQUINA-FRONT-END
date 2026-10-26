@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import MercadoCarrossel from '../../../components/MercadoCarrossel';
 import OfertaCard from '../../../components/OfertaCard';
 import { cores } from '../../../theme';
+import { ordenarAbertasPrimeiro } from '../../../utils/mercado'; 
 
 import {
   ActivityIndicator,
@@ -139,7 +140,7 @@ export default function HomeCliente({ navigation }) {
                     style={{ marginHorizontal: -16 }}
                     contentContainerStyle={{ paddingHorizontal: 16 }}
                   >
-                    {mercadinhos.map((m) => (
+                    {ordenarAbertasPrimeiro(mercadinhos).map((m) => ( // ALTERADO: abertas primeiro
                       <MercadoCarrossel
                         key={String(m.idMercadinho || m.id)}
                         mercadinho={m}
