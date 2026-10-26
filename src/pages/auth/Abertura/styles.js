@@ -5,6 +5,8 @@ export const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: cores.degradeTopo, // provisório, até entrar a foto
+    alignItems: 'center',
+    justifyContent: 'center',
   },
     fotoFundo: {
     ...StyleSheet.absoluteFillObject, // cola nas quatro bordas
@@ -21,8 +23,8 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logo: {
-    width: 170,                // tamanho estimado a partir da imagem
-    height: 204,               // mantém a proporção 512:614 da logo
+    width: '80%',                // tamanho estimado a partir da imagem
+    height: '20%',               // mantém a proporção 512:614 da logo
   },
   cartao: {
     backgroundColor: cores.fundoCartaoLogin,

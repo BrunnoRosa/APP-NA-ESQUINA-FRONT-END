@@ -1,13 +1,15 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { styles } from './styles';
 
 export default function Abertura({ navigation }) {
+  const {width, height} = Dimensions.get('window');
   return (
     <View style={styles.container}>
       <Image
         source={require('../../../../assets/images/fundo-abertura.jpg')}
-        style={styles.fotoFundo}
+       // style={styles.fotoFundo}
+        style={{ width: '100%', height: '100%', position: 'absolute' }} // Ajusta a largura e altura da imagem para preencher a tela
         resizeMode="cover"
       />
       <View style={styles.camadaLaranja} />
