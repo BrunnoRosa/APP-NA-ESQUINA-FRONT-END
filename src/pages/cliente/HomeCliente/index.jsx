@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react';
 import MercadoCarrossel from '../../../components/MercadoCarrossel';
 import OfertaCard from '../../../components/OfertaCard';
 import { cores } from '../../../theme';
-import { ordenarAbertasPrimeiro } from '../../../utils/mercado'; 
+import { ordenarAbertasPrimeiro } from '../../../utils/mercado';
 
 import {
   ActivityIndicator,
@@ -85,7 +85,7 @@ export default function HomeCliente({ navigation }) {
     if (p.ativo === false) return false; 
     
     if (categoriaAtiva === 'TODOS') return true;
-    return p.categoria?.toUpperCase() === categoriaAtiva;
+    return p.categoria?.nome?.toUpperCase() === categoriaAtiva;
   });
 
   return (
