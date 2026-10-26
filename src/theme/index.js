@@ -25,4 +25,8 @@ export const cores = {
   degradeInicioBase: '#FFBD3E',
   textoEndereco: '#5A5749',
   textoSaudacao: '#434242',
+  laranjaDistancia: '#FF8800',
+  textoRaio: '#717171',
+  divisor: '#F3F3F3',
+  fundoVerMais: '#FFECEC',
 };
