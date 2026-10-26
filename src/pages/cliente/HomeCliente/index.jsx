@@ -1,20 +1,38 @@
-import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import Header from '../../../components/Layout/Header';
-import MercadinhoCard from '../../../components/MercadinhoCard';
-import ProdutoCard from '../../../components/ProdutoCard';
+import { useCallback, useState } from 'react';
+import MercadoCarrossel from '../../../components/MercadoCarrossel';
+import OfertaCard from '../../../components/OfertaCard';
+import { cores } from '../../../theme';
+import { ordenarAbertasPrimeiro } from '../../../utils/mercado';
+
+import {
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import CabecalhoInicio from '../../../components/CabecalhoInicio';
 import { useCarrinho } from '../../../context/CarrinhoContext';
 import api from '../../../services/api';
 import { styles } from './styles';
 
-const CATEGORIAS = ['TODOS', 'MERCEARIA', 'HORTIFRUTI', 'BEBIDAS', 'PADARIA', 'LIMPEZA'];
+const CATEGORIAS = [
+  { chave: 'HORTIFRUTI', nome: 'Hortifruti', emoji: '🍌' },
+  { chave: 'PADARIA', nome: 'Padaria', emoji: '🥖' },
+  { chave: 'LIMPEZA', nome: 'Limpeza', emoji: '🧴' },
+  { chave: 'BEBIDAS', nome: 'Bebidas', emoji: '🥤' },
+  { chave: 'ALIMENTOS', nome: 'Alimentos', emoji: '🍚' },
+  { chave: 'HIGIENE', nome: 'Higiene', emoji: '🧼' },
+  { chave: 'OUTROS', nome: 'Outros', emoji: '📦' },
+];
+
+const ATALHOS = [
+  { chave: 'promocoes', nome: 'Promoções', icone: 'pricetag' },
+  { chave: 'produtos', nome: 'Produtos', icone: 'cube' },
+  { chave: 'mercados', nome: 'Mercados', icone: 'storefront' },
+];
 
 export default function HomeCliente({ navigation }) {
   const [mercadinhos, setMercadinhos] = useState([]);
@@ -22,7 +40,7 @@ export default function HomeCliente({ navigation }) {
   const [categoriaAtiva, setCategoriaAtiva] = useState('TODOS');
   const [loading, setLoading] = useState(true);
 
-  const { adicionarAoCarrinho } = useCarrinho();
+  const { adicionarAoCarrinho, totalItens } = useCarrinho();
 
   // Função centralizada para buscar os dados
   const carregarDados = useCallback(async () => {
@@ -79,53 +97,36 @@ export default function HomeCliente({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Header navigation={navigation} title="Sua Região" />
-
+      
       <ScrollView 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
       >
-        {/* Banner */}
-        <View style={styles.bannerCard}>
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: '#FFF', fontSize: 18, fontWeight: 'bold' }}>
-              Compre do Bairro 🛍️
-            </Text>
-            <Text style={{ color: '#E3F2FD', fontSize: 12, marginTop: 2 }}>
-              Entrega rápida e produtos fresquinhos do mercadinho mais próximo.
-            </Text>
-          </View>
-          <Text style={{ fontSize: 36 }}>🛒</Text>
-        </View>
+      {/* Cabeçalho amarelo: margens negativas "cancelam" o padding de 16 da rolagem */}
+      <View style={{ marginHorizontal: -16, marginTop: -16 }}>
+        <CabecalhoInicio navigation={navigation} />
+      </View>
 
-        {/* Filtro de Categorias */}
-        <Text style={styles.sectionTitle}>Categorias</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoriesScroll}
-          contentContainerStyle={{ alignItems: 'center' }}
-        >
-          {CATEGORIAS.map((cat) => (
+      {/* Folha branca com os atalhos */}
+      <View style={styles.folha}>
+        <View style={styles.atalhosLinha}>
+          {ATALHOS.map((atalho) => (
             <TouchableOpacity
-              key={cat}
-              style={[
-                styles.categoryChip,
-                categoriaAtiva === cat && styles.categoryChipActive,
-              ]}
-              onPress={() => setCategoriaAtiva(cat)}
+              key={atalho.chave}
+              style={styles.atalhoItem}
+              activeOpacity={0.7}
+              onPress={() => {
+                if (atalho.chave === 'produtos') navigation.navigate('BuscarProdutos');
+              }}
             >
-              <Text
-                style={[
-                  styles.categoryText,
-                  categoriaAtiva === cat && styles.categoryTextActive,
-                ]}
-              >
-                {cat}
-              </Text>
+              <View style={styles.atalhoCirculo}>
+                <Ionicons name={atalho.icone} size={30} color={cores.primaria} />
+              </View>
+              <Text style={styles.atalhoNome}>{atalho.nome}</Text>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </View>
+      </View>
 
         {loading ? (
           <View style={styles.loadingContainer}>
@@ -133,48 +134,79 @@ export default function HomeCliente({ navigation }) {
           </View>
         ) : (
           <>
-            {/* Lista de Mercadinhos */}
+            {/* Lista de Mercadinhos próximos (carrossel) */}
             {categoriaAtiva === 'TODOS' && (
               <>
-                <Text style={styles.sectionTitle}>Mercadinhos da Região 🏪</Text>
+                <Text style={styles.sectionTitle}>Mercadinhos próximos de você</Text>
                 {mercadinhos.length === 0 ? (
                   <Text style={styles.emptyText}>Nenhum mercadinho cadastrado ainda.</Text>
                 ) : (
-                  mercadinhos.map((m) => (
-                    <MercadinhoCard
-                      key={String(m.idMercadinho || m.id)}
-                      mercadinho={m}
-                      onPress={() =>
-                        navigation.navigate('DetalhesMercadinho', {
-                          idMercadinho: m.idMercadinho || m.id,
-                          mercadinho: m,
-                        })
-                      }
-                    />
-                  ))
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={{ marginHorizontal: -16 }}
+                    contentContainerStyle={{ paddingHorizontal: 16 }}
+                  >
+                    {ordenarAbertasPrimeiro(mercadinhos).map((m) => ( // ALTERADO: abertas primeiro
+                      <MercadoCarrossel
+                        key={String(m.idMercadinho || m.id)}
+                        mercadinho={m}
+                        onPress={() =>
+                          navigation.navigate('DetalhesMercadinho', {
+                            idMercadinho: m.idMercadinho || m.id,
+                            mercadinho: m,
+                          })
+                        }
+                      />
+                    ))}
+                  </ScrollView>
                 )}
               </>
             )}
 
             {/* Lista de Produtos Filtrados */}
-            <Text style={styles.sectionTitle}>
-              {categoriaAtiva === 'TODOS' ? 'Ofertas na Esquina ⭐' : `Produtos em ${categoriaAtiva}`}
-            </Text>
+            {/* Ofertas do dia */}
+            <View style={styles.tituloLinha}>
+              <Text style={styles.tituloSecao}>Ofertas do dia</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('BuscarProdutos')}>
+                <Text style={styles.verMais}>Ver mais</Text>
+              </TouchableOpacity>
+            </View>
 
             {produtosExibidos.length === 0 ? (
-              <Text style={styles.emptyText}>Nenhum produto encontrado nesta categoria.</Text>
+              <Text style={styles.emptyText}>Nenhum produto disponível ainda.</Text>
             ) : (
-              produtosExibidos.map((prod) => (
-                <ProdutoCard
-                  key={String(prod.idProduto || prod.id)}
-                  produto={prod}
-                  onAdicionar={() => adicionarAoCarrinho(prod)}
-                />
-              ))
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{ marginHorizontal: -16 }}
+                contentContainerStyle={{ paddingHorizontal: 16 }}
+              >
+                {produtosExibidos.slice(0, 10).map((prod) => (
+                  <OfertaCard
+                    key={String(prod.idProduto || prod.id)}
+                    produto={prod}
+                    onAdicionar={() => adicionarAoCarrinho(prod)}
+                  />
+                ))}
+              </ScrollView>
             )}
           </>
         )}
       </ScrollView>
+      {/* Botão flutuante do carrinho: só aparece com itens */}
+      {totalItens > 0 && (
+        <TouchableOpacity
+          style={styles.botaoCarrinho}
+          activeOpacity={0.8}
+          onPress={() => navigation.navigate('Carrinho')}
+        >
+          <Ionicons name="cart" size={26} color="#FFFFFF" />
+          <View style={styles.badgeCarrinho}>
+            <Text style={styles.badgeCarrinhoTexto}>{totalItens}</Text>
+          </View>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

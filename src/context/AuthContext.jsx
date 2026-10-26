@@ -1,5 +1,5 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createContext, useContext, useEffect, useState } from 'react';
 import api, { registerAuthErrorHandler } from '../services/api';
 
 const AuthContext = createContext({});
@@ -46,16 +46,23 @@ export const AuthProvider = ({ children }) => {
     loadStorageData();
   }, []);
 
-  async function login(email, senha) {
+  async function login(email, senha, lembrar = true) {
     const response = await api.post('/api/auth/login', { email, senha });
-    const { token, idUsuario, perfil } = response.data; 
-    const userData = { email, idUsuario, perfil };
+    const { token, idUsuario, nome, perfil } = response.data;
+    const userData = { email, idUsuario, nome, perfil };
 
     setUser(userData);
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-    await AsyncStorage.setItem('@AppNaEsquina:token', token);
-    await AsyncStorage.setItem('@AppNaEsquina:user', JSON.stringify(userData));
+    if (lembrar) {
+      // Guarda no aparelho: o login continua depois de fechar o app
+      await AsyncStorage.setItem('@AppNaEsquina:token', token);
+      await AsyncStorage.setItem('@AppNaEsquina:user', JSON.stringify(userData));
+    } else {
+      // Não guarda: apaga qualquer login salvo antes
+      await AsyncStorage.removeItem('@AppNaEsquina:token');
+      await AsyncStorage.removeItem('@AppNaEsquina:user');
+    }
   }
 
   return (

@@ -15,4 +15,18 @@ export const cores = {
   degradeTopo: '#FDAC27', // degradê do login
   degradeBase: '#FB8701',
   fundoBotaoSecundario: '#FFF4EF', // botão "Criar nova conta" (medido)
+  textoLogin: '#232447',      // título "Login" (medido)
+  textoCampo: '#1A1C1E',      // texto digitado (medido)
+  bordaCampo: '#F3F4F3',      // contorno dos campos (medido)
+  icone: '#ACB5BB',           // olho e placeholders (medido)
+  fundoSeletor: '#F5F6F9',          // fundo do seletor de perfil (medido)
+  textoSeletorInativo: '#7D7D91',   // opção não escolhida (medido)
+  degradeInicioTopo: '#FFEF8D',
+  degradeInicioBase: '#FFBD3E',
+  textoEndereco: '#5A5749',
+  textoSaudacao: '#434242',
+  laranjaDistancia: '#FF8800',
+  textoRaio: '#717171',
+  divisor: '#F3F3F3',
+  fundoVerMais: '#FFECEC',
 };

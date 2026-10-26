@@ -1,16 +1,17 @@
-import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useCallback, useState } from 'react';
+import {
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import Header from '../../../components/Layout/Header';
 import ProdutoCard from '../../../components/ProdutoCard';
 import { useCarrinho } from '../../../context/CarrinhoContext';
 import api from '../../../services/api';
+import { estaAberto, formatarHora } from '../../../utils/mercado';
 import { styles } from './styles';
 
 export default function DetalhesMercadinho({ route, navigation }) {
@@ -60,8 +61,11 @@ export default function DetalhesMercadinho({ route, navigation }) {
   );
 
   // Filtra apenas produtos ativos. Se a sua API já traz apenas ativos, isso serve de garantia extra.
-  const produtosAtivos = produtos.filter((p) => p.ativo !== false);
-  const destaques = produtosAtivos.filter((p) => p.emDestaque);
+    const produtosAtivos = produtos.filter((p) => p.ativo !== false);
+    const destaques = produtosAtivos.filter((p) => p.emDestaque);
+
+    const aberto = estaAberto(mercadinho?.horarioAbertura, mercadinho?.horarioFechamento);
+    const fecha = formatarHora(mercadinho?.horarioFechamento);
 
   return (
     <View style={styles.wrapper}>
@@ -83,8 +87,13 @@ export default function DetalhesMercadinho({ route, navigation }) {
           <Text style={styles.enderecoLoja}>
             📍 {mercadinho?.endereco || 'Bairro local'}
           </Text>
-          <View style={styles.badgeStatus}>
-            <Text style={styles.badgeText}>🟢 Aberto Agora</Text>
+          
+          <View style={[styles.badgeStatus, !aberto && { backgroundColor: '#E5E5E5' }]}>
+            <Text style={styles.badgeText}>
+              {aberto
+                ? `🟢 Aberto${fecha ? ` até às ${fecha}` : ' agora'}`
+                : '⚪ Fechado agora'}
+            </Text>
           </View>
         </View>
 
