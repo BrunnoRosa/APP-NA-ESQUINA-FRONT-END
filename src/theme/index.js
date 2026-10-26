@@ -2,7 +2,7 @@
 export const cores = {
   primaria: '#FF3131', // vermelho da marca
   fundo: '#FFFFFF',
-  fundoCartaologin: '#FFFCF7',
+  fundoCartaoLogin: '#FFFCF7',
   fundoCartao: '#F0F0F0',
   fundoCirculo: '#F4F4F4', // círculos das Sessões (medido)
   fundoBusca: '#F5F5F5',
