@@ -18,16 +18,6 @@ import { useCarrinho } from '../../../context/CarrinhoContext';
 import api from '../../../services/api';
 import { styles } from './styles';
 
-const CATEGORIAS = [
-  { chave: 'HORTIFRUTI', nome: 'Hortifruti', emoji: '🍌' },
-  { chave: 'PADARIA', nome: 'Padaria', emoji: '🥖' },
-  { chave: 'LIMPEZA', nome: 'Limpeza', emoji: '🧴' },
-  { chave: 'BEBIDAS', nome: 'Bebidas', emoji: '🥤' },
-  { chave: 'ALIMENTOS', nome: 'Alimentos', emoji: '🍚' },
-  { chave: 'HIGIENE', nome: 'Higiene', emoji: '🧼' },
-  { chave: 'OUTROS', nome: 'Outros', emoji: '📦' },
-];
-
 const ATALHOS = [
   { chave: 'promocoes', nome: 'Promoções', icone: 'pricetag' },
   { chave: 'produtos', nome: 'Produtos', icone: 'cube' },
@@ -37,6 +27,7 @@ const ATALHOS = [
 export default function HomeCliente({ navigation }) {
   const [mercadinhos, setMercadinhos] = useState([]);
   const [todosProdutos, setTodosProdutos] = useState([]);
+  const [favoritosIds, setFavoritosIds] = useState([]); // Guarda os IDs dos mercadinhos favoritados
   const [categoriaAtiva, setCategoriaAtiva] = useState('TODOS');
   const [loading, setLoading] = useState(true);
 
@@ -45,15 +36,18 @@ export default function HomeCliente({ navigation }) {
   // Função centralizada para buscar os dados
   const carregarDados = useCallback(async () => {
     try {
-      // Removemos o setLoading(true) daqui para que a tela não "pisque" a cada 5 segundos no polling.
-      // Se quiser mostrar o loading apenas na primeira vez, pode gerenciar isso com outro estado.
-      const [resMercadinhos, resProdutos] = await Promise.all([
+      const [resMercadinhos, resProdutos, resFavoritos] = await Promise.all([
         api.get('/api/mercadinhos'),
         api.get('/api/produtos'),
+        api.get('/api/clientes/favoritos').catch(() => ({ data: [] })), // Rota de favoritos do cliente
       ]);
 
       setMercadinhos(resMercadinhos.data || []);
       setTodosProdutos(resProdutos.data || []);
+      
+      // Mapeia apenas os IDs dos mercadinhos favoritos
+      const ids = (resFavoritos.data || []).map((fav) => fav.idMercadinho || fav.id);
+      setFavoritosIds(ids);
     } catch (error) {
       console.error('Erro ao carregar dados da Home:', error);
     } finally {
@@ -64,82 +58,148 @@ export default function HomeCliente({ navigation }) {
   // Polling a cada 5 segundos enquanto a tela estiver em foco
   useFocusEffect(
     useCallback(() => {
-      // 1. Chama imediatamente assim que a tela ganha foco
       carregarDados();
 
-      // 2. Configura o intervalo para rodar a cada 5 segundos
       const intervalId = setInterval(() => {
         carregarDados();
       }, 5000);
 
-      // 3. Função de limpeza: para o intervalo quando a tela perde o foco
       return () => {
         clearInterval(intervalId);
       };
     }, [carregarDados])
   );
 
+  // Função para favoritar ou desfavoritar um mercadinho
+  const toggleFavorito = async (idMercadinho) => {
+    const jaEhFavorito = favoritosIds.includes(idMercadinho);
+
+    // Atualização otimista na interface (muda na hora sem esperar a API)
+    setFavoritosIds((prev) =>
+      jaEhFavorito ? prev.filter((id) => id !== idMercadinho) : [...prev, idMercadinho]
+    );
+
+    try {
+      if (jaEhFavorito) {
+        await api.delete(`/api/clientes/favoritos/${idMercadinho}`);
+      } else {
+        await api.post(`/api/clientes/favoritos`, { idMercadinho });
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar favorito:', error);
+      // Reverte o estado caso a API falhe
+      setFavoritosIds((prev) =>
+        jaEhFavorito ? [...prev, idMercadinho] : prev.filter((id) => id !== idMercadinho)
+      );
+    }
+  };
+
   // Filtragem dinâmica de produtos de acordo com a categoria selecionada
   const produtosExibidos = todosProdutos.filter((p) => {
-    // Se o produto não estiver ativo, ele não deve ser exibido
     if (p.ativo === false) return false;
-
     if (categoriaAtiva === 'TODOS') return true;
 
-    // Extrai o nome da categoria seja ela uma String ou um Objeto
     const nomeCategoria = typeof p.categoria === 'object'
       ? p.categoria?.nome || p.categoria?.descricao
       : p.categoria;
 
-    // Converte para String antes de chamar toUpperCase()
     return String(nomeCategoria || '').toUpperCase() === categoriaAtiva;
   });
 
   return (
     <View style={styles.container}>
-      
       <ScrollView 
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+        contentContainerStyle={{ paddingBottom: 120 }}
       >
-      {/* Cabeçalho amarelo: margens negativas "cancelam" o padding de 16 da rolagem */}
-      <View style={{ marginHorizontal: -16, marginTop: -16 }}>
-        <CabecalhoInicio navigation={navigation} />
-      </View>
+        {/* Cabeçalho Amarelo com navegação para a tela de lista de Favoritos */}
+        <CabecalhoInicio 
+          navigation={navigation} 
+          quantidadeFavoritos={favoritosIds.length} 
+        />
 
-      {/* Folha branca com os atalhos */}
-      <View style={styles.folha}>
-        <View style={styles.atalhosLinha}>
-          {ATALHOS.map((atalho) => (
-            <TouchableOpacity
-              key={atalho.chave}
-              style={styles.atalhoItem}
-              activeOpacity={0.7}
-              onPress={() => {
-                if (atalho.chave === 'produtos') navigation.navigate('BuscarProdutos');
-              }}
-            >
-              <View style={styles.atalhoCirculo}>
-                <Ionicons name={atalho.icone} size={30} color={cores.primaria} />
-              </View>
-              <Text style={styles.atalhoNome}>{atalho.nome}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#007BFF" />
+        {/* Folha branca sobreposta */}
+        <View style={styles.folha}>
+          {/* Atalhos Principais */}
+          <View style={styles.atalhosLinha}>
+            {ATALHOS.map((atalho) => (
+              <TouchableOpacity
+                key={atalho.chave}
+                style={styles.atalhoItem}
+                activeOpacity={0.7}
+                onPress={() => {
+                  if (atalho.chave === 'produtos') navigation.navigate('BuscarProdutos');
+                  if (atalho.chave === 'mercados') navigation.navigate('Mercados');
+                }}
+              >
+                <View style={styles.atalhoCirculo}>
+                  <Ionicons name={atalho.icone} size={28} color={cores.primaria} />
+                </View>
+                <Text style={styles.atalhoNome}>{atalho.nome}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
-        ) : (
-          <>
-            {/* Lista de Mercadinhos próximos (carrossel) */}
-            {categoriaAtiva === 'TODOS' && (
-              <>
-                <Text style={styles.sectionTitle}>Mercadinhos próximos de você</Text>
-                {mercadinhos.length === 0 ? (
-                  <Text style={styles.emptyText}>Nenhum mercadinho cadastrado ainda.</Text>
+
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={cores.primaria || '#007BFF'} />
+            </View>
+          ) : (
+            <>
+              {/* Carrossel de Mercadinhos Próximos */}
+              {categoriaAtiva === 'TODOS' && (
+                <View style={styles.secaoContainer}>
+                  <Text style={styles.sectionTitle}>Mercadinhos próximos de você</Text>
+                  {mercadinhos.length === 0 ? (
+                    <Text style={styles.emptyText}>Nenhum mercadinho cadastrado ainda.</Text>
+                  ) : (
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      style={{ marginHorizontal: -16 }}
+                      contentContainerStyle={{ paddingHorizontal: 16 }}
+                    >
+                      {ordenarAbertasPrimeiro(mercadinhos).map((m) => {
+                        const idM = m.idMercadinho || m.id;
+                        const isFavorito = favoritosIds.includes(idM);
+
+                        return (
+                          <MercadoCarrossel
+                            key={String(idM)}
+                            mercadinho={m}
+                            isFavorito={isFavorito}
+                            onToggleFavorito={() => toggleFavorito(idM)}
+                            onPress={() =>
+                              navigation.navigate('DetalhesMercadinho', {
+                                idMercadinho: idM,
+                                mercadinho: m,
+                              })
+                            }
+                          />
+                        );
+                      })}
+                    </ScrollView>
+                  )}
+                </View>
+              )}
+
+              {/* Seção de Ofertas do Dia */}
+              <View style={styles.secaoContainer}>
+                <View style={styles.tituloLinha}>
+                  <View>
+                    <Text style={styles.tituloSecao}>Ofertas do dia</Text>
+                    <Text style={styles.subtituloSecao}>[somente em 24h]</Text>
+                  </View>
+                  <TouchableOpacity 
+                    style={styles.verMaisBtn}
+                    onPress={() => navigation.navigate('BuscarProdutos')}
+                  >
+                    <Text style={styles.verMais}>Ver mais</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {produtosExibidos.length === 0 ? (
+                  <Text style={styles.emptyText}>Nenhum produto disponível ainda.</Text>
                 ) : (
                   <ScrollView
                     horizontal
@@ -147,54 +207,22 @@ export default function HomeCliente({ navigation }) {
                     style={{ marginHorizontal: -16 }}
                     contentContainerStyle={{ paddingHorizontal: 16 }}
                   >
-                    {ordenarAbertasPrimeiro(mercadinhos).map((m) => ( // ALTERADO: abertas primeiro
-                      <MercadoCarrossel
-                        key={String(m.idMercadinho || m.id)}
-                        mercadinho={m}
-                        onPress={() =>
-                          navigation.navigate('DetalhesMercadinho', {
-                            idMercadinho: m.idMercadinho || m.id,
-                            mercadinho: m,
-                          })
-                        }
+                    {produtosExibidos.slice(0, 10).map((prod) => (
+                      <OfertaCard
+                        key={String(prod.idProduto || prod.id)}
+                        produto={prod}
+                        onAdicionar={() => adicionarAoCarrinho(prod)}
                       />
                     ))}
                   </ScrollView>
                 )}
-              </>
-            )}
-
-            {/* Lista de Produtos Filtrados */}
-            {/* Ofertas do dia */}
-            <View style={styles.tituloLinha}>
-              <Text style={styles.tituloSecao}>Ofertas do dia</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('BuscarProdutos')}>
-                <Text style={styles.verMais}>Ver mais</Text>
-              </TouchableOpacity>
-            </View>
-
-            {produtosExibidos.length === 0 ? (
-              <Text style={styles.emptyText}>Nenhum produto disponível ainda.</Text>
-            ) : (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={{ marginHorizontal: -16 }}
-                contentContainerStyle={{ paddingHorizontal: 16 }}
-              >
-                {produtosExibidos.slice(0, 10).map((prod) => (
-                  <OfertaCard
-                    key={String(prod.idProduto || prod.id)}
-                    produto={prod}
-                    onAdicionar={() => adicionarAoCarrinho(prod)}
-                  />
-                ))}
-              </ScrollView>
-            )}
-          </>
-        )}
+              </View>
+            </>
+          )}
+        </View>
       </ScrollView>
-      {/* Botão flutuante do carrinho: só aparece com itens */}
+
+      {/* Botão Flutuante do Carrinho */}
       {totalItens > 0 && (
         <TouchableOpacity
           style={styles.botaoCarrinho}
