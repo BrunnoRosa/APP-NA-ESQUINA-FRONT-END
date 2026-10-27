@@ -21,11 +21,12 @@ import BuscarProdutos from './src/pages/cliente/BuscarProdutos';
 import Carrinho from './src/pages/cliente/Carrinho';
 import Conta from './src/pages/cliente/Conta';
 import DetalhesMercadinho from './src/pages/cliente/DetalhesMercadinho';
+import Favoritos from './src/pages/cliente/Favoritos';
 import HomeCliente from './src/pages/cliente/HomeCliente';
 import MeusPedidos from './src/pages/cliente/MeusPedidos';
 
 // Telas do Comerciante
-import AtivarProdutoCatalogo from './src/pages/comerciante/AtivarProdutoCatalogo'; // <-- NOVO IMPORT
+import AtivarProdutoCatalogo from './src/pages/comerciante/AtivarProdutoCatalogo';
 import DashboardComerciante from './src/pages/comerciante/DashboardComerciante';
 import GerenciarPedidos from './src/pages/comerciante/GerenciarPedidos';
 import GerenciarProdutos from './src/pages/comerciante/GerenciarProdutos';
@@ -80,7 +81,6 @@ function Routes() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!signed ? (
-          // Rotas Públicas
           <>
             <Stack.Screen name="Abertura" component={Abertura} />
             <Stack.Screen name="Login" component={Login} />
@@ -88,16 +88,15 @@ function Routes() {
             <Stack.Screen name="RecuperarSenha" component={RecuperarSenha} />
           </>
         ) : user?.perfil === 'COMERCIANTE' ? (
-          // Rotas do Comerciante (Abas + Telas secundárias)
           <>
             <Stack.Screen name="ComercianteTabs" component={ComercianteTabs} />
             <Stack.Screen name="AtivarProdutoCatalogo" component={AtivarProdutoCatalogo} />
           </>
         ) : (
-          // Rotas do Cliente (Abas + Telas secundárias sem aba cobrindo a tela)
           <>
             <Stack.Screen name="ClienteTabs" component={ClienteTabs} />
             <Stack.Screen name="DetalhesMercadinho" component={DetalhesMercadinho} />
+            <Stack.Screen name="Favoritos" component={Favoritos} />
             <Stack.Screen name="Carrinho" component={Carrinho} />
           </>
         )}

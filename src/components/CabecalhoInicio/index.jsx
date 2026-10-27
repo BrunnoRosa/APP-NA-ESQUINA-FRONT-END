@@ -8,7 +8,6 @@ import { styles } from './styles';
 export default function CabecalhoInicio({ navigation }) {
   const { user } = useAuth();
 
-  // Primeiro nome só: "Camila Souza" vira "Camila"
   const primeiroNome = user?.nome ? user.nome.split(' ')[0] : 'visitante';
 
   return (
@@ -41,19 +40,31 @@ export default function CabecalhoInicio({ navigation }) {
             placeholderTextColor={cores.textoSecundario}
             onFocus={() => navigation.navigate('BuscarProdutos')}
           />
-          <View style={styles.botaoFiltro}>
+          <TouchableOpacity 
+            style={styles.botaoFiltro}
+            activeOpacity={0.8}
+          >
             <Ionicons name="options-outline" size={18} color="#FFFFFF" />
-          </View>
+          </TouchableOpacity>
         </View>
 
-        {/* Coração e sino (só visuais por enquanto) */}
-        <View style={[styles.botaoRedondo, styles.botaoCoracao]}>
+        {/* Botão de Favoritos funcional */}
+        <TouchableOpacity 
+          style={[styles.botaoRedondo, styles.botaoCoracao]}
+          onPress={() => navigation.navigate('Favoritos')}
+          activeOpacity={0.8}
+        >
           <Ionicons name="heart" size={20} color="#FFFFFF" />
-        </View>
-        <View style={[styles.botaoRedondo, styles.botaoSino]}>
+        </TouchableOpacity>
+
+        {/* Botão de Notificações */}
+        <TouchableOpacity 
+          style={[styles.botaoRedondo, styles.botaoSino]}
+          activeOpacity={0.8}
+        >
           <Ionicons name="notifications-outline" size={20} color={cores.textoTitulo} />
           <View style={styles.pontoAviso} />
-        </View>
+        </TouchableOpacity>
       </View>
     </LinearGradient>
   );
