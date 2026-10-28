@@ -27,7 +27,6 @@ export default function GerenciarPedidos({ navigation }) {
     }
   }
 
-  // Define parâmetro isSilent para atualização em segundo plano sem piscar tela
   const carregarPedidos = useCallback(async (isSilent = false) => {
     const idMercadinho = user?.idMercadinho || user?.id || 1;
 
@@ -42,24 +41,28 @@ export default function GerenciarPedidos({ navigation }) {
     }
   }, [user]);
 
-  // Executa o Polling a cada 5 segundos enquanto a tela estiver em foco
   useFocusEffect(
     useCallback(() => {
       carregarPedidos();
 
       const intervalId = setInterval(() => {
-        carregarPedidos(true); // Requisição silenciosa em background
+        carregarPedidos(true);
       }, 5000);
 
-      return () => clearInterval(intervalId); // Limpa o temporizador ao sair
+      return () => clearInterval(intervalId);
     }, [carregarPedidos])
   );
 
-  const alterarStatus = async (idPedido, novoStatus) => {
+  const alterarStatus = async (idPedido, novoStatus, motivo = '') => {
     setAtualizandoId(idPedido);
     try {
-      await api.put(`/api/pedidos/${idPedido}/status?status=${novoStatus}`);
-      exibirAlerta('Status Atualizado', `Pedido #${idPedido} atualizado para ${novoStatus}.`);
+      let url = `/api/pedidos/${idPedido}/status?status=${novoStatus}`;
+      if (motivo.trim() !== '') {
+        url += `&motivo=${encodeURIComponent(motivo.trim())}`;
+      }
+
+      await api.put(url);
+      exibirAlerta('Status Atualizado', `Pedido #${idPedido} atualizado com sucesso!`);
       carregarPedidos(true);
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
@@ -69,33 +72,58 @@ export default function GerenciarPedidos({ navigation }) {
     }
   };
 
-  function getStatusStyle(status) {
+  const solicitarCancelamento = (idPedido) => {
+    if (Platform.OS === 'web') {
+      const motivo = window.prompt(
+        'Por que deseja cancelar este pedido?\n(Ex: Produto indisponível em estoque)'
+      );
+      if (motivo !== null) { // Se o usuário não clicou em Cancelar no prompt
+        alterarStatus(idPedido, 'CANCELADO', motivo);
+      }
+    } else {
+      Alert.prompt(
+        'Cancelar Pedido',
+        'Informe o motivo do cancelamento:',
+        [
+          { text: 'Voltar', style: 'cancel' },
+          {
+            text: 'Confirmar Cancelamento',
+            style: 'destructive',
+            onPress: (motivo) => alterarStatus(idPedido, 'CANCELADO', motivo),
+          },
+        ],
+        'plain-text'
+      );
+    }
+  };
+
+  function getStatusInfo(status) {
     switch (status) {
       case 'PENDENTE':
-        return { bg: '#FFF3CD', text: '#856404' };
-      case 'EM_PREPARO':
-        return { bg: '#CCE5FF', text: '#004085' };
-      case 'SAIU_PARA_ENTREGA':
-        return { bg: '#E2E3E5', text: '#383D41' };
-      case 'CONCLUIDO':
-        return { bg: '#D4EDDA', text: '#155724' };
+        return { label: 'Aguardando Separação', bg: '#FFF3CD', text: '#856404' };
+      case 'EM_SEPARACAO':
+        return { label: 'Separando Produtos', bg: '#CCE5FF', text: '#004085' };
+      case 'AGUARDANDO_RETIRADA':
+        return { label: 'Pronto para Retirada', bg: '#E2E3E5', text: '#383D41' };
+      case 'RETIRADA_CONCLUIDO':
+        return { label: 'Concluído', bg: '#D4EDDA', text: '#155724' };
       case 'CANCELADO':
-        return { bg: '#F8D7DA', text: '#721C24' };
+        return { label: 'Cancelado', bg: '#F8D7DA', text: '#721C24' };
       default:
-        return { bg: '#E2E3E5', text: '#383D41' };
+        return { label: status, bg: '#E2E3E5', text: '#383D41' };
     }
   }
 
   function renderPedido({ item }) {
-    const statusStyle = getStatusStyle(item.status);
+    const statusInfo = getStatusInfo(item.status);
     const isBusy = atualizandoId === item.idPedido;
 
     return (
       <View style={styles.pedidoCard}>
         <View style={styles.pedidoHeader}>
           <Text style={styles.pedidoNumero}>Pedido #{item.idPedido}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
-            <Text style={[styles.statusText, { color: statusStyle.text }]}>{item.status}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}>
+            <Text style={[styles.statusText, { color: statusInfo.text }]}>{statusInfo.label}</Text>
           </View>
         </View>
 
@@ -129,6 +157,13 @@ export default function GerenciarPedidos({ navigation }) {
           </Text>
         </View>
 
+        {item.status === 'CANCELADO' && item.motivoCancelamento && (
+          <View style={styles.motivoContainer}>
+            <Text style={styles.motivoTitle}>Motivo do cancelamento:</Text>
+            <Text style={styles.motivoText}>{item.motivoCancelamento}</Text>
+          </View>
+        )}
+
         {isBusy ? (
           <ActivityIndicator style={{ marginTop: 12 }} size="small" color="#007BFF" />
         ) : (
@@ -137,34 +172,34 @@ export default function GerenciarPedidos({ navigation }) {
               <>
                 <TouchableOpacity
                   style={[styles.btnAction, { backgroundColor: '#007BFF' }]}
-                  onPress={() => alterarStatus(item.idPedido, 'EM_PREPARO')}
+                  onPress={() => alterarStatus(item.idPedido, 'EM_SEPARACAO')}
                 >
-                  <Text style={styles.btnText}>👨‍🍳 Em Preparo</Text>
+                  <Text style={styles.btnText}>📦 Iniciar Separação</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.btnAction, { backgroundColor: '#DC3545' }]}
-                  onPress={() => alterarStatus(item.idPedido, 'CANCELADO')}
+                  onPress={() => solicitarCancelamento(item.idPedido)}
                 >
                   <Text style={styles.btnText}>❌ Cancelar</Text>
                 </TouchableOpacity>
               </>
             )}
 
-            {item.status === 'EM_PREPARO' && (
+            {item.status === 'EM_SEPARACAO' && (
               <TouchableOpacity
                 style={[styles.btnAction, { backgroundColor: '#17A2B8' }]}
-                onPress={() => alterarStatus(item.idPedido, 'SAIU_PARA_ENTREGA')}
+                onPress={() => alterarStatus(item.idPedido, 'AGUARDANDO_RETIRADA')}
               >
-                <Text style={styles.btnText}>🛵 Saiu p/ Entrega</Text>
+                <Text style={styles.btnText}>🏪 Disponível para Retirada</Text>
               </TouchableOpacity>
             )}
 
-            {item.status === 'SAIU_PARA_ENTREGA' && (
+            {item.status === 'AGUARDANDO_RETIRADA' && (
               <TouchableOpacity
                 style={[styles.btnAction, { backgroundColor: '#28A745' }]}
-                onPress={() => alterarStatus(item.idPedido, 'CONCLUIDO')}
+                onPress={() => alterarStatus(item.idPedido, 'RETIRADA_CONCLUIDO')}
               >
-                <Text style={styles.btnText}>✅ Marcar Concluído</Text>
+                <Text style={styles.btnText}>✅ Entregue ao Cliente</Text>
               </TouchableOpacity>
             )}
           </View>

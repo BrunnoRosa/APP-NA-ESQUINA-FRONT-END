@@ -27,7 +27,6 @@ export default function MeusPedidos({ navigation }) {
     }
   }
 
-  // Define parâmetro isSilent para atualizar sem exibir o carregando na tela
   const carregarPedidos = useCallback(async (isSilent = false) => {
     const idCliente = user?.idUsuario || user?.id;
     if (!idCliente) return;
@@ -43,60 +42,59 @@ export default function MeusPedidos({ navigation }) {
     }
   }, [user]);
 
-  // Executa o Polling a cada 5 segundos enquanto a tela estiver focada
   useFocusEffect(
     useCallback(() => {
       carregarPedidos();
 
       const intervalId = setInterval(() => {
-        carregarPedidos(true); // Requisição silenciosa em background
+        carregarPedidos(true);
       }, 5000);
 
-      return () => clearInterval(intervalId); // Limpa o intervalo ao sair da tela
+      return () => clearInterval(intervalId);
     }, [carregarPedidos])
   );
 
   const confirmarRecebimento = async (idPedido) => {
     setAtualizandoId(idPedido);
     try {
-      await api.put(`/api/pedidos/${idPedido}/status?status=CONCLUIDO`);
-      exibirAlerta('Pedido Entregue! 🎉', `Obrigado por confirmar o recebimento do pedido #${idPedido}.`);
+      await api.put(`/api/pedidos/${idPedido}/status?status=RETIRADA_CONCLUIDO`);
+      exibirAlerta('Pedido Retirado! 🎉', `Obrigado por comprar conosco, volte sempre! #${idPedido}.`);
       carregarPedidos(true);
     } catch (error) {
-      console.error('Erro ao confirmar recebimento:', error);
-      exibirAlerta('Erro', 'Não foi possível confirmar o recebimento no momento.');
+      console.error('Erro ao confirmar a retirada do pedido:', error);
+      exibirAlerta('Erro', 'Não foi possível confirmar a retirada do seu pedido no momento.');
     } finally {
       setAtualizandoId(null);
     }
   };
 
-  function getStatusStyle(status) {
+  function getStatusInfo(status) {
     switch (status) {
       case 'PENDENTE':
-        return { bg: '#FFF3CD', text: '#856404' };
-      case 'EM_PREPARO':
-        return { bg: '#CCE5FF', text: '#004085' };
-      case 'SAIU_PARA_ENTREGA':
-        return { bg: '#E2E3E5', text: '#383D41' };
-      case 'CONCLUIDO':
-        return { bg: '#D4EDDA', text: '#155724' };
+        return { label: 'Aguardando Aprovação', bg: '#FFF3CD', text: '#856404' };
+      case 'EM_SEPARACAO':
+        return { label: 'Em Separação', bg: '#CCE5FF', text: '#004085' };
+      case 'AGUARDANDO_RETIRADA':
+        return { label: 'Pronto para Retirada', bg: '#E2E3E5', text: '#383D41' };
+      case 'RETIRADA_CONCLUIDO':
+        return { label: 'Retirado / Concluído', bg: '#D4EDDA', text: '#155724' };
       case 'CANCELADO':
-        return { bg: '#F8D7DA', text: '#721C24' };
+        return { label: 'Cancelado', bg: '#F8D7DA', text: '#721C24' };
       default:
-        return { bg: '#E2E3E5', text: '#383D41' };
+        return { label: status, bg: '#E2E3E5', text: '#383D41' };
     }
   }
 
   function renderPedido({ item }) {
-    const statusStyle = getStatusStyle(item.status);
+    const statusInfo = getStatusInfo(item.status);
     const isBusy = atualizandoId === item.idPedido;
 
     return (
       <View style={styles.pedidoCard}>
         <View style={styles.pedidoHeader}>
           <Text style={styles.pedidoNumero}>Pedido #{item.idPedido}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
-            <Text style={[styles.statusText, { color: statusStyle.text }]}>{item.status}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}>
+            <Text style={[styles.statusText, { color: statusInfo.text }]}>{statusInfo.label}</Text>
           </View>
         </View>
 
@@ -130,7 +128,7 @@ export default function MeusPedidos({ navigation }) {
           </Text>
         </View>
 
-        {item.status === 'SAIU_PARA_ENTREGA' && (
+        {item.status === 'AGUARDANDO_RETIRADA' && (
           isBusy ? (
             <ActivityIndicator style={{ marginTop: 12 }} size="small" color="#28A745" />
           ) : (
@@ -138,9 +136,16 @@ export default function MeusPedidos({ navigation }) {
               style={styles.confirmButton}
               onPress={() => confirmarRecebimento(item.idPedido)}
             >
-              <Text style={styles.confirmButtonText}>🙌 Confirmar Recebimento</Text>
+              <Text style={styles.confirmButtonText}>🛍️ Já Retirei os Produtos</Text>
             </TouchableOpacity>
           )
+        )}
+
+        {item.status === 'CANCELADO' && item.motivoCancelamento && (
+          <View style={styles.motivoContainer}>
+            <Text style={styles.motivoTitle}>Motivo do cancelamento:</Text>
+            <Text style={styles.motivoText}>{item.motivoCancelamento}</Text>
+          </View>
         )}
       </View>
     );

@@ -9,27 +9,39 @@ import {
   Image,
   Modal,
   Alert,
+  Platform,
 } from 'react-native';
 import api from '../../../services/api';
 import { styles } from './styles';
+import { useAuth } from '../../../context/AuthContext';
 
 export default function AtivarProdutoCatalogo({ navigation, route }) {
-  // ID do mercadinho logado (pode vir via props/route/contexto)
-  const idMercadinho = route?.params?.idMercadinho || 1;
+  const { user } = useAuth();
+  
+  // Pega dinamicamente o ID do mercadinho logado ou da rota
+  const idMercadinho = user?.idMercadinho || user?.mercadinho?.idMercadinho || user?.idUsuario || user?.id || route?.params?.idMercadinho;
 
   const [termo, setTermo] = useState('');
   const [catalogo, setCatalogo] = useState([]);
-  const [idsAtivados, setIdsAtivados] = useState([]); // Guarda os IDs dos produtos já no estoque
+  const [idsAtivados, setIdsAtivados] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Estados para o Modal de Ativação
   const [modalVisivel, setModalVisivel] = useState(false);
   const [produtoSelecionado, setProdutoSelecionado] = useState(null);
   const [preco, setPreco] = useState('');
   const [salvando, setSalvando] = useState(false);
 
-  // Carrega os produtos que este mercadinho já possui no estoque
+  function exibirAlerta(titulo, mensagem) {
+    if (Platform.OS === 'web') {
+      alert(`${titulo}\n${mensagem}`);
+    } else {
+      Alert.alert(titulo, mensagem);
+    }
+  }
+
   const carregarProdutosJaAtivados = useCallback(async () => {
+    if (!idMercadinho) return;
+
     try {
       const response = await api.get(`/api/produtos/mercadinho/${idMercadinho}`);
       const ids = (response.data || [])
@@ -41,7 +53,6 @@ export default function AtivarProdutoCatalogo({ navigation, route }) {
     }
   }, [idMercadinho]);
 
-  // Busca produtos no Catálogo Global
   const buscarCatalogo = useCallback(async () => {
     try {
       setLoading(true);
@@ -55,7 +66,7 @@ export default function AtivarProdutoCatalogo({ navigation, route }) {
       setCatalogo(response.data || []);
     } catch (error) {
       console.error('Erro ao buscar catálogo global:', error);
-      Alert.alert('Erro', 'Não foi possível carregar os produtos do catálogo.');
+      exibirAlerta('Erro', 'Não foi possível carregar os produtos do catálogo.');
     } finally {
       setLoading(false);
     }
@@ -68,26 +79,29 @@ export default function AtivarProdutoCatalogo({ navigation, route }) {
     return () => clearTimeout(timer);
   }, [termo, buscarCatalogo]);
 
-  // Abre modal para digitar o preço
   const abrirModalAtivacao = (item) => {
     setProdutoSelecionado(item);
     setPreco('');
     setModalVisivel(true);
   };
 
-  // Envia a requisição POST para vincular/ativar o produto no estoque
   const confirmarAtivacao = async () => {
     const precoNumerico = parseFloat(preco.replace(',', '.'));
 
     if (!preco || isNaN(precoNumerico) || precoNumerico <= 0) {
-      Alert.alert('Atenção', 'Informe um preço válido maior que zero.');
+      exibirAlerta('Atenção', 'Informe um preço válido maior que zero.');
+      return;
+    }
+
+    if (!idMercadinho) {
+      exibirAlerta('Erro', 'Mercadinho não identificado.');
       return;
     }
 
     try {
       setSalvando(true);
       const payload = {
-        idMercadinho,
+        idMercadinho: Number(idMercadinho),
         idProdutoBase: produtoSelecionado.idProdutoBase,
         preco: precoNumerico,
         ativo: true,
@@ -95,20 +109,30 @@ export default function AtivarProdutoCatalogo({ navigation, route }) {
 
       await api.post('/api/produtos/ativar-do-catalogo', payload);
 
-      // Atualiza o estado local imediatamente marcando o produto como ativado
+      // 1. Atualiza a lista local de ativados
       setIdsAtivados((prev) => [...prev, produtoSelecionado.idProdutoBase]);
 
-      Alert.alert(
-        'Sucesso! 🎉',
-        `"${produtoSelecionado.nome}" foi adicionado ao seu estoque por R$ ${precoNumerico.toFixed(2)}.`
-      );
-
+      // 2. Armazena o nome e fecha o modal
+      const nomeProdutoAtivado = produtoSelecionado.nome;
       setModalVisivel(false);
       setProdutoSelecionado(null);
+
+      // 3. Exibe o alerta com pequeno delay para liberar a renderização da Web
+      setTimeout(() => {
+        exibirAlerta(
+          'Sucesso! 🎉',
+          `"${nomeProdutoAtivado}" foi adicionado ao seu estoque por R$ ${precoNumerico.toFixed(2)}.`
+        );
+      }, 100);
+
     } catch (error) {
       console.error('Erro ao ativar produto:', error);
       const mensagem = error.response?.data?.message || 'Erro ao ativar produto no estoque.';
-      Alert.alert('Erro', mensagem);
+
+      setModalVisivel(false);
+      setTimeout(() => {
+        exibirAlerta('Erro', mensagem);
+      }, 100);
     } finally {
       setSalvando(false);
     }
@@ -116,7 +140,6 @@ export default function AtivarProdutoCatalogo({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      {/* Cabeçalho Customizado com Botão de Voltar */}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E9ECEF' }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ paddingRight: 12 }}>
           <Text style={{ fontSize: 16, color: '#007BFF', fontWeight: 'bold' }}>← Voltar</Text>
@@ -125,7 +148,6 @@ export default function AtivarProdutoCatalogo({ navigation, route }) {
       </View>
 
       <View style={styles.content}>
-        {/* Campo de Busca no Catálogo Global */}
         <View style={styles.searchSection}>
           <Text style={{ fontSize: 16 }}>🔍</Text>
           <TextInput
@@ -142,7 +164,6 @@ export default function AtivarProdutoCatalogo({ navigation, route }) {
           )}
         </View>
 
-        {/* Lista de Produtos do Catálogo Global */}
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#28A745" />
@@ -173,7 +194,6 @@ export default function AtivarProdutoCatalogo({ navigation, route }) {
                     </Text>
                   </View>
 
-                  {/* Alterna o botão se o item já foi ativado */}
                   {jaAtivado ? (
                     <View style={[styles.btnAtivar, { backgroundColor: '#E2E3E5', borderColor: '#CED4DA', borderWidth: 1 }]}>
                       <Text style={{ color: '#6C757D', fontSize: 12, fontWeight: 'bold' }}>✓ Ativado</Text>
@@ -200,7 +220,6 @@ export default function AtivarProdutoCatalogo({ navigation, route }) {
         )}
       </View>
 
-      {/* Modal para Informar o Preço de Venda */}
       <Modal
         visible={modalVisivel}
         transparent

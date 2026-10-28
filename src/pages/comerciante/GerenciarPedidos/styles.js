@@ -78,6 +78,11 @@ export const styles = StyleSheet.create({
     color: '#6C757D',
     marginBottom: 8,
   },
+  mercadinhoNome: {
+    fontSize: 13,
+    color: '#6C757D',
+    marginBottom: 8,
+  },
   divider: {
     height: 1,
     backgroundColor: '#E9ECEF',
@@ -130,6 +135,36 @@ export const styles = StyleSheet.create({
   btnText: {
     color: '#FFF',
     fontWeight: 'bold',
+    fontSize: 13,
+  },
+  confirmButton: {
+    backgroundColor: '#28A745',
+    paddingVertical: 10,
+    borderRadius: 6,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  confirmButtonText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 13,
+  },
+  motivoContainer: {
+    marginTop: 10,
+    padding: 10,
+    backgroundColor: '#F8D7DA',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#F5C6CB',
+  },
+  motivoTitle: {
+    color: '#721C24',
+    fontSize: 13,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  motivoText: {
+    color: '#721C24',
     fontSize: 13,
   },
 });

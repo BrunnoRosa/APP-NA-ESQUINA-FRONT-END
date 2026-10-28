@@ -39,8 +39,17 @@ export default function GerenciarProdutos({ navigation }) {
     }
   }
 
+  // Função utilitária para extrair o idMercadinho do objeto user
+  const obterIdMercadinho = () => {
+    return user?.idMercadinho || user?.mercadinho?.idMercadinho || user?.idUsuario || user?.id;
+  };
+
   const carregarProdutos = useCallback(async () => {
-    const idMercadinho = user?.idMercadinho || user?.id || 1;
+    const idMercadinho = obterIdMercadinho();
+    if (!idMercadinho) {
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -59,9 +68,12 @@ export default function GerenciarProdutos({ navigation }) {
     }, [carregarProdutos])
   );
 
-  // Navega para a tela de busca no Catálogo Global
   const handleIrParaCatalogoGlobal = () => {
-    const idMercadinho = user?.idMercadinho || user?.id || 1;
+    const idMercadinho = obterIdMercadinho();
+    if (!idMercadinho) {
+      exibirAlerta('Erro', 'Mercadinho não identificado. Faça login novamente.');
+      return;
+    }
     navigation.navigate('AtivarProdutoCatalogo', { idMercadinho });
   };
 
@@ -71,7 +83,12 @@ export default function GerenciarProdutos({ navigation }) {
       return;
     }
 
-    const idMercadinho = user?.idMercadinho || user?.id || 1;
+    const idMercadinho = obterIdMercadinho();
+    if (!idMercadinho) {
+      exibirAlerta('Erro', 'Mercadinho não identificado.');
+      return;
+    }
+
     setSalvando(true);
 
     try {
@@ -132,7 +149,6 @@ export default function GerenciarProdutos({ navigation }) {
     }
   };
 
-  // Alternar Status entre Ativo / Inativo
   const handleAlternarStatus = (produto) => {
     const idProd = produto.idProduto || produto.id;
     const novoStatus = !(produto.ativo ?? true);
@@ -178,7 +194,6 @@ export default function GerenciarProdutos({ navigation }) {
         <Text style={styles.title}>Gerir Produtos 📦</Text>
       </View>
 
-      {/* Opção 1: Buscar do Catálogo Global (Mais rápido) */}
       <TouchableOpacity
         style={styles.btnCatalogoGlobal}
         onPress={handleIrParaCatalogoGlobal}
@@ -189,14 +204,12 @@ export default function GerenciarProdutos({ navigation }) {
         </Text>
       </TouchableOpacity>
 
-      {/* Divisor Visual */}
       <View style={styles.dividerRow}>
         <View style={styles.dividerLine} />
         <Text style={styles.dividerText}>ou cadastre um produto avulso</Text>
         <View style={styles.dividerLine} />
       </View>
 
-      {/* Opção 2: Formulário de Cadastro Avulso */}
       <View style={styles.formCard}>
         <Text style={styles.sectionTitle}>Novo Produto Avulso</Text>
         <TextInput
@@ -286,7 +299,6 @@ export default function GerenciarProdutos({ navigation }) {
         />
       )}
 
-      {/* Modal de Edição */}
       <Modal
         visible={modalEditVisivel}
         transparent

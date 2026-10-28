@@ -49,7 +49,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     borderRadius: 8,
     padding: 14,
-    marginBottom: 12,
+    marginBottom: 14,
     borderWidth: 1,
     borderColor: '#E9ECEF',
   },
@@ -57,7 +57,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   pedidoNumero: {
     fontSize: 16,
@@ -73,10 +73,14 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
+  clienteEmail: {
+    fontSize: 13,
+    color: '#6C757D',
+    marginBottom: 8,
+  },
   mercadinhoNome: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#007BFF',
+    fontSize: 13,
+    color: '#6C757D',
     marginBottom: 8,
   },
   divider: {
@@ -117,6 +121,22 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#28A745',
   },
+  actionContainer: {
+    flexDirection: 'row',
+    marginTop: 12,
+    gap: 8,
+  },
+  btnAction: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  btnText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 13,
+  },
   confirmButton: {
     backgroundColor: '#28A745',
     paddingVertical: 10,
@@ -126,7 +146,25 @@ export const styles = StyleSheet.create({
   },
   confirmButtonText: {
     color: '#FFF',
-    fontSize: 14,
     fontWeight: 'bold',
+    fontSize: 13,
+  },
+  motivoContainer: {
+    marginTop: 10,
+    padding: 10,
+    backgroundColor: '#F8D7DA',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#F5C6CB',
+  },
+  motivoTitle: {
+    color: '#721C24',
+    fontSize: 13,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  motivoText: {
+    color: '#721C24',
+    fontSize: 13,
   },
 });
