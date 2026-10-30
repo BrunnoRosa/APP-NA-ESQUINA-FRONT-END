@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -39,28 +39,62 @@ export default function GerenciarProdutos({ navigation }) {
     }
   }
 
-  // Função utilitária para extrair o idMercadinho do objeto user
-  const obterIdMercadinho = () => {
-    return user?.idMercadinho || user?.mercadinho?.idMercadinho || user?.idUsuario || user?.id;
-  };
+  // Obter o ID do Mercadinho resolvendo a divergência entre comerciante_id e id_mercadinho
+  const obterIdMercadinho = useCallback(async () => {
+    // 1. Tenta obter diretamente do objeto user
+    let idMerc = user?.idMercadinho || user?.mercadinho?.idMercadinho || user?.mercadinho?.id;
+    if (idMerc) return idMerc;
+
+    // 2. Se apenas tivermos o ID do comerciante/utilizador, consulta a API para obter o idMercadinho real
+    const idComerciante = user?.idUsuario || user?.id;
+    if (idComerciante) {
+      try {
+        // Ajuste esta rota para o endpoint de busca de mercadinho por comerciante, se existir
+        const res = await api.get(`/api/mercadinhos/comerciante/${idComerciante}`);
+        if (res.data?.idMercadinho || res.data?.id) {
+          return res.data.idMercadinho || res.data.id;
+        }
+      } catch (e) {
+        console.warn('⚠️ Não foi possível obter idMercadinho por endpoint:', e);
+      }
+    }
+    return idComerciante; // Fallback
+  }, [user]);
 
   const carregarProdutos = useCallback(async () => {
-    const idMercadinho = obterIdMercadinho();
-    if (!idMercadinho) {
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
+      const idMercadinho = await obterIdMercadinho();
+      
+      console.log('🔍 [DEBUG] ID Mercadinho utilizado na query:', idMercadinho);
+
+      if (!idMercadinho) {
+        setLoading(false);
+        return;
+      }
+
       const response = await api.get(`/api/produtos/mercadinho/${idMercadinho}?t=${new Date().getTime()}`);
-      setProdutos(response.data || []);
+      
+      let listaProdutos = [];
+      if (Array.isArray(response.data)) {
+        listaProdutos = response.data;
+      } else if (Array.isArray(response.data?.content)) {
+        listaProdutos = response.data.content;
+      } else if (Array.isArray(response.data?.produtos)) {
+        listaProdutos = response.data.produtos;
+      }
+
+      setProdutos(listaProdutos);
     } catch (error) {
-      console.error('Erro ao carregar produtos:', error);
+      console.error('❌ Erro ao carregar produtos:', error);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [obterIdMercadinho]);
+
+  useEffect(() => {
+    carregarProdutos();
+  }, [carregarProdutos]);
 
   useFocusEffect(
     useCallback(() => {
@@ -68,8 +102,8 @@ export default function GerenciarProdutos({ navigation }) {
     }, [carregarProdutos])
   );
 
-  const handleIrParaCatalogoGlobal = () => {
-    const idMercadinho = obterIdMercadinho();
+  const handleIrParaCatalogoGlobal = async () => {
+    const idMercadinho = await obterIdMercadinho();
     if (!idMercadinho) {
       exibirAlerta('Erro', 'Mercadinho não identificado. Faça login novamente.');
       return;
@@ -83,7 +117,7 @@ export default function GerenciarProdutos({ navigation }) {
       return;
     }
 
-    const idMercadinho = obterIdMercadinho();
+    const idMercadinho = await obterIdMercadinho();
     if (!idMercadinho) {
       exibirAlerta('Erro', 'Mercadinho não identificado.');
       return;
@@ -102,13 +136,12 @@ export default function GerenciarProdutos({ navigation }) {
       };
 
       await api.post('/api/produtos', payload);
-
       exibirAlerta('Sucesso', 'Produto cadastrado com sucesso!');
       setNome('');
       setPreco('');
-      carregarProdutos();
+      await carregarProdutos();
     } catch (error) {
-      console.error('Erro ao cadastrar produto:', error);
+      console.error('❌ Erro ao cadastrar produto:', error);
       exibirAlerta('Erro', 'Não foi possível cadastrar o produto.');
     } finally {
       setSalvando(false);
@@ -116,8 +149,9 @@ export default function GerenciarProdutos({ navigation }) {
   };
 
   const abrirModalEdicao = (produto) => {
+    const nomeExibicao = produto.nome || produto.nomePersonalizado || produto.produtoBase?.nome || '';
     setProdutoEditando(produto);
-    setEditNome(produto.nome);
+    setEditNome(nomeExibicao);
     setEditPreco(String(produto.preco));
     setModalEditVisivel(true);
   };
@@ -140,7 +174,7 @@ export default function GerenciarProdutos({ navigation }) {
       exibirAlerta('Sucesso', 'Produto atualizado com sucesso!');
       setModalEditVisivel(false);
       setProdutoEditando(null);
-      carregarProdutos();
+      await carregarProdutos();
     } catch (error) {
       console.error('Erro ao atualizar produto:', error);
       exibirAlerta('Erro', 'Não foi possível atualizar o produto.');
@@ -153,12 +187,13 @@ export default function GerenciarProdutos({ navigation }) {
     const idProd = produto.idProduto || produto.id;
     const novoStatus = !(produto.ativo ?? true);
     const acaoTexto = novoStatus ? 'ativar' : 'inativar';
+    const nomeExibicao = produto.nome || produto.nomePersonalizado || produto.produtoBase?.nome || 'este produto';
 
     const executarAlternancia = async () => {
       try {
         await api.put(`/api/produtos/${idProd}/status?ativo=${novoStatus}`);
-        exibirAlerta('Sucesso', `O produto "${produto.nome}" foi ${novoStatus ? 'ativado' : 'inativado'} com sucesso.`);
-        carregarProdutos();
+        exibirAlerta('Sucesso', `O produto "${nomeExibicao}" foi ${novoStatus ? 'ativado' : 'inativado'} com sucesso.`);
+        await carregarProdutos();
       } catch (error) {
         console.error(`Erro ao ${acaoTexto} produto:`, error);
         exibirAlerta('Erro', `Não foi possível ${acaoTexto} o produto.`);
@@ -166,8 +201,8 @@ export default function GerenciarProdutos({ navigation }) {
     };
 
     const mensagemConfirmacao = novoStatus 
-      ? `Deseja ativar "${produto.nome}"? Ele voltará a ser exibido para os clientes.` 
-      : `Deseja inativar "${produto.nome}"? Ele deixará de ser exibido para os clientes.`;
+      ? `Deseja ativar "${nomeExibicao}"?` 
+      : `Deseja inativar "${nomeExibicao}"?`;
 
     if (Platform.OS === 'web') {
       if (confirm(mensagemConfirmacao)) {
@@ -247,16 +282,27 @@ export default function GerenciarProdutos({ navigation }) {
       ) : (
         <FlatList
           data={produtos}
-          keyExtractor={(item) => String(item.idProduto || item.id)}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingBottom: 40, flexGrow: 1 }}
+          keyExtractor={(item, index) => String(item?.idProduto || item?.id || index)}
           showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={{ alignItems: 'center', marginTop: 30 }}>
+              <Text style={{ color: '#6C757D', fontSize: 16 }}>
+                Nenhum produto cadastrado ainda.
+              </Text>
+            </View>
+          }
           renderItem={({ item }) => {
             const isAtivo = item.ativo ?? true;
+            // Trata o nome caso nome_personalizado seja NULL na base de dados
+            const nomeExibicao = item.nome || item.nomePersonalizado || item.produtoBase?.nome || 'Produto sem nome';
 
             return (
               <View style={[styles.productCard, !isAtivo && { opacity: 0.65, backgroundColor: '#F8F9FA' }]}>
                 <View style={styles.productMain}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
-                    <Text style={styles.productName} numberOfLines={1}>{item.nome}</Text>
+                    <Text style={styles.productName} numberOfLines={1}>{nomeExibicao}</Text>
                     {!isAtivo && (
                       <Text style={{ fontSize: 10, color: '#DC3545', fontWeight: 'bold', backgroundColor: '#F8D7DA', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
                         INATIVO

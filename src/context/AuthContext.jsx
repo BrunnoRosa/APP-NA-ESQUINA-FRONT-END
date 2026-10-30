@@ -49,10 +49,42 @@ export const AuthProvider = ({ children }) => {
   async function login(email, senha, lembrar = true) {
     const response = await api.post('/api/auth/login', { email, senha });
     const { token, idUsuario, nome, perfil } = response.data;
-    const userData = { email, idUsuario, nome, perfil };
+
+    // Set do token no header da API antes de buscar dados complementares
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+    // 1. Tenta pegar o idMercadinho vindo direto do login
+    let idMercadinho = 
+      response.data?.idMercadinho || 
+      response.data?.mercadinho?.idMercadinho || 
+      response.data?.mercadinho?.id;
+
+    // 2. Se não veio no login, busca na lista geral de mercadinhos para localizar o id_mercadinho do comerciante
+    if (!idMercadinho) {
+      try {
+        const resMercadinhos = await api.get('/api/mercadinhos');
+        const listaMercadinhos = Array.isArray(resMercadinhos.data) 
+          ? resMercadinhos.data 
+          : (resMercadinhos.data?.content || []);
+
+        // Procura o mercadinho vinculado ao comerciante logado (idUsuario)
+        const meuMercadinho = listaMercadinhos.find((m) => {
+          const comId = m.comercianteId || m.comerdante_id || m.idComerciante || m.usuario?.idUsuario || m.comerciante?.idUsuario || m.comerciante?.id;
+          return Number(comId) === Number(idUsuario);
+        });
+
+        if (meuMercadinho) {
+          idMercadinho = meuMercadinho.idMercadinho || meuMercadinho.id;
+          console.log('✅ [AUTH] Mercadinho vinculado localizado com sucesso. ID:', idMercadinho);
+        }
+      } catch (err) {
+        console.warn('⚠️ Não foi possível carregar idMercadinho automaticamente:', err);
+      }
+    }
+
+    const userData = { email, idUsuario, nome, perfil, idMercadinho };
 
     setUser(userData);
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
     if (lembrar) {
       // Guarda no aparelho: o login continua depois de fechar o app
