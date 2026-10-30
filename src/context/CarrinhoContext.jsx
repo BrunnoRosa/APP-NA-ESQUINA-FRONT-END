@@ -4,9 +4,30 @@ const CarrinhoContext = createContext({});
 
 export function CarrinhoProvider({ children }) {
   const [itens, setItens] = useState([]);
+  const [idMercadinho, setIdMercadinho] = useState(null);
 
-  // Adiciona produto ao carrinho ou incrementa quantidade
   const adicionarAoCarrinho = (produto) => {
+    // Captura o ID do mercadinho vindo do produto (ajuste a propriedade conforme seu backend: idMercadinho, mercadinhoId, etc.)
+    const idMercadinhoProduto = produto.idMercadinho || produto.mercadinhoId || produto.mercadinho?.id;
+
+    // Se o carrinho já tem itens de outro mercadinho, trata a troca de loja
+    if (idMercadinho && idMercadinhoProduto && idMercadinho !== idMercadinhoProduto) {
+      const confirmarTroca = window.confirm(
+        'Seu carrinho contém itens de outro mercadinho. Deseja limpar o carrinho para adicionar este item?'
+      );
+      if (!confirmarTroca) return;
+
+      // Limpa itens antigos e inicia novo carrinho com o novo mercadinho
+      setItens([{ ...produto, quantidade: 1 }]);
+      setIdMercadinho(idMercadinhoProduto);
+      return;
+    }
+
+    // Se for o primeiro item do carrinho
+    if (!idMercadinho && idMercadinhoProduto) {
+      setIdMercadinho(idMercadinhoProduto);
+    }
+
     setItens((itensAtuais) => {
       const idProd = produto.idProduto || produto.id;
       const itemExistente = itensAtuais.find(
@@ -25,30 +46,38 @@ export function CarrinhoProvider({ children }) {
     });
   };
 
-  // Decrementa quantidade ou remove se chegar a 0
   const removerDoCarrinho = (idProduto) => {
-    setItens((itensAtuais) =>
-      itensAtuais
+    setItens((itensAtuais) => {
+      const novosItens = itensAtuais
         .map((item) => {
           if ((item.idProduto || item.id) === idProduto) {
             return { ...item, quantidade: item.quantidade - 1 };
           }
           return item;
         })
-        .filter((item) => item.quantidade > 0)
-    );
+        .filter((item) => item.quantidade > 0);
+
+      if (novosItens.length === 0) {
+        setIdMercadinho(null);
+      }
+
+      return novosItens;
+    });
   };
 
-  // Remove totalmente o item do carrinho
   const removerItemCompleto = (idProduto) => {
-    setItens((itensAtuais) =>
-      itensAtuais.filter((item) => (item.idProduto || item.id) !== idProduto)
-    );
+    setItens((itensAtuais) => {
+      const novosItens = itensAtuais.filter((item) => (item.idProduto || item.id) !== idProduto);
+      if (novosItens.length === 0) {
+        setIdMercadinho(null);
+      }
+      return novosItens;
+    });
   };
 
-  // Limpa todo o carrinho
   const limparCarrinho = () => {
     setItens([]);
+    setIdMercadinho(null);
   };
 
   const totalItens = itens.reduce((acc, item) => acc + item.quantidade, 0);
@@ -63,6 +92,7 @@ export function CarrinhoProvider({ children }) {
       value={{
         itens,
         carrinho: itens,
+        idMercadinho, // <--- Agora o idMercadinho é exportado para uso na chamada da API
         totalItens,
         valorTotal,
         adicionarAoCarrinho,

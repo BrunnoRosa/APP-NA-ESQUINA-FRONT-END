@@ -8,6 +8,13 @@ export default function ProdutoCard({ produto, onAdicionar, onPress }) {
     currency: 'BRL',
   });
 
+  // Extrai o ID do mercadinho tratando todas as estruturas possíveis vindas da API/DTO
+  const idMercadinho =
+    produto?.idMercadinho ||
+    produto?.mercadinhoId ||
+    produto?.mercadinho?.idMercadinho ||
+    produto?.mercadinho?.id;
+
   // Extrai o nome do mercadinho (suporta objetos aninhados ou propriedades diretas do DTO)
   const nomeMercadinho =
     produto?.nomeMercadinho ||
@@ -25,6 +32,16 @@ export default function ProdutoCard({ produto, onAdicionar, onPress }) {
     typeof distanciaRaw === 'number'
       ? `${distanciaRaw.toFixed(1)} km`
       : null;
+
+  const handleAdicionar = () => {
+    if (onAdicionar) {
+      // Injeta o idMercadinho garantido dentro do objeto do produto enviado ao carrinho
+      onAdicionar({
+        ...produto,
+        idMercadinho,
+      }, idMercadinho);
+    }
+  };
 
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.8} onPress={onPress}>
@@ -73,7 +90,7 @@ export default function ProdutoCard({ produto, onAdicionar, onPress }) {
           {onAdicionar && (
             <TouchableOpacity
               style={styles.btnAdd}
-              onPress={() => onAdicionar(produto)}
+              onPress={handleAdicionar}
               activeOpacity={0.7}
             >
               <Text style={styles.btnAddText}>+ Adicionar</Text>

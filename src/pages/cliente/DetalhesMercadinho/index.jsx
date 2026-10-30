@@ -23,9 +23,26 @@ export default function DetalhesMercadinho({ route, navigation }) {
 
   const { adicionarAoCarrinho } = useCarrinho();
 
+  // Consolida a identificação do ID do Mercadinho da página atual
+  const idMercadinhoAtual =
+    idMercadinho ||
+    mercadinhoParam?.id ||
+    mercadinhoParam?.idMercadinho ||
+    mercadinho?.id ||
+    mercadinho?.idMercadinho;
+
+  const handleAdicionarProduto = (item) => {
+    // Garante a injeção explícita tanto no objeto quanto como parâmetro direto
+    const produtoComMercadinho = {
+      ...item,
+      idMercadinho: idMercadinhoAtual || item?.idMercadinho || item?.mercadinhoId,
+    };
+    
+    adicionarAoCarrinho(produtoComMercadinho, idMercadinhoAtual);
+  };
+
   const carregarDadosMercadinho = useCallback(async () => {
     try {
-      // O setLoading(true) foi removido para evitar que a tela pisque a cada 5 segundos
       const id = idMercadinho || 1;
 
       if (!mercadinhoParam) {
@@ -42,30 +59,25 @@ export default function DetalhesMercadinho({ route, navigation }) {
     }
   }, [idMercadinho, mercadinhoParam]);
 
-  // Executa o Polling a cada 5 segundos enquanto a tela estiver em foco
   useFocusEffect(
     useCallback(() => {
-      // 1. Chama imediatamente ao entrar na tela
       carregarDadosMercadinho();
 
-      // 2. Configura a atualização automática (5 em 5 segundos)
       const intervalId = setInterval(() => {
         carregarDadosMercadinho();
       }, 5000);
 
-      // 3. Limpa o intervalo ao sair da tela
       return () => {
         clearInterval(intervalId);
       };
     }, [carregarDadosMercadinho])
   );
 
-  // Filtra apenas produtos ativos. Se a sua API já traz apenas ativos, isso serve de garantia extra.
-    const produtosAtivos = produtos.filter((p) => p.ativo !== false);
-    const destaques = produtosAtivos.filter((p) => p.emDestaque);
+  const produtosAtivos = produtos.filter((p) => p.ativo !== false);
+  const destaques = produtosAtivos.filter((p) => p.emDestaque);
 
-    const aberto = estaAberto(mercadinho?.horarioAbertura, mercadinho?.horarioFechamento);
-    const fecha = formatarHora(mercadinho?.horarioFechamento);
+  const aberto = estaAberto(mercadinho?.horarioAbertura, mercadinho?.horarioFechamento);
+  const fecha = formatarHora(mercadinho?.horarioFechamento);
 
   return (
     <View style={styles.wrapper}>
@@ -109,7 +121,7 @@ export default function DetalhesMercadinho({ route, navigation }) {
                     <View key={String(item.idProduto || item.id)} style={{ width: 260, marginRight: 12 }}>
                       <ProdutoCard
                         produto={item}
-                        onAdicionar={() => adicionarAoCarrinho(item)}
+                        onAdicionar={handleAdicionarProduto}
                       />
                     </View>
                   ))}
@@ -125,7 +137,7 @@ export default function DetalhesMercadinho({ route, navigation }) {
                 <ProdutoCard
                   key={String(item.idProduto || item.id)}
                   produto={item}
-                  onAdicionar={() => adicionarAoCarrinho(item)}
+                  onAdicionar={handleAdicionarProduto}
                 />
               ))
             )}
