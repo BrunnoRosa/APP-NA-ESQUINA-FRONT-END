@@ -123,4 +123,28 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 20,
   },
+
+  // --- validação ---
+  campoErro: {
+    borderColor: cores.erro,
+  },
+  textoErro: {
+    color: cores.erro,
+    fontSize: 12,
+    marginTop: -10,
+    marginBottom: 14,
+  },
+  textoDica: {
+    color: cores.textoRotulo,
+    fontSize: 11,
+    marginTop: -10,
+    marginBottom: 14,
+  },
+  avisoFormulario: {
+    color: cores.erro,
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
 });
