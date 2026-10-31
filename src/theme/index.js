@@ -29,4 +29,5 @@ export const cores = {
   textoRaio: '#717171',
   divisor: '#F3F3F3',
   fundoVerMais: '#FFECEC',
+  erro: '#D93025',              // mensagens e bordas de campo inválido
 };

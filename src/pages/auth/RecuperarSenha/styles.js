@@ -53,5 +53,14 @@ export const styles = StyleSheet.create({
     color: '#007AFF',
     fontSize: 15,
     fontWeight: '500',
-  }
+  },
+  inputErro: {
+    borderColor: '#D93025',
+  },
+  textoErro: {
+    color: '#D93025',
+    fontSize: 13,
+    marginTop: -14,
+    marginBottom: 16,
+  },
 });
