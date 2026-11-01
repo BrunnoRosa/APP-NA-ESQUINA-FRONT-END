@@ -1,129 +1,171 @@
 import { StyleSheet } from 'react-native';
+import { cores } from '../../../theme';
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: cores.degradeInicioBase,
   },
-  header: {
+
+  // Topo com degradê
+  topo: {
+    paddingTop: 48,
+    paddingHorizontal: 20,
+    paddingBottom: 44,
+  },
+  topoLinha: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 48,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
-    backgroundColor: '#007BFF',
+    gap: 14,
   },
-  backButton: {
-    marginRight: 12,
+  botaoVoltar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  backButtonText: {
-    color: '#FFF',
-    fontSize: 16,
+  titulo: {
+    fontSize: 24,
     fontWeight: 'bold',
+    color: cores.textoTitulo,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFF',
+  subtitulo: {
+    fontSize: 13,
+    color: cores.textoSecundario,
+    marginTop: 2,
   },
-  content: {
+
+  // Folha branca
+  folha: {
     flex: 1,
-    padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    marginTop: -28,
+    overflow: 'hidden',
   },
+  lista: {
+    padding: 20,
+    paddingBottom: 12,
+    gap: 12,
+  },
+
+  // Cartão do item
   itemCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: '#E9ECEF',
+    backgroundColor: cores.fundoCartao,
+    borderRadius: 20,
+    padding: 16,
   },
   itemInfo: {
     flex: 1,
-    marginRight: 8,
+    paddingRight: 12,
   },
   itemNome: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#212529',
+    fontWeight: 'bold',
+    color: cores.textoTitulo,
   },
   itemPreco: {
-    fontSize: 13,
-    color: '#28A745',
+    fontSize: 15,
     fontWeight: 'bold',
-    marginTop: 2,
+    color: cores.primaria,
+    marginTop: 4,
+  },
+  itemAcoes: {
+    alignItems: 'flex-end',
+    gap: 10,
   },
   qtdControls: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F1F3F5',
-    borderRadius: 8,
-    paddingHorizontal: 4,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 4,
+    gap: 10,
   },
   btnQtd: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  btnQtdText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#007BFF',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: cores.primaria,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   qtdText: {
-    fontSize: 14,
+    minWidth: 18,
+    textAlign: 'center',
+    fontSize: 15,
     fontWeight: 'bold',
-    paddingHorizontal: 8,
+    color: cores.textoTitulo,
   },
-  footer: {
-    backgroundColor: '#FFF',
-    padding: 16,
+
+  // Rodapé
+  rodape: {
+    padding: 20,
+    paddingBottom: 28,
     borderTopWidth: 1,
-    borderTopColor: '#E9ECEF',
+    borderTopColor: cores.divisor,
+    backgroundColor: '#FFFFFF',
+    gap: 14,
   },
-  totalRow: {
+  totalLinha: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
   },
-  totalLabel: {
-    fontSize: 16,
-    color: '#495057',
+  totalRotulo: {
+    fontSize: 15,
+    color: cores.textoSecundario,
   },
   totalValor: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#28A745',
+    color: cores.primaria,
   },
-  btnFinalizar: {
-    backgroundColor: '#28A745',
-    paddingVertical: 14,
-    borderRadius: 10,
+  botaoPrimario: {
+    backgroundColor: cores.primaria,
+    borderRadius: 28,
+    paddingVertical: 15,
+    paddingHorizontal: 28,
     alignItems: 'center',
   },
-  btnFinalizarText: {
-    color: '#FFF',
+  botaoPrimarioTexto: {
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  emptyContainer: {
+
+  // Estado vazio
+  vazioContainer: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 60,
+    justifyContent: 'center',
+    padding: 32,
+    gap: 10,
   },
-  emptyTitle: {
+  vazioCirculo: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: cores.fundoCirculo,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  vazioTitulo: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#495057',
-    marginTop: 12,
+    color: cores.textoTitulo,
   },
-  emptySubtitle: {
-    fontSize: 13,
-    color: '#6C757D',
-    marginTop: 4,
+  vazioSubtitulo: {
+    fontSize: 14,
+    color: cores.textoSecundario,
+    textAlign: 'center',
+    marginBottom: 12,
   },
 });

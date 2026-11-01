@@ -1,5 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';                  // 🆕
 import React from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { Image, Text, TouchableOpacity, View } from 'react-native';
+import { cores } from '../../theme';                            // 🆕
 import { styles } from './styles';
 
 export default function ProdutoCard({ produto, onAdicionar, onPress }) {
@@ -45,41 +47,50 @@ export default function ProdutoCard({ produto, onAdicionar, onPress }) {
 
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.8} onPress={onPress}>
-      {produto?.emDestaque && (
-        <View style={styles.destaqueTag}>
-          <Text style={styles.destaqueText}>⭐ Destaque</Text>
-        </View>
-      )}
-
+      {/* ✏️ Foto */}
       <View style={styles.imageContainer}>
         {produto?.imagemUrl ? (
           <Image
             source={{ uri: produto.imagemUrl }}
-            style={{ width: '100%', height: '100%', borderRadius: 8 }}
+            style={styles.imagem}
+            resizeMode="contain"
           />
         ) : (
-          <Text style={styles.imageEmoji}>📦</Text>
+          <Ionicons name="cube" size={30} color={cores.icone} />
         )}
       </View>
 
       <View style={styles.infoContainer}>
-        <Text style={styles.nome} numberOfLines={1}>
-          {produto?.nome || 'Produto'}
-        </Text>
+        {/* ✏️ Nome + etiqueta de destaque na mesma linha */}
+        <View style={styles.nomeLinha}>
+          <Text style={styles.nome} numberOfLines={2}>
+            {produto?.nome || 'Produto'}
+          </Text>
+          {produto?.emDestaque && (
+            <View style={styles.destaqueTag}>
+              <Ionicons name="star" size={10} color={cores.primaria} />
+              <Text style={styles.destaqueText}>Destaque</Text>
+            </View>
+          )}
+        </View>
 
-        {/* Linha com Mercadinho e Distância */}
+        {/* ✏️ Mercadinho e distância com ícones */}
         {(nomeMercadinho || distanciaFormatada) && (
           <View style={styles.storeInfoRow}>
             {nomeMercadinho && (
-              <Text style={styles.mercadinhoNome} numberOfLines={1}>
-                🏪 {nomeMercadinho}
-              </Text>
+              <View style={styles.infoItem}>
+                <Ionicons name="storefront-outline" size={13} color={cores.textoSecundario} />
+                <Text style={styles.mercadinhoNome} numberOfLines={1}>
+                  {nomeMercadinho}
+                </Text>
+              </View>
             )}
 
             {distanciaFormatada && (
-              <Text style={styles.distanciaText}>
-                📍 {distanciaFormatada}
-              </Text>
+              <View style={styles.infoItem}>
+                <Ionicons name="location-outline" size={13} color={cores.laranjaDistancia} />
+                <Text style={styles.distanciaText}>{distanciaFormatada}</Text>
+              </View>
             )}
           </View>
         )}
@@ -91,9 +102,10 @@ export default function ProdutoCard({ produto, onAdicionar, onPress }) {
             <TouchableOpacity
               style={styles.btnAdd}
               onPress={handleAdicionar}
-              activeOpacity={0.7}
+              activeOpacity={0.8}
             >
-              <Text style={styles.btnAddText}>+ Adicionar</Text>
+              <Ionicons name="add" size={16} color="#FFFFFF" />
+              <Text style={styles.btnAddText}>Adicionar</Text>
             </TouchableOpacity>
           )}
         </View>

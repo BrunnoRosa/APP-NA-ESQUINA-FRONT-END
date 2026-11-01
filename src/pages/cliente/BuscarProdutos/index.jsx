@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 // 🗑️ REMOVIDO: import do Header azul (o Figma não tem esse cabeçalho na Pesquisar)
+import BotaoCarrinho from '../../../components/BotaoCarrinho'; // 🆕
 import LojaCard from '../../../components/LojaCard'; // 🆕 NOVO
 import ProdutoCard from '../../../components/ProdutoCard';
 import { useCarrinho } from '../../../context/CarrinhoContext';
@@ -257,6 +258,9 @@ export default function BuscarProdutos({ navigation }) {
         )}
       </View>
       {/* 🆕 NOVO: a folha branca fechou na linha acima */}
+
+      {/* 🆕 Botão flutuante do carrinho (90 = acima da barra de abas, igual à Home) */}
+      <BotaoCarrinho navigation={navigation} bottom={90} />
     </View>
   );
 }
