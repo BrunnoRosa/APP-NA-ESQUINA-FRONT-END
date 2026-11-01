@@ -14,6 +14,7 @@ import {
   View,
 } from 'react-native';
 import CabecalhoInicio from '../../../components/CabecalhoInicio';
+import BotaoCarrinho from '../../../components/BotaoCarrinho';   // 🆕
 import { useCarrinho } from '../../../context/CarrinhoContext';
 import api from '../../../services/api';
 import { styles } from './styles';
@@ -31,7 +32,7 @@ export default function HomeCliente({ navigation }) {
   const [categoriaAtiva, setCategoriaAtiva] = useState('TODOS');
   const [loading, setLoading] = useState(true);
 
-  const { adicionarAoCarrinho, totalItens } = useCarrinho();
+  const { adicionarAoCarrinho, totalItens } = useCarrinho(); // remover futuramente
 
   // Função centralizada para buscar os dados
   const carregarDados = useCallback(async () => {
@@ -223,18 +224,7 @@ export default function HomeCliente({ navigation }) {
       </ScrollView>
 
       {/* Botão Flutuante do Carrinho */}
-      {totalItens > 0 && (
-        <TouchableOpacity
-          style={styles.botaoCarrinho}
-          activeOpacity={0.8}
-          onPress={() => navigation.navigate('Carrinho')}
-        >
-          <Ionicons name="cart" size={26} color="#FFFFFF" />
-          <View style={styles.badgeCarrinho}>
-            <Text style={styles.badgeCarrinhoTexto}>{totalItens}</Text>
-          </View>
-        </TouchableOpacity>
-      )}
+      <BotaoCarrinho navigation={navigation} bottom={90} />   {/* ✏️ */}
     </View>
   );
 }
