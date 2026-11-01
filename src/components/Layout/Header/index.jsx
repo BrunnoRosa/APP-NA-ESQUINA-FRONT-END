@@ -21,15 +21,23 @@ export default function Header({ navigation, title }) {
     }
   };
 
+  // Define o texto do título garantindo que não repita "Painel Comerciante"
+  const getDisplayTitle = () => {
+    if (title && title !== 'Painel Comerciante') {
+      return title;
+    }
+    return 'Carregando Mercado...';
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.topRow}>
         <View style={{ flex: 1 }}>
           <Text style={styles.greetingText}>
-            {isComerciante ? 'Painel Comerciante' : 'Entregar em'}
+            {isComerciante ? 'Painel Comerciante' : 'Bem-vindo(a)'}
           </Text>
           <Text style={styles.titleText} numberOfLines={1}>
-            {title || user?.nome || user?.email || 'Na Esquina'}
+            {getDisplayTitle()}
           </Text>
         </View>
 
