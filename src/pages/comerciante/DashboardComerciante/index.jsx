@@ -101,6 +101,15 @@ export default function DashboardComerciante({ navigation }) {
           </View>
 
           <TouchableOpacity
+            style={[styles.botaoSair, { marginRight: 8 }]}
+            onPress={() => navigation.navigate('EditarPerfil')}
+            activeOpacity={0.8}
+            accessibilityLabel="Editar perfil"
+          >
+            <Ionicons name="create-outline" size={22} color={cores.primaria} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
             style={styles.botaoSair}
             onPress={signOut}
             activeOpacity={0.8}

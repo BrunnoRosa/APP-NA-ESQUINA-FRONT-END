@@ -10,6 +10,9 @@ import { CarrinhoProvider } from './src/context/CarrinhoContext';
 // Componente Customizado do TabBar
 import TabNavigator from './src/components/Layout/TabNavigator';
 
+// Tela compartilhada
+import EditarPerfil from './src/pages/comum/EditarPerfil'; // 🆕
+
 // Telas de Autenticação
 import Abertura from './src/pages/auth/Abertura';
 import Cadastro from './src/pages/auth/Cadastro';
@@ -91,6 +94,7 @@ function Routes() {
           <>
             <Stack.Screen name="ComercianteTabs" component={ComercianteTabs} />
             <Stack.Screen name="AtivarProdutoCatalogo" component={AtivarProdutoCatalogo} />
+            <Stack.Screen name="EditarPerfil" component={EditarPerfil} />
           </>
         ) : (
           <>
@@ -98,6 +102,7 @@ function Routes() {
             <Stack.Screen name="DetalhesMercadinho" component={DetalhesMercadinho} />
             <Stack.Screen name="Favoritos" component={Favoritos} />
             <Stack.Screen name="Carrinho" component={Carrinho} />
+            <Stack.Screen name="EditarPerfil" component={EditarPerfil} />
           </>
         )}
       </Stack.Navigator>
