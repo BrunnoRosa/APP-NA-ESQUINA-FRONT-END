@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -227,10 +227,19 @@ export default function BuscarProdutos({ navigation, route }) {
       mercadinho: m,
     });
 
+  // Ajustado com fallbacks completos para não perder o idMercadinho
   const handleAdicionarAoCarrinho = (produto) => {
+    const idLojaFinal =
+      produto.idMercadinho ||
+      produto.mercadinhoId ||
+      produto.id_mercadinho ||
+      (typeof produto.mercadinho === 'number' ? produto.mercadinho : null) ||
+      produto.mercadinho?.idMercadinho ||
+      produto.mercadinho?.id;
+
     adicionarAoCarrinho({
       ...produto,
-      idMercadinho: produto.idMercadinho,
+      idMercadinho: idLojaFinal ? Number(idLojaFinal) : null,
     });
   };
 

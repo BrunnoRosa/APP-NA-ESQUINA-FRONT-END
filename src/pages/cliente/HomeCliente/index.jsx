@@ -276,7 +276,12 @@ export default function HomeCliente({ navigation }) {
                         onAdicionar={() =>
                           adicionarAoCarrinho({
                             ...prod,
-                            idMercadinho: prod.idMercadinho,
+                            idMercadinho:
+                              prod.idMercadinho ||
+                              prod.mercadinhoId ||
+                              prod.id_mercadinho ||
+                              prod.mercadinho?.idMercadinho ||
+                              prod.mercadinho?.id,
                           })
                         }
                       />

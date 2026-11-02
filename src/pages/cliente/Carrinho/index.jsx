@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -133,7 +133,9 @@ export default function Carrinho({ navigation }) {
 
       exibirAlerta('Sucesso!', 'Pedido realizado com sucesso!');
       limparCarrinho();
-      navigation.navigate('HomeCliente');
+      
+      // Navegação correta para tela aninhada dentro de ClienteTabs
+      navigation.navigate('ClienteTabs', { screen: 'HomeCliente' });
     } catch (error) {
       console.error('Erro detalhado ao finalizar pedido:', error?.response?.data || error);
       const msgErro =
@@ -200,9 +202,23 @@ export default function Carrinho({ navigation }) {
                     <Text style={styles.qtdText}>{item?.quantidade || 1}</Text>
                     <TouchableOpacity
                       style={styles.btnQtd}
-                      onPress={() =>
-                        adicionarAoCarrinho && adicionarAoCarrinho(item)
-                      }
+                      onPress={() => {
+                        if (adicionarAoCarrinho) {
+                          // Garante que a propriedade idMercadinho não se perca durante o incremento (+)
+                          const idLojaPreservado =
+                            item.idMercadinho ||
+                            item.mercadinhoId ||
+                            item.id_mercadinho ||
+                            item.mercadinho?.idMercadinho ||
+                            item.mercadinho?.id ||
+                            idMercadinho;
+
+                          adicionarAoCarrinho({
+                            ...item,
+                            idMercadinho: idLojaPreservado ? Number(idLojaPreservado) : null,
+                          });
+                        }
+                      }}
                     >
                       <Text style={styles.btnQtdText}>+</Text>
                     </TouchableOpacity>
