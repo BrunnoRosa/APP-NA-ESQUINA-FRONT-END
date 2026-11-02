@@ -7,19 +7,19 @@ export const styles = StyleSheet.create({
     backgroundColor: cores.fundo,
   },
 
-  // 🆕 NOVO: área do degradê amarelo (o espaço extra embaixo é coberto pela folha)
+  // Área do degradê topo
   cabecalho: {
     paddingBottom: 40,
   },
 
-  // 🆕 NOVO: folha branca de cantos arredondados que sobe sobre o degradê
+  // Folha de cantos arredondados que sobe sobre o degradê
   folha: {
     flex: 1,
     backgroundColor: cores.fundo,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     marginTop: -28,
-    overflow: 'hidden', // corta o conteúdo nos cantos arredondados
+    overflow: 'hidden',
   },
 
   // Topo com busca e logo
@@ -34,7 +34,7 @@ export const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF', // ✏️ ALTERADO (antes: cores.fundoBusca, cinza)
+    backgroundColor: '#FFFFFF',
     borderRadius: 24,
     paddingLeft: 16,
     paddingRight: 4,
@@ -44,7 +44,6 @@ export const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     color: cores.textoCampo,
-    outlineStyle: 'none',
   },
   limpar: {
     padding: 4,
@@ -68,7 +67,7 @@ export const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     color: cores.textoSecundario,
-    marginTop: 20, // ✏️ ALTERADO (antes 12): afasta o título da curva da folha
+    marginTop: 20,
     marginBottom: 12,
     paddingHorizontal: 16,
   },
@@ -92,7 +91,7 @@ export const styles = StyleSheet.create({
   // Filtros
   filtros: {
     paddingHorizontal: 16,
-    marginTop: 20, // ✏️ ALTERADO (antes 8): mesma razão do título
+    marginTop: 20,
   },
   categoriesScroll: {
     marginBottom: 12,

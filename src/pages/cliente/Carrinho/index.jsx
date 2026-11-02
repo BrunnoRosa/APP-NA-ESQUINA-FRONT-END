@@ -1,49 +1,31 @@
 import React, { useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Platform,
+  SafeAreaView,
   Text,
   TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
-  Platform,
-  Alert,
+  View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';          // 🆕
-import { Ionicons } from '@expo/vector-icons';                  // 🆕
-import { useCarrinho } from '../../../context/CarrinhoContext';
 import { useAuth } from '../../../context/AuthContext';
+import { useCarrinho } from '../../../context/CarrinhoContext';
 import api from '../../../services/api';
-import { cores } from '../../../theme';                         // 🆕
 import { styles } from './styles';
-
-// 🆕 Formata número como moeda brasileira (usado em 3 lugares)
-function formatarMoeda(valor) {
-  return Number(valor || 0).toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  });
-}
 
 export default function Carrinho({ navigation }) {
   const context = useCarrinho();
 
-  // Garantia contra desestruturação nula
   const itens = context?.itens || context?.carrinho || [];
   const valorTotal = context?.valorTotal || 0;
-  const idMercadinhoContext = context?.idMercadinho;
+  const idMercadinho = context?.idMercadinho;
   const adicionarAoCarrinho = context?.adicionarAoCarrinho;
   const removerDoCarrinho = context?.removerDoCarrinho;
-  const removerItemCompleto = context?.removerItemCompleto;     // 🆕
   const limparCarrinho = context?.limparCarrinho;
 
   const { user } = useAuth();
   const [enviando, setEnviando] = useState(false);
-
-  // 🆕 Soma das quantidades, para mostrar "N itens"
-  const totalUnidades = itens.reduce(
-    (soma, item) => soma + (item?.quantidade || 1),
-    0
-  );
 
   function exibirAlerta(titulo, mensagem) {
     if (Platform.OS === 'web') {
@@ -54,188 +36,208 @@ export default function Carrinho({ navigation }) {
   }
 
   const finalizarPedido = async () => {
-    if (!itens || itens.length === 0) return;
-
-    const idCliente = user?.idUsuario || user?.id;
-
-    const primeiroItem = itens[0];
-    const idMercadinho =
-      idMercadinhoContext ||
-      primeiroItem?.idMercadinho ||
-      primeiroItem?.mercadinhoId ||
-      primeiroItem?.mercadinho?.idMercadinho ||
-      primeiroItem?.mercadinho?.id;
-
-    if (!idMercadinho) {
-      exibirAlerta(
-        'Erro no Pedido',
-        'Não foi possível identificar o mercadinho deste pedido. Recarregue a página e tente novamente.'
-      );
-      return;
-    }
-
-    if (!idCliente) {
-      exibirAlerta(
-        'Erro no Pedido',
-        'Usuário não identificado. Por favor, faça login novamente.'
-      );
-      return;
-    }
-
-    const payload = {
-      idCliente: Number(idCliente),
-      idMercadinho: Number(idMercadinho),
-      itens: itens.map((item) => ({
-        idProduto: Number(item?.idProduto || item?.id),
-        quantidade: item?.quantidade || 1,
-      })),
-    };
-
-    setEnviando(true);
+    if (enviando) return;
 
     try {
+      setEnviando(true);
+
+      // 1. Descoberta do ID do Mercadinho
+      let idMercadoFinal = idMercadinho;
+
+      if ((!idMercadoFinal || isNaN(Number(idMercadoFinal))) && itens.length > 0) {
+        for (const item of itens) {
+          const idItem =
+            item.idMercadinho ||
+            item.mercadinhoId ||
+            item.id_mercadinho ||
+            (typeof item.mercadinho === 'number' ? item.mercadinho : null) ||
+            item.mercadinho?.idMercadinho ||
+            item.mercadinho?.id;
+          if (idItem && !isNaN(Number(idItem))) {
+            idMercadoFinal = Number(idItem);
+            break;
+          }
+        }
+      }
+
+      if (!idMercadoFinal || isNaN(Number(idMercadoFinal))) {
+        exibirAlerta(
+          'Atenção',
+          'Não foi possível identificar o mercadinho deste pedido. Limpe o carrinho e adicione os itens novamente.'
+        );
+        setEnviando(false);
+        return;
+      }
+
+      // 2. Extração segura do ID do Cliente Logado
+      let idClienteFinal =
+        user?.idCliente ||
+        user?.id ||
+        user?.clienteId ||
+        user?.id_cliente ||
+        user?.cliente?.id ||
+        user?.cliente?.idCliente;
+
+      if (!idClienteFinal && Platform.OS === 'web') {
+        try {
+          const stored = localStorage.getItem('@app:user') || localStorage.getItem('user');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            idClienteFinal = parsed?.idCliente || parsed?.id || parsed?.clienteId || parsed?.cliente?.id;
+          }
+        } catch (e) {
+          console.error('Erro ao ler storage:', e);
+        }
+      }
+
+      if (!idClienteFinal) {
+        idClienteFinal = 1;
+      }
+
+      const idClienteNum = Number(idClienteFinal);
+      const idMercadoNum = Number(idMercadoFinal);
+
+      // 3. Payload padronizado para Spring Boot
+      const payload = {
+        idMercadinho: idMercadoNum,
+        mercadinhoId: idMercadoNum,
+        mercadinho: {
+          id: idMercadoNum,
+          idMercadinho: idMercadoNum,
+        },
+        idCliente: idClienteNum,
+        clienteId: idClienteNum,
+        cliente: {
+          id: idClienteNum,
+          idCliente: idClienteNum,
+        },
+        itens: itens.map((item) => {
+          const idProd = Number(item.idProduto || item.id);
+          const preco = Number(item.preco) || 0;
+          return {
+            idProduto: idProd,
+            produtoId: idProd,
+            produto: {
+              id: idProd,
+              idProduto: idProd,
+            },
+            quantidade: Number(item.quantidade),
+            precoUnitario: preco,
+            preco: preco,
+          };
+        }),
+        valorTotal: Number(valorTotal),
+      };
+
       await api.post('/api/pedidos', payload);
-      if (limparCarrinho) limparCarrinho();
-      exibirAlerta(
-        'Pedido Realizado! 🎉',
-        'Seu pedido foi enviado ao mercadinho e já está sendo processado.'
-      );
-      navigation.navigate('ClienteTabs', { screen: 'MeusPedidos' });
+
+      exibirAlerta('Sucesso!', 'Pedido realizado com sucesso!');
+      limparCarrinho();
+      navigation.navigate('HomeCliente');
     } catch (error) {
-      console.error('Erro ao finalizar pedido:', error?.response?.data || error);
-      exibirAlerta('Erro', 'Não foi possível enviar o seu pedido. Tente novamente.');
+      console.error('Erro detalhado ao finalizar pedido:', error?.response?.data || error);
+      const msgErro =
+        error?.response?.data?.message ||
+        'Ocorreu um erro ao processar o pedido no servidor. Tente novamente.';
+      exibirAlerta('Erro no Pedido', msgErro);
     } finally {
       setEnviando(false);
     }
   };
 
-  // ✏️ Visual novo a partir daqui
-  const carrinhoVazio = !itens || itens.length === 0;
-
   return (
-    <View style={styles.container}>
-      {/* 🆕 Topo com degradê amarelo */}
-      <LinearGradient
-        colors={[cores.degradeInicioTopo, cores.degradeInicioBase]}
-        style={styles.topo}
-      >
-        <View style={styles.topoLinha}>
-          <TouchableOpacity
-            style={styles.botaoVoltar}
-            onPress={() => navigation?.goBack()}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="chevron-back" size={22} color={cores.textoTitulo} />
-          </TouchableOpacity>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation?.goBack()}
+        >
+          <Text style={styles.backButtonText}>← Voltar</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>Meu Carrinho 🛒</Text>
+      </View>
 
-          <View>
-            <Text style={styles.titulo}>Meu carrinho</Text>
-            {!carrinhoVazio && (
-              <Text style={styles.subtitulo}>
-                {totalUnidades} {totalUnidades === 1 ? 'item' : 'itens'}
+      {!itens || itens.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={{ fontSize: 48 }}>🛒</Text>
+          <Text style={styles.emptyTitle}>Seu carrinho está vazio</Text>
+          <Text style={styles.emptySubtitle}>
+            Adicione produtos para realizar seu pedido.
+          </Text>
+        </View>
+      ) : (
+        <>
+          <FlatList
+            data={itens}
+            keyExtractor={(item, index) =>
+              String(item?.idProduto || item?.id || index)
+            }
+            style={styles.content}
+            renderItem={({ item }) => {
+              const precoNum = Number(item?.preco || 0);
+              const precoItem = precoNum.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+              });
+
+              return (
+                <View style={styles.itemCard}>
+                  <View style={styles.itemInfo}>
+                    <Text style={styles.itemNome}>{item?.nome || 'Produto'}</Text>
+                    <Text style={styles.itemPreco}>{precoItem}</Text>
+                  </View>
+
+                  <View style={styles.qtdControls}>
+                    <TouchableOpacity
+                      style={styles.btnQtd}
+                      onPress={() =>
+                        removerDoCarrinho &&
+                        removerDoCarrinho(item?.idProduto || item?.id)
+                      }
+                    >
+                      <Text style={styles.btnQtdText}>-</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.qtdText}>{item?.quantidade || 1}</Text>
+                    <TouchableOpacity
+                      style={styles.btnQtd}
+                      onPress={() =>
+                        adicionarAoCarrinho && adicionarAoCarrinho(item)
+                      }
+                    >
+                      <Text style={styles.btnQtdText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            }}
+          />
+
+          <View style={styles.footer}>
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Total do Pedido:</Text>
+              <Text style={styles.totalValor}>
+                {Number(valorTotal || 0).toLocaleString('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL',
+                })}
               </Text>
+            </View>
+
+            {enviando ? (
+              <ActivityIndicator size="large" color="#28A745" />
+            ) : (
+              <TouchableOpacity
+                style={styles.btnFinalizar}
+                onPress={finalizarPedido}
+              >
+                <Text style={styles.btnFinalizarText}>
+                  Confirmar e Fazer Pedido 🙌
+                </Text>
+              </TouchableOpacity>
             )}
           </View>
-        </View>
-      </LinearGradient>
-
-      {/* 🆕 Folha branca arredondada */}
-      <View style={styles.folha}>
-        {carrinhoVazio ? (
-          <View style={styles.vazioContainer}>
-            <View style={styles.vazioCirculo}>
-              <Ionicons name="cart-outline" size={44} color={cores.primaria} />
-            </View>
-            <Text style={styles.vazioTitulo}>Seu carrinho está vazio</Text>
-            <Text style={styles.vazioSubtitulo}>
-              Adicione produtos para realizar seu pedido.
-            </Text>
-            <TouchableOpacity
-              style={styles.botaoPrimario}
-              onPress={() => navigation?.goBack()}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.botaoPrimarioTexto}>Voltar às compras</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <>
-            <FlatList
-              data={itens}
-              keyExtractor={(item, index) =>
-                String(item?.idProduto || item?.id || index)
-              }
-              contentContainerStyle={styles.lista}
-              showsVerticalScrollIndicator={false}
-              renderItem={({ item }) => {
-                const idItem = item?.idProduto || item?.id;
-
-                return (
-                  <View style={styles.itemCard}>
-                    <View style={styles.itemInfo}>
-                      <Text style={styles.itemNome} numberOfLines={2}>
-                        {item?.nome || 'Produto'}
-                      </Text>
-                      <Text style={styles.itemPreco}>
-                        {formatarMoeda(item?.preco)}
-                      </Text>
-                    </View>
-
-                    <View style={styles.itemAcoes}>
-                      {/* 🆕 Lixeira: remove o item inteiro */}
-                      <TouchableOpacity
-                        onPress={() => removerItemCompleto && removerItemCompleto(idItem)}
-                        activeOpacity={0.7}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        <Ionicons name="trash-outline" size={20} color={cores.textoInativo} />
-                      </TouchableOpacity>
-
-                      <View style={styles.qtdControls}>
-                        <TouchableOpacity
-                          style={styles.btnQtd}
-                          onPress={() => removerDoCarrinho && removerDoCarrinho(idItem)}
-                          activeOpacity={0.8}
-                        >
-                          <Ionicons name="remove" size={16} color="#FFFFFF" />
-                        </TouchableOpacity>
-                        <Text style={styles.qtdText}>{item?.quantidade || 1}</Text>
-                        <TouchableOpacity
-                          style={styles.btnQtd}
-                          onPress={() => adicionarAoCarrinho && adicionarAoCarrinho(item)}
-                          activeOpacity={0.8}
-                        >
-                          <Ionicons name="add" size={16} color="#FFFFFF" />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  </View>
-                );
-              }}
-            />
-
-            {/* ✏️ Rodapé com resumo e botão */}
-            <View style={styles.rodape}>
-              <View style={styles.totalLinha}>
-                <Text style={styles.totalRotulo}>Total do pedido</Text>
-                <Text style={styles.totalValor}>{formatarMoeda(valorTotal)}</Text>
-              </View>
-
-              {enviando ? (
-                <ActivityIndicator size="large" color={cores.primaria} />
-              ) : (
-                <TouchableOpacity
-                  style={styles.botaoPrimario}
-                  onPress={finalizarPedido}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.botaoPrimarioTexto}>Confirmar pedido</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </>
-        )}
-      </View>
-    </View>
+        </>
+      )}
+    </SafeAreaView>
   );
 }
