@@ -4,9 +4,9 @@ import { cores } from '../../../theme';
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: cores.degradeTopo || '#FFDF6D', // Fundo superior que combina com o cabeçalho
+    backgroundColor: cores.degradeTopo || '#FFDF6D',
   },
-  
+
   /* Folha branca arredondada que sobe sobre o fundo amarelo */
   folha: {
     backgroundColor: cores.fundo || '#FFFFFF',
@@ -102,7 +102,7 @@ export const styles = StyleSheet.create({
   botaoCarrinho: {
     position: 'absolute',
     right: 16,
-    bottom: 90,
+    bottom: 25,
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -114,6 +114,7 @@ export const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 },
+    zIndex: 999,
   },
   badgeCarrinho: {
     position: 'absolute',

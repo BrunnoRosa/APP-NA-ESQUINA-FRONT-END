@@ -1,62 +1,96 @@
 import { StyleSheet } from 'react-native';
+import { cores } from '../../../theme';
 
 export const styles = StyleSheet.create({
   wrapper: {
-    flex: 1, // Ocupa todo o espaço disponível sem forçar alturas fixas
-    backgroundColor: '#F8F9FA',
+    flex: 1,
+    backgroundColor: cores.degradeInicioBase,
   },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 60, // Espaço seguro para o final da lista
+
+  // Topo com degradê
+  topo: {
+    paddingTop: 48,
+    paddingHorizontal: 20,
+    paddingBottom: 44,
   },
-  btnVoltar: {
-    marginBottom: 12,
-  },
-  btnVoltarText: {
-    color: '#007BFF',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  infoCard: {
+  botaoVoltar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E9ECEF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
   },
   nomeLoja: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#212529',
-    marginBottom: 4,
+    color: cores.textoTitulo,
+  },
+  enderecoLinha: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 6,
   },
   enderecoLoja: {
+    flex: 1,
     fontSize: 13,
-    color: '#6C757D',
-    marginBottom: 8,
+    color: cores.textoEndereco,
   },
-  badgeStatus: {
-    backgroundColor: '#E8F5E9',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    alignSelf: 'flex-start',
+
+  // Folha branca
+  folha: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    marginTop: -28,
+    overflow: 'hidden',
   },
-  badgeText: {
-    color: '#2E7D32',
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 110, // espaço para o botão do carrinho não cobrir o último item
+  },
+
+  // Selo e funcionamento
+  statusLinha: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 20,
+  },
+  seloStatus: {
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: 14,
+  },
+  seloTexto: {
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: 'bold',
   },
-  sectionTitle: {
-    fontSize: 16,
+  funcionamento: {
+    fontSize: 13,
+    color: cores.textoSecundario,
+  },
+
+  // Seções
+  secaoTitulo: {
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#212529',
+    color: cores.textoTitulo,
     marginBottom: 12,
   },
+  carrossel: {
+    marginBottom: 22,
+    marginHorizontal: -20,        // deixa o carrossel encostar nas bordas da tela
+    paddingHorizontal: 20,
+  },
   emptyText: {
+    fontSize: 14,
+    color: cores.textoSecundario,
     textAlign: 'center',
-    color: '#6C757D',
-    marginVertical: 20,
+    marginTop: 20,
   },
 });

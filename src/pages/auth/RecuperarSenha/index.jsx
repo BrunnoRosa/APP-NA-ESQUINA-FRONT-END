@@ -1,6 +1,20 @@
+import { Ionicons } from '@expo/vector-icons';                  // 🆕
+import { LinearGradient } from 'expo-linear-gradient';          // 🆕
 import React, { useState } from 'react';
-import { Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,                                                         // 🆕
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,                                                    // 🆕
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,                                                          // 🆕
+} from 'react-native';
 import api from '../../../services/api';
+import { cores } from '../../../theme';                         // 🆕
 import { traduzirErro, validarEmail } from '../../../utils/validacoes';
 import { styles } from './styles';
 
@@ -40,47 +54,75 @@ export default function RecuperarSenha({ navigation }) {
     }
   }
 
+  // ✏️ Visual novo a partir daqui
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <LinearGradient
+      colors={[cores.degradeTopo, cores.degradeBase]}
+      style={styles.container}
     >
-      <Text style={styles.title}>Recuperar Senha</Text>
-      <Text style={styles.subtitle}>
-        Digite o seu e-mail para receber um link de redefinição de senha.
-      </Text>
-
-      <TextInput
-        style={[styles.input, erroEmail ? styles.inputErro : null]}
-        placeholder="O seu e-mail"
-        placeholderTextColor="#999"
-        keyboardType="email-address"
-        autoCapitalize="none"
-        autoCorrect={false}
-        value={email}
-        maxLength={150}
-        onChangeText={(texto) => {
-          setEmail(texto);
-          if (erroEmail) setErroEmail('');
-        }}
-      />
-      {erroEmail ? <Text style={styles.textoErro}>{erroEmail}</Text> : null}
-
-      <TouchableOpacity 
-        style={styles.button} 
-        onPress={handleRecuperar} 
-        disabled={loadingReq}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {loadingReq ? (
-          <ActivityIndicator color="#FFF" />
-        ) : (
-          <Text style={styles.buttonText}>Enviar Instruções</Text>
-        )}
-      </TouchableOpacity>
+        <ScrollView
+          contentContainerStyle={styles.conteudo}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <Image
+            source={require('../../../../assets/images/logo-na-esquina.png')}
+            style={styles.logo}
+            resizeMode="contain"
+            accessibilityLabel="Logo Na Esquina"
+          />
 
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.linkButton}>
-        <Text style={styles.linkText}>← Voltar para o Login</Text>
-      </TouchableOpacity>
-    </KeyboardAvoidingView>
+          <View style={styles.cartao}>
+            <Text style={styles.titulo}>Recuperar senha</Text>
+            <Text style={styles.subtitulo}>
+              Digite o seu e-mail para receber um link de redefinição de senha.
+            </Text>
+
+            <Text style={styles.rotulo}>Email</Text>
+            <TextInput
+              style={[styles.campo, erroEmail ? styles.campoErro : null]}
+              placeholder="Digite seu e-mail"
+              placeholderTextColor={cores.icone}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              value={email}
+              maxLength={150}
+              onChangeText={(texto) => {
+                setEmail(texto);
+                if (erroEmail) setErroEmail('');
+              }}
+            />
+            {erroEmail ? <Text style={styles.textoErro}>{erroEmail}</Text> : null}
+
+            <TouchableOpacity
+              style={styles.botao}
+              onPress={handleRecuperar}
+              disabled={loadingReq}
+              activeOpacity={0.85}
+            >
+              {loadingReq ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.botaoTexto}>Enviar instruções</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.linkVoltar}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={16} color={cores.textoLogin} />
+              <Text style={styles.linkVoltarTexto}>Voltar para o login</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 }
