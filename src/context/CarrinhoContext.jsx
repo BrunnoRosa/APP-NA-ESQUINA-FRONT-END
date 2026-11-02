@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext } from 'react';
+import { createContext, useContext, useState } from 'react';
 import { Alert, Platform } from 'react-native';
 
 const CarrinhoContext = createContext({});
@@ -20,9 +20,14 @@ export function CarrinhoProvider({ children }) {
   const [idMercadinho, setIdMercadinho] = useState(null);
 
   const executarAdicao = (produto, idNovoMercado) => {
-    const idMercadoGarantido = idNovoMercado || idMercadinho || extrairIdMercadinho(produto);
-    
-    setIdMercadinho(idMercadoGarantido);
+    // Tenta obter o ID do novo produto, se nulo mantém o ID global que já estava no carrinho
+    const idMercadoExtraido = idNovoMercado || extrairIdMercadinho(produto);
+    const idMercadoGarantido = idMercadoExtraido || idMercadinho;
+
+    // Atualiza o idMercadinho global apenas se houver um ID válido
+    if (idMercadoGarantido) {
+      setIdMercadinho(idMercadoGarantido);
+    }
 
     setItens((itensAtuais) => {
       const idProd = produto.idProduto || produto.id;
@@ -34,20 +39,35 @@ export function CarrinhoProvider({ children }) {
         ...produto,
         idMercadinho: idMercadoGarantido,
         mercadinhoId: idMercadoGarantido,
-        mercadinho: typeof produto.mercadinho === 'object' 
-          ? produto.mercadinho 
+        mercadinho: typeof produto.mercadinho === 'object' && produto.mercadinho !== null
+          ? { ...produto.mercadinho, idMercadinho: idMercadoGarantido, id: idMercadoGarantido }
           : { idMercadinho: idMercadoGarantido, id: idMercadoGarantido }
       };
 
       if (itemExistente) {
         return itensAtuais.map((item) =>
           (item.idProduto || item.id) === idProd
-            ? { ...item, quantidade: item.quantidade + 1 }
-            : item
+            ? { 
+                ...item, 
+                ...produtoFormatado,
+                quantidade: item.quantidade + 1 
+              }
+            : {
+                ...item,
+                idMercadinho: item.idMercadinho || idMercadoGarantido,
+                mercadinhoId: item.mercadinhoId || idMercadoGarantido,
+              }
         );
       }
 
-      return [...itensAtuais, { ...produtoFormatado, quantidade: 1 }];
+      // Garante que itens anteriores também recebam o idMercadinho caso estivessem sem ele
+      const itensAtualizados = itensAtuais.map((item) => ({
+        ...item,
+        idMercadinho: item.idMercadinho || idMercadoGarantido,
+        mercadinhoId: item.mercadinhoId || idMercadoGarantido,
+      }));
+
+      return [...itensAtualizados, { ...produtoFormatado, quantidade: 1 }];
     });
   };
 
