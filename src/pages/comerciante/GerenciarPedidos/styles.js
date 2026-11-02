@@ -193,4 +193,46 @@ export const styles = StyleSheet.create({
     color: cores.textoSecundario,
     textAlign: 'center',
   },
+  
+  // Modal de cancelamento
+  modalFundo: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modalCaixa: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
+    gap: 12,
+  },
+  modalTitulo: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: cores.textoTitulo,
+  },
+  modalTexto: {
+    fontSize: 13,
+    color: cores.textoSecundario,
+  },
+  modalCampo: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: cores.bordaCampo,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: cores.textoCampo,
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  modalAcoes: {
+    flexDirection: 'row',
+    gap: 10,
+  },
 });
