@@ -13,8 +13,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import BotaoCarrinho from '../../../components/BotaoCarrinho'; // 🆕
 import CabecalhoInicio from '../../../components/CabecalhoInicio';
-import BotaoCarrinho from '../../../components/BotaoCarrinho';   // 🆕
 import { useCarrinho } from '../../../context/CarrinhoContext';
 import api from '../../../services/api';
 import { styles } from './styles';
@@ -37,14 +37,31 @@ export default function HomeCliente({ navigation }) {
   // Função centralizada para buscar os dados
   const carregarDados = useCallback(async () => {
     try {
-      const [resMercadinhos, resProdutos, resFavoritos] = await Promise.all([
+            const [resMercadinhos, resFavoritos] = await Promise.all([
         api.get('/api/mercadinhos'),
-        api.get('/api/produtos'),
         api.get('/api/clientes/favoritos').catch(() => ({ data: [] })), // Rota de favoritos do cliente
       ]);
 
-      setMercadinhos(resMercadinhos.data || []);
-      setTodosProdutos(resProdutos.data || []);
+      const lojas = resMercadinhos.data || [];
+      setMercadinhos(lojas);
+
+      // ✏️ Busca os produtos de cada loja e marca idMercadinho/nomeMercadinho,
+      // porque /api/produtos não informa de qual loja é cada produto.
+      const produtosPorLoja = await Promise.all(
+        lojas.map((loja) =>
+          api
+            .get(`/api/produtos/mercadinho/${loja.idMercadinho}`)
+            .then((res) =>
+              (res.data || []).map((p) => ({
+                ...p,
+                idMercadinho: loja.idMercadinho,
+                nomeMercadinho: loja.nomeFantasia,
+              }))
+            )
+            .catch(() => [])
+        )
+      );
+      setTodosProdutos(produtosPorLoja.flat());
       
       // Mapeia apenas os IDs dos mercadinhos favoritos
       const ids = (resFavoritos.data || []).map((fav) => fav.idMercadinho || fav.id);
