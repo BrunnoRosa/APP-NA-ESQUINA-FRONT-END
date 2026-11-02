@@ -1,17 +1,28 @@
-import React, { useState, useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';                  // 🆕
+import { useFocusEffect } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';          // 🆕
+import React, { useCallback, useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Platform,
   Text,
   TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
-  Platform,
-  Alert,
+  View,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../../context/AuthContext';
 import api from '../../../services/api';
+import { cores } from '../../../theme';                         // 🆕
 import { styles } from './styles';
+
+// 🆕 Formata número como moeda brasileira
+function formatarMoeda(valor) {
+  return Number(valor || 0).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  });
+}
 
 export default function MeusPedidos({ navigation }) {
   const { user } = useAuth();
@@ -71,15 +82,15 @@ export default function MeusPedidos({ navigation }) {
   function getStatusInfo(status) {
     switch (status) {
       case 'PENDENTE':
-        return { label: 'Aguardando Aprovação', bg: '#FFF3CD', text: '#856404' };
+        return { label: 'Aguardando aprovação', bg: '#FFF3CD', text: '#856404' };
       case 'EM_SEPARACAO':
-        return { label: 'Em Separação', bg: '#CCE5FF', text: '#004085' };
+        return { label: 'Em separação', bg: '#DCEBFF', text: '#1F4E8C' };
       case 'AGUARDANDO_RETIRADA':
-        return { label: 'Pronto para Retirada', bg: '#E2E3E5', text: '#383D41' };
+        return { label: 'Pronto para retirada', bg: '#FFE9D2', text: '#B25E00' };   // ✏️ laranja: pede ação
       case 'RETIRADA_CONCLUIDO':
-        return { label: 'Retirado / Concluído', bg: '#D4EDDA', text: '#155724' };
+        return { label: 'Retirado', bg: '#DDF5D9', text: '#168A00' };               // ✏️
       case 'CANCELADO':
-        return { label: 'Cancelado', bg: '#F8D7DA', text: '#721C24' };
+        return { label: 'Cancelado', bg: '#FFE0E0', text: '#C41F1F' };
       default:
         return { label: status, bg: '#E2E3E5', text: '#383D41' };
     }
@@ -98,52 +109,50 @@ export default function MeusPedidos({ navigation }) {
           </View>
         </View>
 
-        <Text style={styles.mercadinhoNome}>
-          🏪 {item.mercadinho?.nomeFantasia || 'Mercadinho'}
-        </Text>
+        {/* ✏️ ícone no lugar do emoji */}
+        <View style={styles.lojaLinha}>
+          <Ionicons name="storefront-outline" size={15} color={cores.textoSecundario} />
+          <Text style={styles.mercadinhoNome} numberOfLines={1}>
+            {item.mercadinho?.nomeFantasia || 'Mercadinho'}
+          </Text>
+        </View>
 
         <View style={styles.divider} />
 
         {item.itens?.map((it) => (
           <View key={String(it.idItemPedido)} style={styles.itemRow}>
-            <Text style={styles.itemNome}>
+            <Text style={styles.itemNome} numberOfLines={2}>
               {it.quantidade}x {it.produto?.nome}
             </Text>
             <Text style={styles.itemPreco}>
-              {Number(it.precoUnitario * it.quantidade).toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL',
-              })}
+              {formatarMoeda(it.precoUnitario * it.quantidade)}
             </Text>
           </View>
         ))}
 
         <View style={styles.pedidoFooter}>
-          <Text style={styles.totalLabel}>Total:</Text>
-          <Text style={styles.totalValor}>
-            {Number(item.valorTotal || 0).toLocaleString('pt-BR', {
-              style: 'currency',
-              currency: 'BRL',
-            })}
-          </Text>
+          <Text style={styles.totalLabel}>Total</Text>
+          <Text style={styles.totalValor}>{formatarMoeda(item.valorTotal)}</Text>
         </View>
 
         {item.status === 'AGUARDANDO_RETIRADA' && (
           isBusy ? (
-            <ActivityIndicator style={{ marginTop: 12 }} size="small" color="#28A745" />
+            <ActivityIndicator style={{ marginTop: 12 }} size="small" color={cores.primaria} />
           ) : (
             <TouchableOpacity
               style={styles.confirmButton}
               onPress={() => confirmarRecebimento(item.idPedido)}
+              activeOpacity={0.85}
             >
-              <Text style={styles.confirmButtonText}>🛍️ Já Retirei os Produtos</Text>
+              <Ionicons name="bag-check-outline" size={18} color="#FFFFFF" />
+              <Text style={styles.confirmButtonText}>Já retirei os produtos</Text>
             </TouchableOpacity>
           )
         )}
 
         {item.status === 'CANCELADO' && item.motivoCancelamento && (
           <View style={styles.motivoContainer}>
-            <Text style={styles.motivoTitle}>Motivo do cancelamento:</Text>
+            <Text style={styles.motivoTitle}>Motivo do cancelamento</Text>
             <Text style={styles.motivoText}>{item.motivoCancelamento}</Text>
           </View>
         )}
@@ -153,30 +162,52 @@ export default function MeusPedidos({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>← Voltar</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Meus Pedidos 📋</Text>
-      </View>
+      {/* 🆕 Topo com degradê (sem botão voltar: esta tela é uma aba) */}
+      <LinearGradient
+        colors={[cores.degradeInicioTopo, cores.degradeInicioBase]}
+        style={styles.topo}
+      >
+        <Text style={styles.titulo}>Meus pedidos</Text>
+        {!loading && pedidos.length > 0 && (
+          <Text style={styles.subtitulo}>
+            {pedidos.length} {pedidos.length === 1 ? 'pedido' : 'pedidos'}
+          </Text>
+        )}
+      </LinearGradient>
 
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007BFF" />
-        </View>
-      ) : pedidos.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyTitle}>Nenhum pedido encontrado</Text>
-          <Text style={styles.emptySubtitle}>Você ainda não realizou compras pelo aplicativo.</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={pedidos}
-          keyExtractor={(item) => String(item.idPedido)}
-          renderItem={renderPedido}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+      {/* 🆕 Folha branca arredondada */}
+      <View style={styles.folha}>
+        {loading ? (
+          <View style={styles.centro}>
+            <ActivityIndicator size="large" color={cores.primaria} />
+          </View>
+        ) : pedidos.length === 0 ? (
+          <View style={styles.centro}>
+            <View style={styles.vazioCirculo}>
+              <Ionicons name="receipt-outline" size={44} color={cores.primaria} />
+            </View>
+            <Text style={styles.emptyTitle}>Nenhum pedido encontrado</Text>
+            <Text style={styles.emptySubtitle}>
+              Você ainda não realizou compras pelo aplicativo.
+            </Text>
+            <TouchableOpacity
+              style={styles.botaoPrimario}
+              onPress={() => navigation.navigate('HomeCliente')}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.botaoPrimarioTexto}>Ver mercados</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <FlatList
+            data={pedidos}
+            keyExtractor={(item) => String(item.idPedido)}
+            renderItem={renderPedido}
+            contentContainerStyle={styles.lista}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
+      </View>
     </View>
   );
 }
