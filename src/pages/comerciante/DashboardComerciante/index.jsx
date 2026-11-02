@@ -1,7 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';                  // 🆕
+import { Ionicons } from '@expo/vector-icons'; // 🆕
 import { useFocusEffect } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';          // 🆕
-import React, { useCallback, useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient'; // 🆕
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../../../context/AuthContext';
 import api from '../../../services/api';
-import { cores } from '../../../theme';                         // 🆕
+import { cores } from '../../../theme'; // 🆕
 import { styles } from './styles';
 // 🗑️ removido: import Header (o topo agora é o degradê desta tela)
 
@@ -42,6 +42,7 @@ export default function DashboardComerciante({ navigation }) {
   const [totalProdutos, setTotalProdutos] = useState(0);
   const [totalDestaques, setTotalDestaques] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [nomeMercado, setNomeMercado] = useState('');          // 🆕
 
   // ✏️ Sem fallback para a loja 1: usa só o mercadinho real do comerciante
   const idMercadinho = user?.idMercadinho;
@@ -58,6 +59,19 @@ export default function DashboardComerciante({ navigation }) {
       const prods = response.data || [];
       setTotalProdutos(prods.length);
       setTotalDestaques(prods.filter((p) => p.emDestaque).length);
+            // 🆕 Busca o nome da loja (falha aqui não deve derrubar as métricas)
+      try {
+        const resLojas = await api.get('/api/mercadinhos');
+        const lojas = Array.isArray(resLojas.data)
+          ? resLojas.data
+          : (resLojas.data?.content || []);
+        const minha = lojas.find(
+          (m) => Number(m.idMercadinho || m.id) === Number(idMercadinho)
+        );
+        setNomeMercado(minha?.nomeFantasia || '');
+      } catch (e) {
+        console.warn('Não foi possível carregar o nome da loja:', e);
+      }
     } catch (error) {
       console.error('Erro ao carregar métricas:', error);
     } finally {
@@ -82,7 +96,7 @@ export default function DashboardComerciante({ navigation }) {
           <View style={{ flex: 1 }}>
             <Text style={styles.saudacao}>Painel do comerciante</Text>
             <Text style={styles.nome} numberOfLines={1}>
-              {user?.nome || user?.email || 'Minha loja'}
+              {nomeMercado || user?.nome || user?.email || 'Minha loja'}
             </Text>
           </View>
 
