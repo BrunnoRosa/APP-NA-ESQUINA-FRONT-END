@@ -1,170 +1,195 @@
 import { StyleSheet } from 'react-native';
+import { cores } from '../../../theme';
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
-    padding: 16,
+    backgroundColor: cores.degradeInicioBase,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
+
+  // Topo
+  topo: {
+    paddingTop: 48,
+    paddingHorizontal: 20,
+    paddingBottom: 44,
   },
-  backButton: {
-    paddingRight: 12,
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: '#007BFF',
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 20,
+  titulo: {
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: cores.textoTitulo,
   },
-  loadingContainer: {
+  subtitulo: {
+    fontSize: 13,
+    color: cores.textoSecundario,
+    marginTop: 2,
+  },
+
+  // Folha branca
+  folha: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    marginTop: -28,
+    overflow: 'hidden',
   },
-  emptyContainer: {
+  lista: {
+    padding: 20,
+    paddingBottom: 30,
+    gap: 14,
+  },
+  centro: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 40,
+    justifyContent: 'center',
+    padding: 32,
+    gap: 10,
   },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: '#6C757D',
-  },
+
+  // Cartão do pedido
   pedidoCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: '#E9ECEF',
+    backgroundColor: cores.fundoCartao,
+    borderRadius: 20,
+    padding: 16,
   },
   pedidoHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
+    gap: 8,
   },
   pedidoNumero: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: cores.textoTitulo,
   },
   statusBadge: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 4,
+    borderRadius: 12,
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 'bold',
   },
-  clienteEmail: {
-    fontSize: 13,
-    color: '#6C757D',
-    marginBottom: 8,
+  lojaLinha: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 8,
   },
   mercadinhoNome: {
+    flex: 1,
     fontSize: 13,
-    color: '#6C757D',
-    marginBottom: 8,
+    color: cores.textoSecundario,
   },
   divider: {
     height: 1,
-    backgroundColor: '#E9ECEF',
-    marginVertical: 8,
+    backgroundColor: '#DCDCDC',
+    marginVertical: 12,
   },
   itemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    alignItems: 'flex-start',
+    gap: 10,
+    marginBottom: 6,
   },
   itemNome: {
-    fontSize: 13,
-    color: '#495057',
+    flex: 1,
+    fontSize: 14,
+    color: cores.textoTitulo,
   },
   itemPreco: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#333',
+    fontSize: 14,
+    color: cores.textoSecundario,
   },
   pedidoFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 8,
-    paddingTop: 8,
+    marginTop: 10,
+    paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#E9ECEF',
+    borderTopColor: '#DCDCDC',
   },
   totalLabel: {
     fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
+    color: cores.textoSecundario,
   },
   totalValor: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#28A745',
+    color: cores.primaria,
   },
-  actionContainer: {
-    flexDirection: 'row',
-    marginTop: 12,
-    gap: 8,
-  },
-  btnAction: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  btnText: {
-    color: '#FFF',
-    fontWeight: 'bold',
-    fontSize: 13,
-  },
+
+  // Botão "Já retirei"
   confirmButton: {
-    backgroundColor: '#28A745',
-    paddingVertical: 10,
-    borderRadius: 6,
+    marginTop: 14,
+    backgroundColor: cores.primaria,
+    borderRadius: 24,
+    paddingVertical: 12,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 12,
+    justifyContent: 'center',
+    gap: 6,
   },
   confirmButtonText: {
-    color: '#FFF',
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: 'bold',
-    fontSize: 13,
   },
+
+  // Motivo do cancelamento
   motivoContainer: {
-    marginTop: 10,
-    padding: 10,
-    backgroundColor: '#F8D7DA',
-    borderRadius: 6,
+    marginTop: 12,
+    backgroundColor: cores.fundoVerMais,
     borderWidth: 1,
-    borderColor: '#F5C6CB',
+    borderColor: cores.primaria,
+    borderRadius: 12,
+    padding: 10,
   },
   motivoTitle: {
-    color: '#721C24',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: 'bold',
+    color: cores.primaria,
     marginBottom: 2,
   },
   motivoText: {
-    color: '#721C24',
     fontSize: 13,
+    color: cores.textoTitulo,
+  },
+
+  // Estado vazio
+  vazioCirculo: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: cores.fundoCirculo,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: cores.textoTitulo,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: cores.textoSecundario,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  botaoPrimario: {
+    backgroundColor: cores.primaria,
+    borderRadius: 28,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+  },
+  botaoPrimarioTexto: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: 'bold',
   },
 });

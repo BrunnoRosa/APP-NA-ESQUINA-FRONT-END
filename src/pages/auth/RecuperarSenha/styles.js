@@ -1,66 +1,102 @@
 import { StyleSheet } from 'react-native';
+import { cores } from '../../../theme';
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+  },
+  conteudo: {
+    flexGrow: 1,
     justifyContent: 'center',
     padding: 24,
   },
-  title: {
-    fontSize: 28,
+  logo: {
+    width: 200,
+    height: 90,
+    alignSelf: 'center',
+    marginBottom: 24,
+  },
+
+  // Cartão (mesmo estilo do Login)
+  cartao: {
+    width: '100%',
+    maxWidth: 420,
+    alignSelf: 'center',
+    backgroundColor: cores.fundoCartaoLogin,
+    borderRadius: 36,
+    paddingHorizontal: 24,
+    paddingVertical: 28,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  titulo: {
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
+    color: cores.textoTitulo,
     textAlign: 'center',
+    marginBottom: 6,
   },
-  subtitle: {
-    fontSize: 15,
-    color: '#666',
-    marginBottom: 32,
+  subtitulo: {
+    fontSize: 13,
+    color: cores.textoSecundario,
     textAlign: 'center',
-    paddingHorizontal: 10,
-    lineHeight: 22,
+    lineHeight: 20,
+    marginBottom: 22,
   },
-  input: {
-    backgroundColor: '#FFF',
+
+  // Campo
+  rotulo: {
+    color: cores.textoRotulo,
+    fontSize: 12,
+    marginBottom: 6,
+  },
+  campo: {
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E1E4E8',
-    borderRadius: 8,
-    paddingHorizontal: 15,
+    borderColor: cores.bordaCampo,
+    borderRadius: 10,
+    paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 15,
-    marginBottom: 20,
-    color: '#333',
-  },
-  button: {
-    backgroundColor: '#28A745',
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
+    fontSize: 14,
+    color: cores.textoCampo,
     marginBottom: 16,
   },
-  buttonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  linkButton: {
-    padding: 10,
-    alignItems: 'center',
-  },
-  linkText: {
-    color: '#007AFF',
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  inputErro: {
-    borderColor: '#D93025',
+  campoErro: {
+    borderColor: cores.erro,
   },
   textoErro: {
-    color: '#D93025',
-    fontSize: 13,
-    marginTop: -14,
-    marginBottom: 16,
+    color: cores.erro,
+    fontSize: 12,
+    marginTop: -10,
+    marginBottom: 14,
+  },
+
+  // Botão
+  botao: {
+    backgroundColor: cores.primaria,
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  botaoTexto: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+
+  // Link voltar
+  linkVoltar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+  },
+  linkVoltarTexto: {
+    color: cores.textoLogin,
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
