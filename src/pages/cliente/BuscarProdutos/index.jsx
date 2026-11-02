@@ -1,54 +1,78 @@
-import { Ionicons } from '@expo/vector-icons'; // 🆕 NOVO
-import { useFocusEffect } from '@react-navigation/native'; // 🆕 NOVO
-import { LinearGradient } from 'expo-linear-gradient'; // 🆕 NOVO
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Image, // 🆕 NOVO (logo no topo)
+  Image,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-// 🗑️ REMOVIDO: import do Header azul (o Figma não tem esse cabeçalho na Pesquisar)
-import BotaoCarrinho from '../../../components/BotaoCarrinho'; // 🆕
-import LojaCard from '../../../components/LojaCard'; // 🆕 NOVO
+
+import BotaoCarrinho from '../../../components/BotaoCarrinho';
+import LojaCard from '../../../components/LojaCard';
 import ProdutoCard from '../../../components/ProdutoCard';
 import { useCarrinho } from '../../../context/CarrinhoContext';
 import api from '../../../services/api';
-import { cores } from '../../../theme'; // 🆕 NOVO
-import { calcularDistanciaKm, ordenarAbertasPrimeiro } from '../../../utils/mercado'; // ✏️ ALTERADO
+import { cores } from '../../../theme';
+import { calcularDistanciaKm, ordenarAbertasPrimeiro } from '../../../utils/mercado';
 import { styles } from './styles';
 
-// ✏️ ALTERADO: categorias iguais às do backend (enum CategoriaProduto).
-// Antes vinham de /api/categorias, que não existe, e o "LATICÍNIOS" não existe no backend.
 const CATEGORIAS = ['TODAS', 'ALIMENTOS', 'BEBIDAS', 'LIMPEZA', 'HIGIENE', 'HORTIFRUTI', 'PADARIA', 'OUTROS'];
 
-// ✏️ ALTERADO: antes era São Paulo. Agora é Salvador, igual ao cadastro de mercado.
-// Quando usarmos o GPS do aparelho, só este valor muda.
 const LOCALIZACAO_USUARIO = { lat: -12.9714, lng: -38.5014 };
 
-export default function BuscarProdutos({ navigation }) {
+export default function BuscarProdutos({ navigation, route }) {
   const [termo, setTermo] = useState('');
-  const categorias = CATEGORIAS; // ✏️ ALTERADO: lista fixa (sem useState/useEffect)
+  const categorias = CATEGORIAS;
   const [categoriaAtiva, setCategoriaAtiva] = useState('TODAS');
   const [ordenarPor, setOrdenarPor] = useState('preco'); // 'preco' ou 'distancia'
   const [produtos, setProdutos] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [mostrarFiltros, setMostrarFiltros] = useState(false); // 🆕 NOVO
+  const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
-  // 🆕 NOVO: listas de lojas do Figma
+  // Listas de lojas
   const [lojas, setLojas] = useState([]);
   const [lojasPerto, setLojasPerto] = useState([]);
 
-  const userCoords = LOCALIZACAO_USUARIO; // ✏️ ALTERADO: constante no lugar do useState
+  // Estado para controlar o modo vindo da navegação (mercados | produtos | promocoes)
+  const [modoAba, setModoAba] = useState(null);
+  const [apenasPromocoes, setApenasPromocoes] = useState(false);
+
+  const userCoords = LOCALIZACAO_USUARIO;
   const { adicionarAoCarrinho } = useCarrinho();
 
-  // 🗑️ REMOVIDO: useEffect que chamava /api/categorias (endpoint inexistente)
+  // Reage aos parâmetros passados na navegação a partir da HomeCliente
+  useEffect(() => {
+    const params = route?.params;
+    if (params) {
+      const modo = params.modo || params.aba;
 
-  // 🆕 NOVO: carrega as lojas sempre que a aba ganha foco
+      if (modo === 'mercados') {
+        setModoAba('mercados');
+        setTermo('');
+        setCategoriaAtiva('TODAS');
+        setMostrarFiltros(false);
+        setApenasPromocoes(false);
+      } else if (modo === 'promocoes') {
+        setModoAba('promocoes');
+        setMostrarFiltros(true);
+        setApenasPromocoes(true);
+        setTermo('');
+      } else if (modo === 'produtos') {
+        setModoAba('produtos');
+        setMostrarFiltros(true);
+        setApenasPromocoes(false);
+        setTermo('');
+      }
+    }
+  }, [route?.params?._ts, route?.params?.modo, route?.params?.aba]);
+
+  // Carrega as lojas sempre que a aba ganha foco
   useFocusEffect(
     useCallback(() => {
       async function carregarLojas() {
@@ -96,20 +120,34 @@ export default function BuscarProdutos({ navigation }) {
     setOrdenarPor((prev) => (prev === 'preco' ? 'distancia' : 'preco'));
   };
 
-  // 🆕 NOVO: abre a loja (mesma navegação que a Home já usa)
   const abrirLoja = (m) =>
     navigation.navigate('DetalhesMercadinho', {
       idMercadinho: m.idMercadinho || m.id,
       mercadinho: m,
     });
 
-  // 🆕 NOVO: se o usuário está buscando, mostra produtos; senão, mostra as lojas
-  const modoBusca = termo.trim().length > 0 || categoriaAtiva !== 'TODAS' || mostrarFiltros;
+  // Determina se deve mostrar a lista de produtos ou as seções de lojas
+  const modoBusca =
+    modoAba === 'produtos' ||
+    modoAba === 'promocoes' ||
+    termo.trim().length > 0 ||
+    categoriaAtiva !== 'TODAS' ||
+    mostrarFiltros;
+
+  // Filtra por promoções/destaques quando vindo do botão Promoções
+  const produtosExibidos = apenasPromocoes
+    ? produtos.filter(
+        (p) =>
+          p.emDestaque === true ||
+          p.destaque === true ||
+          p.oferta === true ||
+          p.emPromocao === true ||
+          String(p.emDestaque) === 'true'
+      )
+    : produtos;
 
   return (
     <View style={styles.container}>
-      {/* ✏️ ALTERADO: o topo (busca + filtro + logo) fica DENTRO do degradê amarelo.
-          Atenção: o LinearGradient abre aqui e só fecha depois da logo. */}
       <LinearGradient
         colors={[cores.degradeInicioTopo, cores.degradeInicioBase]}
         style={styles.cabecalho}
@@ -121,7 +159,10 @@ export default function BuscarProdutos({ navigation }) {
               placeholder="Pesquisar"
               placeholderTextColor={cores.textoSecundario}
               value={termo}
-              onChangeText={setTermo}
+              onChangeText={(txt) => {
+                setTermo(txt);
+                if (txt.trim().length > 0) setModoAba('produtos');
+              }}
             />
             {termo.length > 0 && (
               <TouchableOpacity onPress={() => setTermo('')} style={styles.limpar}>
@@ -144,11 +185,8 @@ export default function BuscarProdutos({ navigation }) {
           />
         </View>
       </LinearGradient>
-      {/* 🆕 NOVO: o degradê fechou na linha acima */}
 
-      {/* 🆕 NOVO: folha branca que contém todo o resto da tela (fecha no fim do arquivo) */}
       <View style={styles.folha}>
-        {/* ✏️ ALTERADO: categorias e ordenação só aparecem ao tocar no botão de filtro */}
         {mostrarFiltros && (
           <View style={styles.filtros}>
             <ScrollView
@@ -173,7 +211,7 @@ export default function BuscarProdutos({ navigation }) {
             </ScrollView>
 
             <View style={styles.sortRow}>
-              <Text style={styles.resultsCount}>{produtos.length} resultado(s)</Text>
+              <Text style={styles.resultsCount}>{produtosExibidos.length} resultado(s)</Text>
               <TouchableOpacity style={styles.sortBtn} onPress={alternarOrdenacao}>
                 <Text style={styles.sortBtnText}>
                   {ordenarPor === 'preco' ? '💰 Menor Preço' : '📍 Menor Distância'}
@@ -184,14 +222,14 @@ export default function BuscarProdutos({ navigation }) {
         )}
 
         {modoBusca ? (
-          /* Resultados de produtos (lógica original mantida) */
+          /* Resultados de produtos */
           loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={cores.primaria} />{/* ✏️ ALTERADO: cor vermelha */}
+              <ActivityIndicator size="large" color={cores.primaria} />
             </View>
           ) : (
             <FlatList
-              data={produtos}
+              data={produtosExibidos}
               keyExtractor={(item) => String(item.idProduto || item.id || item.idProdutoBase)}
               renderItem={({ item }) => (
                 <ProdutoCard produto={item} onAdicionar={() => adicionarAoCarrinho(item)} />
@@ -204,7 +242,7 @@ export default function BuscarProdutos({ navigation }) {
             />
           )
         ) : (
-          /* 🆕 NOVO: blocos "Lojas em Destaque" e "Perto de você" */
+          /* Lojas em Destaque e Perto de você */
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
             <Text style={styles.tituloSecao}>Lojas em Destaque</Text>
             {lojas.length === 0 ? (
@@ -257,9 +295,7 @@ export default function BuscarProdutos({ navigation }) {
           </ScrollView>
         )}
       </View>
-      {/* 🆕 NOVO: a folha branca fechou na linha acima */}
 
-      {/* 🆕 Botão flutuante do carrinho (90 = acima da barra de abas, igual à Home) */}
       <BotaoCarrinho navigation={navigation} bottom={90} />
     </View>
   );
