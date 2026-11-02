@@ -1,18 +1,21 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  TextInput,
-  FlatList,
-  ActivityIndicator,
-  Platform,
-  Alert,
-  Modal,
-} from 'react-native';
+import { Ionicons } from '@expo/vector-icons'; // 🆕
 import { useFocusEffect } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient'; // 🆕
+import { useCallback, useState } from 'react'; // ✏️ sem useEffect
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Modal,
+  Platform,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useAuth } from '../../../context/AuthContext';
 import api from '../../../services/api';
+import { cores } from '../../../theme'; // 🆕
 import { styles } from './styles';
 
 export default function GerenciarProdutos({ navigation }) {
@@ -58,15 +61,13 @@ export default function GerenciarProdutos({ navigation }) {
         console.warn('⚠️ Não foi possível obter idMercadinho por endpoint:', e);
       }
     }
-    return idComerciante; // Fallback
+    return null; // ✏️ antes devolvia o id do usuário (que não é o id da loja)
   }, [user]);
 
   const carregarProdutos = useCallback(async () => {
     try {
       setLoading(true);
       const idMercadinho = await obterIdMercadinho();
-      
-      console.log('🔍 [DEBUG] ID Mercadinho utilizado na query:', idMercadinho);
 
       if (!idMercadinho) {
         setLoading(false);
@@ -74,7 +75,7 @@ export default function GerenciarProdutos({ navigation }) {
       }
 
       const response = await api.get(`/api/produtos/mercadinho/${idMercadinho}?t=${new Date().getTime()}`);
-      
+
       let listaProdutos = [];
       if (Array.isArray(response.data)) {
         listaProdutos = response.data;
@@ -92,10 +93,7 @@ export default function GerenciarProdutos({ navigation }) {
     }
   }, [obterIdMercadinho]);
 
-  useEffect(() => {
-    carregarProdutos();
-  }, [carregarProdutos]);
-
+  // 🗑️ removido o useEffect duplicado: o useFocusEffect já carrega ao abrir a tela
   useFocusEffect(
     useCallback(() => {
       carregarProdutos();
@@ -117,6 +115,13 @@ export default function GerenciarProdutos({ navigation }) {
       return;
     }
 
+        // ✏️ valida o preço antes de chamar a API
+    const precoNumerico = parseFloat(preco.replace(',', '.'));
+    if (isNaN(precoNumerico) || precoNumerico <= 0) {
+      exibirAlerta('Atenção', 'Informe um preço válido maior que zero.');
+      return;
+    }
+
     const idMercadinho = await obterIdMercadinho();
     if (!idMercadinho) {
       exibirAlerta('Erro', 'Mercadinho não identificado.');
@@ -128,7 +133,7 @@ export default function GerenciarProdutos({ navigation }) {
     try {
       const payload = {
         nome: nome.trim(),
-        preco: parseFloat(preco.replace(',', '.')),
+        preco: precoNumerico,
         idMercadinho: Number(idMercadinho),
         categoria: 'OUTROS',
         descricao: '',
@@ -162,13 +167,20 @@ export default function GerenciarProdutos({ navigation }) {
       return;
     }
 
+        // ✏️ valida o preço antes de chamar a API
+    const precoEditado = parseFloat(editPreco.replace(',', '.'));
+    if (isNaN(precoEditado) || precoEditado <= 0) {
+      exibirAlerta('Atenção', 'Informe um preço válido maior que zero.');
+      return;
+    }
+
     setSalvando(true);
     const idProd = produtoEditando.idProduto || produtoEditando.id;
 
     try {
       await api.put(`/api/produtos/${idProd}`, {
         nome: editNome.trim(),
-        preco: parseFloat(editPreco.replace(',', '.')),
+        preco: precoEditado,
       });
 
       exibirAlerta('Sucesso', 'Produto atualizado com sucesso!');
@@ -200,8 +212,8 @@ export default function GerenciarProdutos({ navigation }) {
       }
     };
 
-    const mensagemConfirmacao = novoStatus 
-      ? `Deseja ativar "${nomeExibicao}"?` 
+    const mensagemConfirmacao = novoStatus
+      ? `Deseja ativar "${nomeExibicao}"?`
       : `Deseja inativar "${nomeExibicao}"?`;
 
     if (Platform.OS === 'web') {
@@ -220,78 +232,91 @@ export default function GerenciarProdutos({ navigation }) {
     }
   };
 
-  return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>← Voltar</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Gerir Produtos 📦</Text>
-      </View>
+  // ✏️ Visual novo a partir daqui
 
+  // 🆕 Tudo o que fica ACIMA da lista (vai dentro da mesma rolagem)
+  const cabecalhoLista = (
+    <View>
       <TouchableOpacity
-        style={styles.btnCatalogoGlobal}
+        style={styles.btnCatalogo}
         onPress={handleIrParaCatalogoGlobal}
-        activeOpacity={0.8}
+        activeOpacity={0.85}
       >
-        <Text style={styles.btnCatalogoGlobalText}>
-          🔍 Buscar no Catálogo Global (+100 itens)
-        </Text>
+        <Ionicons name="search" size={18} color="#FFFFFF" />
+        <Text style={styles.btnCatalogoTexto}>Buscar no catálogo global</Text>
       </TouchableOpacity>
 
-      <View style={styles.dividerRow}>
-        <View style={styles.dividerLine} />
-        <Text style={styles.dividerText}>ou cadastre um produto avulso</Text>
-        <View style={styles.dividerLine} />
+      <View style={styles.divisorLinha}>
+        <View style={styles.divisorTraco} />
+        <Text style={styles.divisorTexto}>ou cadastre um produto avulso</Text>
+        <View style={styles.divisorTraco} />
       </View>
 
       <View style={styles.formCard}>
-        <Text style={styles.sectionTitle}>Novo Produto Avulso</Text>
+        <Text style={styles.formTitulo}>Novo produto avulso</Text>
         <TextInput
           style={styles.input}
           placeholder="Nome do produto (ex: Feijão Preto 1kg)"
+          placeholderTextColor={cores.icone}
           value={nome}
           onChangeText={setNome}
         />
         <TextInput
           style={styles.input}
           placeholder="Preço (R$)"
+          placeholderTextColor={cores.icone}
           keyboardType="numeric"
           value={preco}
           onChangeText={setPreco}
         />
         <TouchableOpacity
-          style={styles.btnCadastrar}
+          style={styles.btnPrimario}
           onPress={handleCadastrar}
           disabled={salvando}
+          activeOpacity={0.85}
         >
           {salvando ? (
-            <ActivityIndicator size="small" color="#FFF" />
+            <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
-            <Text style={styles.btnCadastrarText}>+ Cadastrar Avulso</Text>
+            <Text style={styles.btnPrimarioTexto}>Cadastrar avulso</Text>
           )}
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.sectionTitle}>Produtos no Seu Estoque</Text>
+      <Text style={styles.secaoTitulo}>Produtos no seu estoque</Text>
+    </View>
+  );
 
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007BFF" />
-        </View>
-      ) : (
+  return (
+    <View style={styles.container}>
+      {/* 🆕 Topo com degradê (aba: sem botão voltar) */}
+      <LinearGradient
+        colors={[cores.degradeInicioTopo, cores.degradeInicioBase]}
+        style={styles.topo}
+      >
+        <Text style={styles.titulo}>Meus produtos</Text>
+        {!loading && produtos.length > 0 && (
+          <Text style={styles.subtitulo}>
+            {produtos.length} {produtos.length === 1 ? 'produto' : 'produtos'}
+          </Text>
+        )}
+      </LinearGradient>
+
+      {/* 🆕 Folha branca arredondada */}
+      <View style={styles.folha}>
         <FlatList
-          data={produtos}
-          style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: 40, flexGrow: 1 }}
+          data={loading ? [] : produtos}
+          contentContainerStyle={styles.lista}
           keyExtractor={(item, index) => String(item?.idProduto || item?.id || index)}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          ListHeaderComponent={cabecalhoLista}
           ListEmptyComponent={
-            <View style={{ alignItems: 'center', marginTop: 30 }}>
-              <Text style={{ color: '#6C757D', fontSize: 16 }}>
-                Nenhum produto cadastrado ainda.
-              </Text>
-            </View>
+            loading ? (
+              <ActivityIndicator size="large" color={cores.primaria} style={{ marginTop: 24 }} />
+            ) : (
+              <Text style={styles.vazioTexto}>Nenhum produto cadastrado ainda.</Text>
+            )
           }
           renderItem={({ item }) => {
             const isAtivo = item.ativo ?? true;
@@ -299,17 +324,17 @@ export default function GerenciarProdutos({ navigation }) {
             const nomeExibicao = item.nome || item.nomePersonalizado || item.produtoBase?.nome || 'Produto sem nome';
 
             return (
-              <View style={[styles.productCard, !isAtivo && { opacity: 0.65, backgroundColor: '#F8F9FA' }]}>
-                <View style={styles.productMain}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
-                    <Text style={styles.productName} numberOfLines={1}>{nomeExibicao}</Text>
+              <View style={[styles.produtoCard, !isAtivo && styles.produtoInativo]}>
+                <View style={styles.produtoTopo}>
+                  <View style={styles.produtoNomeLinha}>
+                    <Text style={styles.produtoNome} numberOfLines={1}>{nomeExibicao}</Text>
                     {!isAtivo && (
-                      <Text style={{ fontSize: 10, color: '#DC3545', fontWeight: 'bold', backgroundColor: '#F8D7DA', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
-                        INATIVO
-                      </Text>
+                      <View style={styles.tagInativo}>
+                        <Text style={styles.tagInativoTexto}>INATIVO</Text>
+                      </View>
                     )}
                   </View>
-                  <Text style={styles.productPrice}>
+                  <Text style={styles.produtoPreco}>
                     {Number(item.preco || 0).toLocaleString('pt-BR', {
                       style: 'currency',
                       currency: 'BRL',
@@ -317,25 +342,28 @@ export default function GerenciarProdutos({ navigation }) {
                   </Text>
                 </View>
 
-                <View style={styles.actionsRow}>
+                <View style={styles.acoesLinha}>
                   <TouchableOpacity
-                    style={styles.btnEdit}
+                    style={[styles.btnAcao, styles.btnContorno]}
                     onPress={() => abrirModalEdicao(item)}
+                    activeOpacity={0.85}
                   >
-                    <Text style={styles.btnEditText}>✏️ Editar</Text>
+                    <Ionicons name="create-outline" size={16} color={cores.primaria} />
+                    <Text style={styles.btnContornoTexto}>Editar</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[
-                      styles.btnDelete,
-                      isAtivo 
-                        ? { backgroundColor: '#FFEBEE', borderColor: '#FFCDD2' } 
-                        : { backgroundColor: '#E8F5E9', borderColor: '#C8E6C9' }
-                    ]}
+                    style={[styles.btnAcao, isAtivo ? styles.btnContorno : styles.btnSucesso]}
                     onPress={() => handleAlternarStatus(item)}
+                    activeOpacity={0.85}
                   >
-                    <Text style={[styles.btnDeleteText, !isAtivo && { color: '#2E7D32' }]}>
-                      {isAtivo ? '🚫 Inativar' : '✅ Ativar'}
+                    <Ionicons
+                      name={isAtivo ? 'ban-outline' : 'checkmark-circle-outline'}
+                      size={16}
+                      color={isAtivo ? cores.primaria : '#FFFFFF'}
+                    />
+                    <Text style={isAtivo ? styles.btnContornoTexto : styles.btnSucessoTexto}>
+                      {isAtivo ? 'Inativar' : 'Ativar'}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -343,7 +371,7 @@ export default function GerenciarProdutos({ navigation }) {
             );
           }}
         />
-      )}
+      </View>
 
       <Modal
         visible={modalEditVisivel}
@@ -353,40 +381,44 @@ export default function GerenciarProdutos({ navigation }) {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Editar Produto</Text>
+            <Text style={styles.modalTitulo}>Editar produto</Text>
 
             <TextInput
               style={styles.input}
               placeholder="Nome do produto"
+              placeholderTextColor={cores.icone}
               value={editNome}
               onChangeText={setEditNome}
             />
             <TextInput
               style={styles.input}
               placeholder="Preço (R$)"
+              placeholderTextColor={cores.icone}
               keyboardType="numeric"
               value={editPreco}
               onChangeText={setEditPreco}
             />
 
-            <View style={styles.modalActions}>
+            <View style={styles.modalAcoes}>
               <TouchableOpacity
-                style={styles.btnCancelModal}
+                style={[styles.btnAcao, styles.btnContorno, { flex: 1 }]}
                 onPress={() => setModalEditVisivel(false)}
                 disabled={salvando}
+                activeOpacity={0.85}
               >
-                <Text style={styles.btnCancelModalText}>Cancelar</Text>
+                <Text style={styles.btnContornoTexto}>Cancelar</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.btnSaveModal}
+                style={[styles.btnAcao, styles.btnPrimarioModal, { flex: 1 }]}
                 onPress={handleSalvarEdicao}
                 disabled={salvando}
+                activeOpacity={0.85}
               >
                 {salvando ? (
-                  <ActivityIndicator size="small" color="#FFF" />
+                  <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.btnSaveModalText}>Salvar</Text>
+                  <Text style={styles.btnPrimarioTexto}>Salvar</Text>
                 )}
               </TouchableOpacity>
             </View>

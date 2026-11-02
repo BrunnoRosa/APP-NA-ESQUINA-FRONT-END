@@ -1,22 +1,22 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
+import MercadoCarrossel from '../../../components/MercadoCarrossel';
+import OfertaCard from '../../../components/OfertaCard';
+import { cores } from '../../../theme';
+import { ordenarAbertasPrimeiro } from '../../../utils/mercado';
+
 import {
   ActivityIndicator,
-  SafeAreaView,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-
+import BotaoCarrinho from '../../../components/BotaoCarrinho'; // 🆕
 import CabecalhoInicio from '../../../components/CabecalhoInicio';
-import MercadoCarrossel from '../../../components/MercadoCarrossel';
-import OfertaCard from '../../../components/OfertaCard';
 import { useCarrinho } from '../../../context/CarrinhoContext';
 import api from '../../../services/api';
-import { cores } from '../../../theme';
-import { ordenarAbertasPrimeiro } from '../../../utils/mercado';
 import { styles } from './styles';
 
 const ATALHOS = [
@@ -28,88 +28,42 @@ const ATALHOS = [
 export default function HomeCliente({ navigation }) {
   const [mercadinhos, setMercadinhos] = useState([]);
   const [todosProdutos, setTodosProdutos] = useState([]);
-  const [favoritosIds, setFavoritosIds] = useState([]);
+  const [favoritosIds, setFavoritosIds] = useState([]); // Guarda os IDs dos mercadinhos favoritados
   const [categoriaAtiva, setCategoriaAtiva] = useState('TODOS');
   const [loading, setLoading] = useState(true);
 
-  const { adicionarAoCarrinho, totalItens } = useCarrinho();
+  const { adicionarAoCarrinho, totalItens } = useCarrinho(); // remover futuramente
 
-  // Função auxiliar para montar o mapa idProduto -> idMercadinho
-  const mapearLojasEProdutos = async (listaLojas, listaProdutos) => {
-    const mapa = new Map();
-
-    // 1. Tenta extrair diretamente das lojas se possuírem produtos embutidos
-    for (const m of listaLojas) {
-      const idLoja = m.idMercadinho || m.id;
-      const prods = m.produtos || m.produtosDestaque || m.itens || [];
-      for (const p of prods) {
-        const idP = p.idProduto || p.id;
-        if (idP && idLoja) mapa.set(Number(idP), Number(idLoja));
-      }
-    }
-
-    // 2. Se o mapa estiver incompleto, busca os detalhes individuais de cada loja
-    if (mapa.size === 0 && listaLojas.length > 0) {
-      try {
-        const detalhesRes = await Promise.all(
-          listaLojas.map((m) => {
-            const idL = m.idMercadinho || m.id;
-            return api.get(`/api/mercadinhos/${idL}`).catch(() => null);
-          })
-        );
-
-        for (const res of detalhesRes) {
-          if (res?.data) {
-            const m = res.data;
-            const idLoja = m.idMercadinho || m.id;
-            const prods = m.produtos || m.produtosDestaque || m.itens || [];
-            for (const p of prods) {
-              const idP = p.idProduto || p.id;
-              if (idP && idLoja) mapa.set(Number(idP), Number(idLoja));
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Erro ao carregar detalhes das lojas:', err);
-      }
-    }
-
-    // 3. Aplica o idMercadinho em cada produto
-    return listaProdutos.map((prod) => {
-      const idDireto =
-        prod.idMercadinho ||
-        prod.mercadinhoId ||
-        prod.id_mercadinho ||
-        (typeof prod.mercadinho === 'number' ? prod.mercadinho : null) ||
-        prod.mercadinho?.idMercadinho ||
-        prod.mercadinho?.id;
-
-      const idFinal = idDireto ? Number(idDireto) : mapa.get(Number(prod.idProduto || prod.id));
-
-      return {
-        ...prod,
-        idMercadinho: idFinal || null,
-      };
-    });
-  };
-
-  // Carregamento de dados com Polling preservado
+  // Função centralizada para buscar os dados
   const carregarDados = useCallback(async () => {
     try {
-      const [resMercadinhos, resProdutos, resFavoritos] = await Promise.all([
+            const [resMercadinhos, resFavoritos] = await Promise.all([
         api.get('/api/mercadinhos'),
-        api.get('/api/produtos'),
-        api.get('/api/clientes/favoritos').catch(() => ({ data: [] })),
+        api.get('/api/clientes/favoritos').catch(() => ({ data: [] })), // Rota de favoritos do cliente
       ]);
 
-      const listaLojas = resMercadinhos.data || [];
-      const listaProdsBrutos = resProdutos.data || [];
+      const lojas = resMercadinhos.data || [];
+      setMercadinhos(lojas);
 
-      const listaProdsMapeados = await mapearLojasEProdutos(listaLojas, listaProdsBrutos);
-
-      setMercadinhos(listaLojas);
-      setTodosProdutos(listaProdsMapeados);
-
+      // ✏️ Busca os produtos de cada loja e marca idMercadinho/nomeMercadinho,
+      // porque /api/produtos não informa de qual loja é cada produto.
+      const produtosPorLoja = await Promise.all(
+        lojas.map((loja) =>
+          api
+            .get(`/api/produtos/mercadinho/${loja.idMercadinho}`)
+            .then((res) =>
+              (res.data || []).map((p) => ({
+                ...p,
+                idMercadinho: loja.idMercadinho,
+                nomeMercadinho: loja.nomeFantasia,
+              }))
+            )
+            .catch(() => [])
+        )
+      );
+      setTodosProdutos(produtosPorLoja.flat());
+      
+      // Mapeia apenas os IDs dos mercadinhos favoritos
       const ids = (resFavoritos.data || []).map((fav) => fav.idMercadinho || fav.id);
       setFavoritosIds(ids);
     } catch (error) {
@@ -119,14 +73,14 @@ export default function HomeCliente({ navigation }) {
     }
   }, []);
 
-  // Polling ativo a cada 3 segundos enquanto a tela estiver focada
+  // Polling a cada 5 segundos enquanto a tela estiver em foco
   useFocusEffect(
     useCallback(() => {
       carregarDados();
 
       const intervalId = setInterval(() => {
         carregarDados();
-      }, 3000);
+      }, 5000);
 
       return () => {
         clearInterval(intervalId);
@@ -134,9 +88,11 @@ export default function HomeCliente({ navigation }) {
     }, [carregarDados])
   );
 
+  // Função para favoritar ou desfavoritar um mercadinho
   const toggleFavorito = async (idMercadinho) => {
     const jaEhFavorito = favoritosIds.includes(idMercadinho);
 
+    // Atualização otimista na interface (muda na hora sem esperar a API)
     setFavoritosIds((prev) =>
       jaEhFavorito ? prev.filter((id) => id !== idMercadinho) : [...prev, idMercadinho]
     );
@@ -149,33 +105,38 @@ export default function HomeCliente({ navigation }) {
       }
     } catch (error) {
       console.error('Erro ao atualizar favorito:', error);
+      // Reverte o estado caso a API falhe
       setFavoritosIds((prev) =>
         jaEhFavorito ? [...prev, idMercadinho] : prev.filter((id) => id !== idMercadinho)
       );
     }
   };
 
-  const ofertasDoDia = todosProdutos.filter((p) => {
+  // Filtragem dinâmica de produtos de acordo com a categoria selecionada
+  const produtosExibidos = todosProdutos.filter((p) => {
     if (p.ativo === false) return false;
-    return (
-      p.emDestaque === true ||
-      p.destaque === true ||
-      p.oferta === true ||
-      String(p.emDestaque) === 'true'
-    );
+    if (categoriaAtiva === 'TODOS') return true;
+
+    const nomeCategoria = typeof p.categoria === 'object'
+      ? p.categoria?.nome || p.categoria?.descricao
+      : p.categoria;
+
+    return String(nomeCategoria || '').toUpperCase() === categoriaAtiva;
   });
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
+    <View style={styles.container}>
+      <ScrollView 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
       >
-        <CabecalhoInicio
-          navigation={navigation}
-          quantidadeFavoritos={favoritosIds.length}
+        {/* Cabeçalho Amarelo com navegação para a tela de lista de Favoritos */}
+        <CabecalhoInicio 
+          navigation={navigation} 
+          quantidadeFavoritos={favoritosIds.length} 
         />
 
+        {/* Folha branca sobreposta */}
         <View style={styles.folha}>
           {/* Atalhos Principais */}
           <View style={styles.atalhosLinha}>
@@ -185,13 +146,8 @@ export default function HomeCliente({ navigation }) {
                 style={styles.atalhoItem}
                 activeOpacity={0.7}
                 onPress={() => {
-                  if (atalho.chave === 'mercados') {
-                    navigation.navigate('BuscarProdutos', { modo: 'mercados' });
-                  } else if (atalho.chave === 'promocoes') {
-                    navigation.navigate('BuscarProdutos', { modo: 'promocoes' });
-                  } else {
-                    navigation.navigate('BuscarProdutos', { modo: 'produtos' });
-                  }
+                  if (atalho.chave === 'produtos') navigation.navigate('BuscarProdutos');
+                  if (atalho.chave === 'mercados') navigation.navigate('Mercados');
                 }}
               >
                 <View style={styles.atalhoCirculo}>
@@ -208,7 +164,7 @@ export default function HomeCliente({ navigation }) {
             </View>
           ) : (
             <>
-              {/* Carrossel Mercadinhos Próximos */}
+              {/* Carrossel de Mercadinhos Próximos */}
               {categoriaAtiva === 'TODOS' && (
                 <View style={styles.secaoContainer}>
                   <Text style={styles.sectionTitle}>Mercadinhos próximos de você</Text>
@@ -245,23 +201,23 @@ export default function HomeCliente({ navigation }) {
                 </View>
               )}
 
-              {/* Seção Ofertas do Dia */}
+              {/* Seção de Ofertas do Dia */}
               <View style={styles.secaoContainer}>
                 <View style={styles.tituloLinha}>
                   <View>
                     <Text style={styles.tituloSecao}>Ofertas do dia</Text>
                     <Text style={styles.subtituloSecao}>[somente em 24h]</Text>
                   </View>
-                  <TouchableOpacity
+                  <TouchableOpacity 
                     style={styles.verMaisBtn}
-                    onPress={() => navigation.navigate('BuscarProdutos', { modo: 'promocoes' })}
+                    onPress={() => navigation.navigate('BuscarProdutos')}
                   >
                     <Text style={styles.verMais}>Ver mais</Text>
                   </TouchableOpacity>
                 </View>
 
-                {ofertasDoDia.length === 0 ? (
-                  <Text style={styles.emptyText}>Nenhuma oferta disponível no momento.</Text>
+                {produtosExibidos.length === 0 ? (
+                  <Text style={styles.emptyText}>Nenhum produto disponível ainda.</Text>
                 ) : (
                   <ScrollView
                     horizontal
@@ -269,21 +225,11 @@ export default function HomeCliente({ navigation }) {
                     style={{ marginHorizontal: -16 }}
                     contentContainerStyle={{ paddingHorizontal: 16 }}
                   >
-                    {ofertasDoDia.map((prod) => (
+                    {produtosExibidos.slice(0, 10).map((prod) => (
                       <OfertaCard
                         key={String(prod.idProduto || prod.id)}
                         produto={prod}
-                        onAdicionar={() =>
-                          adicionarAoCarrinho({
-                            ...prod,
-                            idMercadinho:
-                              prod.idMercadinho ||
-                              prod.mercadinhoId ||
-                              prod.id_mercadinho ||
-                              prod.mercadinho?.idMercadinho ||
-                              prod.mercadinho?.id,
-                          })
-                        }
+                        onAdicionar={() => adicionarAoCarrinho(prod)}
                       />
                     ))}
                   </ScrollView>
@@ -295,18 +241,7 @@ export default function HomeCliente({ navigation }) {
       </ScrollView>
 
       {/* Botão Flutuante do Carrinho */}
-      {totalItens > 0 && (
-        <TouchableOpacity
-          style={styles.botaoCarrinho}
-          activeOpacity={0.8}
-          onPress={() => navigation.navigate('Carrinho')}
-        >
-          <Ionicons name="cart" size={26} color="#FFFFFF" />
-          <View style={styles.badgeCarrinho}>
-            <Text style={styles.badgeCarrinhoTexto}>{totalItens}</Text>
-          </View>
-        </TouchableOpacity>
-      )}
-    </SafeAreaView>
+      <BotaoCarrinho navigation={navigation} bottom={90} />   {/* ✏️ */}
+    </View>
   );
 }
