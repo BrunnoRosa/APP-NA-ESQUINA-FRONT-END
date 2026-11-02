@@ -1,16 +1,20 @@
-import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  Platform,
-  Alert,
-} from 'react-native';
+import { Ionicons } from '@expo/vector-icons'; // 🆕
 import { useFocusEffect } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient'; // 🆕
+import { useCallback, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image, // 🆕
+  Platform,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useAuth } from '../../../context/AuthContext';
 import api from '../../../services/api';
+import { cores } from '../../../theme'; // 🆕
 import { styles } from './styles';
 
 export default function GerenciarVitrine({ navigation }) {
@@ -19,7 +23,8 @@ export default function GerenciarVitrine({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [alterandoId, setAlterandoId] = useState(null);
 
-  const idMercadinho = user?.idMercadinho || user?.id || 1;
+  // ✏️ Sem fallback para a loja 1: usa só o mercadinho real do comerciante
+  const idMercadinho = user?.idMercadinho;
 
   function exibirAlerta(titulo, mensagem) {
     if (Platform.OS === 'web') {
@@ -30,6 +35,11 @@ export default function GerenciarVitrine({ navigation }) {
   }
 
   const carregarProdutos = useCallback(async () => {
+    if (!idMercadinho) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await api.get(`/api/produtos/mercadinho/${idMercadinho}?t=${new Date().getTime()}`);
@@ -54,7 +64,7 @@ export default function GerenciarVitrine({ navigation }) {
     try {
       await api.put(`/api/produtos/${produto.idProduto}/destaque?emDestaque=${novoStatus}`);
       exibirAlerta(
-        'Vitrine Atualizada ⭐',
+        'Vitrine Atualizada',
         `O produto "${produto.nome}" foi ${novoStatus ? 'adicionado aos' : 'removido dos'} destaques.`
       );
       carregarProdutos();
@@ -66,75 +76,105 @@ export default function GerenciarVitrine({ navigation }) {
     }
   };
 
+  // 🆕 Quantos produtos estão em destaque (para o subtítulo)
+  const totalDestaques = produtos.filter((p) => p.emDestaque).length;
+
+  // 🆕 Bloco de explicação, acima da lista
+  const cabecalhoLista = (
+    <View style={styles.banner}>
+      <View style={styles.bannerIcone}>
+        <Ionicons name="bulb-outline" size={22} color={cores.primaria} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.bannerTitulo}>Como funcionam os destaques?</Text>
+        <Text style={styles.bannerTexto}>
+          Produtos marcados com a estrela ganham prioridade nas buscas e aparecem no topo da tela principal dos clientes do seu bairro.
+        </Text>
+      </View>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>← Voltar</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Ofertas & Destaques ⭐</Text>
-      </View>
-
-      <View style={styles.content}>
-        <View style={styles.infoBanner}>
-          <Text style={styles.infoBannerTitle}>💡 Como funcionam os Destaques?</Text>
-          <Text style={styles.infoBannerText}>
-            Produtos marcados com a estrela ganham prioridade nas buscas e aparecem no topo da tela principal dos clientes do seu bairro.
+      {/* 🆕 Topo com degradê (aba: sem botão voltar) */}
+      <LinearGradient
+        colors={[cores.degradeInicioTopo, cores.degradeInicioBase]}
+        style={styles.topo}
+      >
+        <Text style={styles.titulo}>Ofertas e destaques</Text>
+        {!loading && produtos.length > 0 && (
+          <Text style={styles.subtitulo}>
+            {totalDestaques} de {produtos.length} em destaque
           </Text>
-        </View>
+        )}
+      </LinearGradient>
 
-        {loading ? (
-          <ActivityIndicator size="large" color="#007BFF" style={{ marginVertical: 40 }} />
-        ) : (
-          <FlatList
-            data={produtos}
-            keyExtractor={(item) => String(item.idProduto)}
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => {
-              const isBusy = alterandoId === item.idProduto;
-              const preco = Number(item.preco || 0).toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL',
-              });
+      {/* 🆕 Folha branca arredondada */}
+      <View style={styles.folha}>
+        <FlatList
+          data={loading ? [] : produtos}
+          keyExtractor={(item) => String(item.idProduto)}
+          contentContainerStyle={styles.lista}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={cabecalhoLista}
+          ListEmptyComponent={
+            loading ? (
+              <ActivityIndicator size="large" color={cores.primaria} style={{ marginTop: 30 }} />
+            ) : (
+              <Text style={styles.vazioTexto}>
+                {idMercadinho
+                  ? 'Nenhum produto cadastrado ainda.'
+                  : 'Mercadinho não identificado. Saia da conta e entre novamente.'}
+              </Text>
+            )
+          }
+          renderItem={({ item }) => {
+            const isBusy = alterandoId === item.idProduto;
+            const preco = Number(item.preco || 0).toLocaleString('pt-BR', {
+              style: 'currency',
+              currency: 'BRL',
+            });
 
-              return (
-                <View style={styles.cardItem}>
-                  <View style={styles.cardLeft}>
-                    <View style={styles.emojiBox}>
-                      <Text style={{ fontSize: 22 }}>📦</Text>
-                    </View>
-                    <View>
-                      <Text style={styles.nomeProduto}>{item.nome}</Text>
-                      <Text style={styles.precoProduto}>{preco}</Text>
-                    </View>
-                  </View>
-
-                  {isBusy ? (
-                    <ActivityIndicator size="small" color="#007BFF" />
+            return (
+              <View style={styles.cardItem}>
+                <View style={styles.foto}>
+                  {item.imagemUrl ? (
+                    <Image source={{ uri: item.imagemUrl }} style={styles.imagem} resizeMode="contain" />
                   ) : (
-                    <TouchableOpacity
-                      style={[
-                        styles.btnDestaque,
-                        item.emDestaque ? styles.btnDestaqueAtivo : styles.btnDestaqueInativo,
-                      ]}
-                      onPress={() => alternarDestaque(item)}
-                    >
-                      <Text
-                        style={
-                          item.emDestaque
-                            ? styles.btnDestaqueTextAtivo
-                            : styles.btnDestaqueTextInativo
-                        }
-                      >
-                        {item.emDestaque ? '⭐ Em Destaque' : '＋ Destacar'}
-                      </Text>
-                    </TouchableOpacity>
+                    <Ionicons name="cube" size={24} color={cores.icone} />
                   )}
                 </View>
-              );
-            }}
-          />
-        )}
+
+                <View style={styles.info}>
+                  <Text style={styles.nomeProduto} numberOfLines={2}>{item.nome}</Text>
+                  <Text style={styles.precoProduto}>{preco}</Text>
+                </View>
+
+                {isBusy ? (
+                  <ActivityIndicator size="small" color={cores.primaria} />
+                ) : (
+                  <TouchableOpacity
+                    style={[
+                      styles.btnDestaque,
+                      item.emDestaque ? styles.btnDestaqueAtivo : styles.btnDestaqueInativo,
+                    ]}
+                    onPress={() => alternarDestaque(item)}
+                    activeOpacity={0.85}
+                  >
+                    <Ionicons
+                      name={item.emDestaque ? 'star' : 'star-outline'}
+                      size={15}
+                      color={item.emDestaque ? '#FFFFFF' : cores.primaria}
+                    />
+                    <Text style={item.emDestaque ? styles.btnTextoAtivo : styles.btnTextoInativo}>
+                      {item.emDestaque ? 'Destaque' : 'Destacar'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            );
+          }}
+        />
       </View>
     </View>
   );

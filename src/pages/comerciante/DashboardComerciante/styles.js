@@ -1,109 +1,138 @@
 import { StyleSheet } from 'react-native';
+import { cores } from '../../../theme';
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: cores.degradeInicioBase,
   },
-  content: {
-    padding: 16,
+
+  // Topo
+  topo: {
+    paddingTop: 48,
+    paddingHorizontal: 20,
+    paddingBottom: 44,
   },
-  headerRow: {
+  topoLinha: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    gap: 12,
   },
-  sectionTitle: {
+  saudacao: {
+    fontSize: 13,
+    color: cores.textoSaudacao,
+  },
+  nome: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: cores.textoTitulo,
+    marginTop: 2,
+  },
+  botaoSair: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Folha branca
+  folha: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    marginTop: -28,
+    overflow: 'hidden',
+  },
+  conteudo: {
+    padding: 20,
+    paddingBottom: 30,
+  },
+  secaoTitulo: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#212529',
+    color: cores.textoTitulo,
+    marginBottom: 12,
   },
-  btnLogout: {
-    backgroundColor: '#FFEBEE',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+
+  // Aviso (loja não identificada)
+  aviso: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: cores.fundoVerMais,
     borderWidth: 1,
-    borderColor: '#FFCDD2',
+    borderColor: cores.primaria,
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 16,
   },
-  btnLogoutText: {
-    color: '#C62828',
-    fontWeight: 'bold',
-    fontSize: 12,
+  avisoTexto: {
+    flex: 1,
+    fontSize: 13,
+    color: cores.textoTitulo,
   },
-  metricsRow: {
+
+  // Métricas
+  metricasLinha: {
     flexDirection: 'row',
     gap: 12,
     marginBottom: 20,
   },
-  metricCard: {
+  metricaCard: {
     flex: 1,
-    borderRadius: 12,
+    backgroundColor: cores.fundoCartao,
+    borderRadius: 20,
     padding: 16,
-    alignItems: 'center',
-    borderWidth: 1,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
   },
-  metricCardBlue: {
-    backgroundColor: '#E3F2FD',
-    borderColor: '#BBDEFB',
-  },
-  metricCardYellow: {
-    backgroundColor: '#FFF8E1',
-    borderColor: '#FFE082',
-  },
-  metricValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#007BFF',
-    marginBottom: 2,
-  },
-  metricValueYellow: {
-    color: '#F57F17',
-  },
-  metricLabel: {
-    fontSize: 12,
-    color: '#495057',
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  actionCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E9ECEF',
-    borderLeftWidth: 5,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-  },
-  actionHeader: {
+  metricaValorLinha: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    gap: 6,
   },
-  actionIcon: {
-    fontSize: 20,
-    marginRight: 10,
-  },
-  actionTitle: {
-    fontSize: 16,
+  metricaValor: {
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#212529',
+    color: cores.primaria,
   },
-  actionSubtitle: {
+  metricaRotulo: {
+    fontSize: 13,
+    color: cores.textoSecundario,
+    marginTop: 2,
+  },
+
+  // Ações rápidas
+  acaoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: cores.fundoCartao,
+    borderRadius: 20,
+    padding: 14,
+    marginBottom: 12,
+    gap: 12,
+  },
+  acaoIcone: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  acaoTextos: {
+    flex: 1,
+  },
+  acaoTitulo: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: cores.textoTitulo,
+  },
+  acaoDescricao: {
     fontSize: 12,
-    color: '#6C757D',
-    paddingLeft: 30,
-    lineHeight: 18,
+    color: cores.textoSecundario,
+    marginTop: 2,
+    lineHeight: 17,
   },
 });

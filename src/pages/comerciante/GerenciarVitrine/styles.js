@@ -1,112 +1,144 @@
 import { StyleSheet } from 'react-native';
+import { cores } from '../../../theme';
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 16,
-    paddingHorizontal: 16,
-    marginBottom: 0,
-  },
-  backButton: {
-    paddingRight: 12,
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: '#007BFF',
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
+    backgroundColor: cores.degradeInicioBase,
   },
 
-  content: {
-    flex: 1,
-    padding: 16,
+  // Topo
+  topo: {
+    paddingTop: 48,
+    paddingHorizontal: 20,
+    paddingBottom: 44,
   },
-  infoBanner: {
-    backgroundColor: '#FFF8E1',
-    borderColor: '#FFE082',
+  titulo: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: cores.textoTitulo,
+  },
+  subtitulo: {
+    fontSize: 13,
+    color: cores.textoSecundario,
+    marginTop: 2,
+  },
+
+  // Folha branca
+  folha: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    marginTop: -28,
+    overflow: 'hidden',
+  },
+  lista: {
+    padding: 20,
+    paddingBottom: 30,
+  },
+  vazioTexto: {
+    fontSize: 14,
+    color: cores.textoSecundario,
+    textAlign: 'center',
+    marginTop: 30,
+  },
+
+  // Bloco de explicação
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    backgroundColor: cores.fundoVerMais,
     borderWidth: 1,
-    borderRadius: 12,
+    borderColor: cores.primaria,
+    borderRadius: 20,
     padding: 14,
     marginBottom: 16,
   },
-  infoBannerTitle: {
+  bannerIcone: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bannerTitulo: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#F57F17',
-    marginBottom: 4,
+    color: cores.textoTitulo,
+    marginBottom: 3,
   },
-  infoBannerText: {
+  bannerTexto: {
     fontSize: 12,
-    color: '#795548',
-    lineHeight: 18,
+    color: cores.textoSecundario,
+    lineHeight: 17,
   },
+
+  // Cartão do produto
   cardItem: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: cores.fundoCartao,
+    borderRadius: 20,
     padding: 12,
-    marginBottom: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: '#E9ECEF',
-    elevation: 1,
+    marginBottom: 12,
   },
-  cardLeft: {
-    flexDirection: 'row',
+  foto: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
-    flex: 1,
-  },
-  emojiBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 8,
-    backgroundColor: '#F1F3F5',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
+    overflow: 'hidden',
+  },
+  imagem: {
+    width: '100%',
+    height: '100%',
+  },
+  info: {
+    flex: 1,
   },
   nomeProduto: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#212529',
+    fontWeight: 'bold',
+    color: cores.textoTitulo,
   },
   precoProduto: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: 'bold',
-    color: '#28A745',
+    color: cores.primaria,
     marginTop: 2,
   },
+
+  // Botão de destaque
   btnDestaque: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
   },
   btnDestaqueAtivo: {
-    backgroundColor: '#FFF8E1',
-    borderColor: '#FFE082',
+    backgroundColor: cores.primaria,
   },
   btnDestaqueInativo: {
-    backgroundColor: '#F8F9FA',
-    borderColor: '#CED4DA',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: cores.primaria,
   },
-  btnDestaqueTextAtivo: {
-    color: '#F57F17',
+  btnTextoAtivo: {
+    color: '#FFFFFF',
+    fontSize: 12,
     fontWeight: 'bold',
-    fontSize: 12,
   },
-  btnDestaqueTextInativo: {
-    color: '#6C757D',
+  btnTextoInativo: {
+    color: cores.primaria,
     fontSize: 12,
+    fontWeight: 'bold',
   },
 });

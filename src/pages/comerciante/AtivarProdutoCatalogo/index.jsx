@@ -1,25 +1,28 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';                  // 🆕
+import { LinearGradient } from 'expo-linear-gradient';          // 🆕
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  Modal,
+  Platform,
   Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
-  Image,
-  Modal,
-  Alert,
-  Platform,
+  View,
 } from 'react-native';
-import api from '../../../services/api';
-import { styles } from './styles';
 import { useAuth } from '../../../context/AuthContext';
+import api from '../../../services/api';
+import { cores } from '../../../theme';                         // 🆕
+import { styles } from './styles';
 
 export default function AtivarProdutoCatalogo({ navigation, route }) {
   const { user } = useAuth();
-  
-  // Pega dinamicamente o ID do mercadinho logado ou da rota
-  const idMercadinho = user?.idMercadinho || user?.mercadinho?.idMercadinho || user?.idUsuario || user?.id || route?.params?.idMercadinho;
+
+  // ✏️ Usa só o mercadinho real (rota ou login). Antes caía no id do usuário.
+  const idMercadinho = route?.params?.idMercadinho || user?.idMercadinho || user?.mercadinho?.idMercadinho;
 
   const [termo, setTermo] = useState('');
   const [catalogo, setCatalogo] = useState([]);
@@ -138,84 +141,100 @@ export default function AtivarProdutoCatalogo({ navigation, route }) {
     }
   };
 
+  // ✏️ Visual novo a partir daqui
   return (
     <View style={styles.container}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E9ECEF' }}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ paddingRight: 12 }}>
-          <Text style={{ fontSize: 16, color: '#007BFF', fontWeight: 'bold' }}>← Voltar</Text>
-        </TouchableOpacity>
-        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#212529' }}>Adicionar ao Estoque 📦</Text>
-      </View>
+      {/* 🆕 Topo com degradê: voltar, título e busca */}
+      <LinearGradient
+        colors={[cores.degradeInicioTopo, cores.degradeInicioBase]}
+        style={styles.topo}
+      >
+        <View style={styles.topoLinha}>
+          <TouchableOpacity
+            style={styles.botaoVoltar}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="chevron-back" size={22} color={cores.textoTitulo} />
+          </TouchableOpacity>
+          <Text style={styles.titulo}>Adicionar ao estoque</Text>
+        </View>
 
-      <View style={styles.content}>
-        <View style={styles.searchSection}>
-          <Text style={{ fontSize: 16 }}>🔍</Text>
+        <View style={styles.busca}>
+          <Ionicons name="search" size={18} color={cores.icone} />
           <TextInput
-            style={styles.searchInput}
+            style={styles.buscaInput}
             placeholder="Pesquisar Coca, Arroz, Detergente..."
-            placeholderTextColor="#999"
+            placeholderTextColor={cores.icone}
             value={termo}
             onChangeText={setTermo}
           />
           {termo.length > 0 && (
-            <TouchableOpacity onPress={() => setTermo('')}>
-              <Text style={{ color: '#999', fontSize: 14 }}>❌</Text>
+            <TouchableOpacity onPress={() => setTermo('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="close-circle" size={18} color={cores.icone} />
             </TouchableOpacity>
           )}
         </View>
+      </LinearGradient>
 
+      {/* 🆕 Folha branca arredondada */}
+      <View style={styles.folha}>
         {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#28A745" />
+          <View style={styles.centro}>
+            <ActivityIndicator size="large" color={cores.primaria} />
           </View>
         ) : (
           <FlatList
             data={catalogo}
             keyExtractor={(item) => String(item.idProdutoBase)}
+            contentContainerStyle={styles.lista}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
             renderItem={({ item }) => {
               const jaAtivado = idsAtivados.includes(item.idProdutoBase);
 
               return (
-                <View style={[styles.cardItem, jaAtivado && { backgroundColor: '#F8F9FA', opacity: 0.85 }]}>
-                  <View style={styles.imageBox}>
+                <View style={[styles.cardItem, jaAtivado && styles.cardAtivado]}>
+                  <View style={styles.foto}>
                     {item.imagemUrl ? (
-                      <Image source={{ uri: item.imagemUrl }} style={styles.thumbImage} />
+                      <Image source={{ uri: item.imagemUrl }} style={styles.imagem} resizeMode="contain" />
                     ) : (
-                      <Text style={{ fontSize: 24 }}>📦</Text>
+                      <Ionicons name="cube" size={24} color={cores.icone} />
                     )}
                   </View>
 
-                  <View style={styles.infoBox}>
-                    <Text style={styles.nomeItem} numberOfLines={1}>
+                  <View style={styles.info}>
+                    <Text style={styles.nomeItem} numberOfLines={2}>
                       {item.nome}
                     </Text>
-                    <Text style={styles.subtextItem}>
-                      EAN: {item.codigoBarra || 'Sem código'} | {item.categoria?.nome || 'Geral'}
+                    <Text style={styles.subtextItem} numberOfLines={1}>
+                      {item.categoria?.nome || 'Geral'} • EAN {item.codigoBarra || 'sem código'}
                     </Text>
                   </View>
 
                   {jaAtivado ? (
-                    <View style={[styles.btnAtivar, { backgroundColor: '#E2E3E5', borderColor: '#CED4DA', borderWidth: 1 }]}>
-                      <Text style={{ color: '#6C757D', fontSize: 12, fontWeight: 'bold' }}>✓ Ativado</Text>
+                    <View style={styles.seloAtivado}>
+                      <Ionicons name="checkmark" size={14} color={cores.textoSecundario} />
+                      <Text style={styles.seloAtivadoTexto}>Ativado</Text>
                     </View>
                   ) : (
                     <TouchableOpacity
                       style={styles.btnAtivar}
                       onPress={() => abrirModalAtivacao(item)}
+                      activeOpacity={0.85}
                     >
-                      <Text style={styles.btnAtivarText}>+ Ativar</Text>
+                      <Ionicons name="add" size={16} color="#FFFFFF" />
+                      <Text style={styles.btnAtivarTexto}>Ativar</Text>
                     </TouchableOpacity>
                   )}
                 </View>
               );
             }}
             ListEmptyComponent={
-              <Text style={styles.emptyText}>
+              <Text style={styles.vazioTexto}>
                 Nenhum produto encontrado no catálogo global.
               </Text>
             }
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 40 }}
           />
         )}
       </View>
@@ -227,40 +246,43 @@ export default function AtivarProdutoCatalogo({ navigation, route }) {
         onRequestClose={() => setModalVisivel(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Ativar no Estoque</Text>
-            <Text style={styles.modalSubtitle} numberOfLines={2}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitulo}>Ativar no estoque</Text>
+            <Text style={styles.modalSubtitulo} numberOfLines={2}>
               {produtoSelecionado?.nome}
             </Text>
 
-            <Text style={styles.labelInput}>Preço de Venda (R$):</Text>
+            <Text style={styles.rotulo}>Preço de venda (R$)</Text>
             <TextInput
-              style={styles.precoInput}
+              style={styles.input}
               placeholder="0,00"
+              placeholderTextColor={cores.icone}
               keyboardType="numeric"
               value={preco}
               onChangeText={setPreco}
               autoFocus
             />
 
-            <View style={styles.modalActions}>
+            <View style={styles.modalAcoes}>
               <TouchableOpacity
-                style={[styles.btnModal, styles.btnCancelar]}
+                style={[styles.btnModal, styles.btnContorno]}
                 onPress={() => setModalVisivel(false)}
                 disabled={salvando}
+                activeOpacity={0.85}
               >
-                <Text style={styles.btnCancelarText}>Cancelar</Text>
+                <Text style={styles.btnContornoTexto}>Cancelar</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.btnModal, styles.btnConfirmar]}
+                style={[styles.btnModal, styles.btnPrimario]}
                 onPress={confirmarAtivacao}
                 disabled={salvando}
+                activeOpacity={0.85}
               >
                 {salvando ? (
-                  <ActivityIndicator color="#FFF" size="small" />
+                  <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
-                  <Text style={styles.btnConfirmarText}>Salvar</Text>
+                  <Text style={styles.btnPrimarioTexto}>Salvar</Text>
                 )}
               </TouchableOpacity>
             </View>

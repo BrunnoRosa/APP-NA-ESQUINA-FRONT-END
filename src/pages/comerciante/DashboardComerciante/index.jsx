@@ -1,10 +1,41 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';                  // 🆕
 import { useFocusEffect } from '@react-navigation/native';
-import Header from '../../../components/Layout/Header';
+import { LinearGradient } from 'expo-linear-gradient';          // 🆕
+import React, { useCallback, useState } from 'react';
+import {
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useAuth } from '../../../context/AuthContext';
 import api from '../../../services/api';
+import { cores } from '../../../theme';                         // 🆕
 import { styles } from './styles';
+// 🗑️ removido: import Header (o topo agora é o degradê desta tela)
+
+// 🆕 Atalhos da tela: a lista evita repetir 3 blocos quase iguais
+const ACOES = [
+  {
+    rota: 'GerenciarProdutos',
+    icone: 'cube-outline',
+    titulo: 'Gerir catálogo de produtos',
+    descricao: 'Cadastre novos itens, altere preços e ajuste o inventário.',
+  },
+  {
+    rota: 'GerenciarVitrine',
+    icone: 'star-outline',
+    titulo: 'Gerir ofertas e destaques',
+    descricao: 'Escolha os produtos que aparecem em destaque para os clientes.',
+  },
+  {
+    rota: 'GerenciarPedidos',
+    icone: 'receipt-outline',
+    titulo: 'Gerenciar pedidos recebidos',
+    descricao: 'Veja os pedidos dos clientes, aceite compras e altere os status.',
+  },
+];
 
 export default function DashboardComerciante({ navigation }) {
   const { user, signOut } = useAuth();
@@ -12,9 +43,15 @@ export default function DashboardComerciante({ navigation }) {
   const [totalDestaques, setTotalDestaques] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const idMercadinho = user?.idMercadinho || user?.id || 1;
+  // ✏️ Sem fallback para a loja 1: usa só o mercadinho real do comerciante
+  const idMercadinho = user?.idMercadinho;
 
   const carregarMetricas = useCallback(async () => {
+    if (!idMercadinho) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await api.get(`/api/produtos/mercadinho/${idMercadinho}`);
@@ -36,76 +73,89 @@ export default function DashboardComerciante({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Header navigation={navigation} title={user?.nome || user?.email || 'Painel do Comerciante'} />
+      {/* 🆕 Topo com degradê */}
+      <LinearGradient
+        colors={[cores.degradeInicioTopo, cores.degradeInicioBase]}
+        style={styles.topo}
+      >
+        <View style={styles.topoLinha}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.saudacao}>Painel do comerciante</Text>
+            <Text style={styles.nome} numberOfLines={1}>
+              {user?.nome || user?.email || 'Minha loja'}
+            </Text>
+          </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.headerRow}>
-          <Text style={styles.sectionTitle}>Visão Geral 📊</Text>
-          <TouchableOpacity onPress={signOut} style={styles.btnLogout}>
-            <Text style={styles.btnLogoutText}>Sair 👋</Text>
+          <TouchableOpacity
+            style={styles.botaoSair}
+            onPress={signOut}
+            activeOpacity={0.8}
+            accessibilityLabel="Sair da conta"
+          >
+            <Ionicons name="log-out-outline" size={22} color={cores.primaria} />
           </TouchableOpacity>
         </View>
+      </LinearGradient>
 
-        {loading ? (
-          <ActivityIndicator size="large" color="#007BFF" style={{ marginVertical: 20 }} />
-        ) : (
-          <View style={styles.metricsRow}>
-            <View style={[styles.metricCard, styles.metricCardBlue]}>
-              <Text style={styles.metricValue}>{totalProdutos}</Text>
-              <Text style={styles.metricLabel}>Produtos no Catálogo</Text>
+      {/* 🆕 Folha branca arredondada */}
+      <View style={styles.folha}>
+        <ScrollView
+          contentContainerStyle={styles.conteudo}
+          showsVerticalScrollIndicator={false}
+        >
+          {!idMercadinho ? (
+            <View style={styles.aviso}>
+              <Ionicons name="alert-circle-outline" size={22} color={cores.primaria} />
+              <Text style={styles.avisoTexto}>
+                Não foi possível identificar o seu mercadinho. Saia da conta e entre novamente.
+              </Text>
             </View>
+          ) : null}
 
-            <View style={[styles.metricCard, styles.metricCardYellow]}>
-              <Text style={[styles.metricValue, styles.metricValueYellow]}>{totalDestaques}</Text>
-              <Text style={styles.metricLabel}>Em Destaque ⭐</Text>
+          <Text style={styles.secaoTitulo}>Visão geral</Text>
+
+          {loading ? (
+            <ActivityIndicator size="large" color={cores.primaria} style={{ marginVertical: 20 }} />
+          ) : (
+            <View style={styles.metricasLinha}>
+              <View style={styles.metricaCard}>
+                <Text style={styles.metricaValor}>{totalProdutos}</Text>
+                <Text style={styles.metricaRotulo}>Produtos no catálogo</Text>
+              </View>
+
+              <View style={styles.metricaCard}>
+                <View style={styles.metricaValorLinha}>
+                  <Text style={styles.metricaValor}>{totalDestaques}</Text>
+                  <Ionicons name="star" size={18} color={cores.laranjaDistancia} />
+                </View>
+                <Text style={styles.metricaRotulo}>Em destaque</Text>
+              </View>
             </View>
-          </View>
-        )}
+          )}
 
-        <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Ações Rápidas</Text>
+          <Text style={[styles.secaoTitulo, { marginTop: 8 }]}>Ações rápidas</Text>
 
-        <TouchableOpacity
-          style={[styles.actionCard, { borderLeftColor: '#007BFF' }]}
-          onPress={() => navigation.navigate('GerenciarProdutos')}
-          activeOpacity={0.7}
-        >
-          <View style={styles.actionHeader}>
-            <Text style={styles.actionIcon}>📦</Text>
-            <Text style={styles.actionTitle}>Gerir Catálogo de Produtos</Text>
-          </View>
-          <Text style={styles.actionSubtitle}>
-            Cadastre novos itens, altere preços e ajuste o inventário.
-          </Text>
-        </TouchableOpacity>
+          {ACOES.map((acao) => (
+            <TouchableOpacity
+              key={acao.rota}
+              style={styles.acaoCard}
+              onPress={() => navigation.navigate(acao.rota)}
+              activeOpacity={0.8}
+            >
+              <View style={styles.acaoIcone}>
+                <Ionicons name={acao.icone} size={24} color={cores.primaria} />
+              </View>
 
-        <TouchableOpacity
-          style={[styles.actionCard, { borderLeftColor: '#FFC107' }]}
-          onPress={() => navigation.navigate('GerenciarVitrine')}
-          activeOpacity={0.7}
-        >
-          <View style={styles.actionHeader}>
-            <Text style={styles.actionIcon}>⭐</Text>
-            <Text style={styles.actionTitle}>Gerir Ofertas e Destaques</Text>
-          </View>
-          <Text style={styles.actionSubtitle}>
-            Selecione os produtos que aparecem com destaque no topo das buscas dos clientes.
-          </Text>
-        </TouchableOpacity>
+              <View style={styles.acaoTextos}>
+                <Text style={styles.acaoTitulo}>{acao.titulo}</Text>
+                <Text style={styles.acaoDescricao}>{acao.descricao}</Text>
+              </View>
 
-        <TouchableOpacity
-          style={[styles.actionCard, { borderLeftColor: '#28A745' }]}
-          onPress={() => navigation.navigate('GerenciarPedidos')}
-          activeOpacity={0.7}
-        >
-          <View style={styles.actionHeader}>
-            <Text style={styles.actionIcon}>📋</Text>
-            <Text style={styles.actionTitle}>Gerenciar Pedidos Recebidos</Text>
-          </View>
-          <Text style={styles.actionSubtitle}>
-            Visualize pedidos dos clientes, aceite compras e altere os status de entrega.
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
+              <Ionicons name="chevron-forward" size={20} color={cores.textoInativo} />
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
     </View>
   );
 }

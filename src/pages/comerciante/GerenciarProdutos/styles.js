@@ -1,213 +1,233 @@
 import { StyleSheet } from 'react-native';
+import { cores } from '../../../theme';
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
-    padding: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  backButton: {
-    paddingRight: 12,
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: '#007BFF',
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  formCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E9ECEF',
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 12,
-  },
-  input: {
-    backgroundColor: '#F1F3F5',
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: '#333',
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#CED4DA',
-  },
-  btnCadastrar: {
-    backgroundColor: '#28A745',
-    borderRadius: 6,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  btnCadastrarText: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  productCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#E9ECEF',
-  },
-  productMain: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  productName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#333',
-  },
-  productPrice: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#28A745',
-    marginTop: 2,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 8,
-    marginTop: 10,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#F1F3F5',
-  },
-  btnEdit: {
-    backgroundColor: '#E3F2FD',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: '#90CAF9',
-  },
-  btnEditText: {
-    color: '#0D47A1',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  btnDelete: {
-    backgroundColor: '#FFEBEE',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: '#FFCDD2',
-  },
-  btnDeleteText: {
-    color: '#C62828',
-    fontSize: 12,
-    fontWeight: 'bold',
+    backgroundColor: cores.degradeInicioBase,
   },
 
-  // Estilos do Modal de Edição
-  modalOverlay: {
+  // Topo
+  topo: {
+    paddingTop: 48,
+    paddingHorizontal: 20,
+    paddingBottom: 44,
+  },
+  titulo: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: cores.textoTitulo,
+  },
+  subtitulo: {
+    fontSize: 13,
+    color: cores.textoSecundario,
+    marginTop: 2,
+  },
+
+  // Folha branca
+  folha: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    marginTop: -28,
+    overflow: 'hidden',
+  },
+  lista: {
     padding: 20,
+    paddingBottom: 40,
   },
-  modalContent: {
-    width: '100%',
-    maxWidth: 400,
-    backgroundColor: '#FFF',
-    borderRadius: 8,
-    padding: 20,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 14,
-  },
-  modalActions: {
+
+  // Botão do catálogo global
+  btnCatalogo: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 10,
-    marginTop: 14,
-  },
-  btnCancelModal: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-    backgroundColor: '#6C757D',
-  },
-  btnCancelModalText: {
-    color: '#FFF',
-    fontWeight: 'bold',
-  },
-  btnSaveModal: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-    backgroundColor: '#007BFF',
-  },
-  btnSaveModalText: {
-    color: '#FFF',
-    fontWeight: 'bold',
-  },
-  // Botão Catálogo Global
-  btnCatalogoGlobal: {
-    backgroundColor: '#007BFF',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
     alignItems: 'center',
-    marginBottom: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: cores.primaria,
+    borderRadius: 28,
+    paddingVertical: 14,
   },
-  btnCatalogoGlobalText: {
+  btnCatalogoTexto: {
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: 'bold',
   },
 
-  // Divisor entre Catálogo e Cadastro Avulso
-  dividerRow: {
+  // Divisor "ou"
+  divisorLinha: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    gap: 10,
+    marginVertical: 18,
   },
-  dividerLine: {
+  divisorTraco: {
     flex: 1,
     height: 1,
-    backgroundColor: '#DEE2E6',
+    backgroundColor: cores.divisor,
   },
-  dividerText: {
+  divisorTexto: {
     fontSize: 12,
-    color: '#6C757D',
-    marginHorizontal: 8,
-    fontWeight: '500',
+    color: cores.textoSecundario,
+  },
+
+  // Formulário avulso
+  formCard: {
+    backgroundColor: cores.fundoCartao,
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 22,
+  },
+  formTitulo: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: cores.textoTitulo,
+    marginBottom: 12,
+  },
+  input: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: cores.bordaCampo,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: cores.textoCampo,
+    marginBottom: 12,
+  },
+  btnPrimario: {
+    backgroundColor: cores.primaria,
+    borderRadius: 24,
+    paddingVertical: 13,
+    alignItems: 'center',
+  },
+  btnPrimarioTexto: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
+
+  secaoTitulo: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: cores.textoTitulo,
+    marginBottom: 12,
+  },
+  vazioTexto: {
+    fontSize: 14,
+    color: cores.textoSecundario,
+    textAlign: 'center',
+    marginTop: 24,
+  },
+
+  // Cartão do produto
+  produtoCard: {
+    backgroundColor: cores.fundoCartao,
+    borderRadius: 20,
+    padding: 14,
+    marginBottom: 12,
+  },
+  produtoInativo: {
+    opacity: 0.6,
+  },
+  produtoTopo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 10,
+  },
+  produtoNomeLinha: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  produtoNome: {
+    flexShrink: 1,
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: cores.textoTitulo,
+  },
+  produtoPreco: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: cores.primaria,
+  },
+  tagInativo: {
+    backgroundColor: cores.fundoVerMais,
+    borderWidth: 1,
+    borderColor: cores.primaria,
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  tagInativoTexto: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: cores.primaria,
+  },
+
+  // Botões do cartão
+  acoesLinha: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+  },
+  btnAcao: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    borderRadius: 20,
+    paddingVertical: 9,
+  },
+  btnContorno: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: cores.primaria,
+  },
+  btnContornoTexto: {
+    color: cores.primaria,
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  btnSucesso: {
+    backgroundColor: cores.sucesso,
+  },
+  btnSucessoTexto: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+
+  // Modal de edição
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 20,
+    width: '100%',
+    maxWidth: 420,
+    alignSelf: 'center',
+  },
+  modalTitulo: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: cores.textoTitulo,
+    marginBottom: 14,
+  },
+  modalAcoes: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 4,
+  },
+  btnPrimarioModal: {
+    backgroundColor: cores.primaria,
   },
 });

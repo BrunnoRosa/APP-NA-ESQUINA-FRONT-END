@@ -1,204 +1,218 @@
 import { StyleSheet } from 'react-native';
+import { cores } from '../../../theme';
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  // Novo bloco para o cabeçalho com botão de voltar
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E9ECEF',
-  },
-  btnVoltar: {
-    paddingRight: 12,
-  },
-  btnVoltarText: {
-    fontSize: 16,
-    color: '#007BFF',
-    fontWeight: 'bold',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#212529',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    backgroundColor: cores.degradeInicioBase,
   },
 
-  // Campo de Busca
-  searchSection: {
+  // Topo
+  topo: {
+    paddingTop: 48,
+    paddingHorizontal: 20,
+    paddingBottom: 44,
+  },
+  topoLinha: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: '#E9ECEF',
+    gap: 14,
     marginBottom: 16,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
   },
-  searchInput: {
-    flex: 1,
-    marginLeft: 8,
-    fontSize: 15,
-    color: '#212529',
+  botaoVoltar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-
-  // Card do Produto
-  cardItem: {
+  titulo: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: cores.textoTitulo,
+  },
+  busca: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
     backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#E9ECEF',
+    borderRadius: 28,
+    paddingHorizontal: 16,
+    height: 48,
   },
-  imageBox: {
-    width: 50,
-    height: 50,
-    borderRadius: 6,
-    backgroundColor: '#F1F3F5',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  thumbImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 6,
-  },
-  infoBox: {
+  buscaInput: {
     flex: 1,
-    marginRight: 8,
-  },
-  nomeItem: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#212529',
-  },
-  subtextItem: {
-    fontSize: 12,
-    color: '#6C757D',
-    marginTop: 2,
+    color: cores.textoCampo,
+    outlineStyle: 'none',   // tira o contorno azul do navegador (só afeta a web)
   },
 
-  // Botão Ativar
-  btnAtivar: {
-    backgroundColor: '#28A745',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnAtivarText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: 'bold',
-  },
-
-  // Feedbacks
-  loadingContainer: {
+  // Folha branca
+  folha: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    marginTop: -28,
+    overflow: 'hidden',
   },
-  emptyText: {
+  lista: {
+    padding: 20,
+    paddingTop: 28,
+    paddingBottom: 40,
+  },
+  centro: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  vazioTexto: {
+    fontSize: 14,
+    color: cores.textoSecundario,
     textAlign: 'center',
-    color: '#6C757D',
-    fontSize: 14,
     marginTop: 30,
   },
 
-  // Modal
+  // Cartão do item do catálogo
+  cardItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: cores.fundoCartao,
+    borderRadius: 20,
+    padding: 12,
+    marginBottom: 12,
+  },
+  cardAtivado: {
+    opacity: 0.7,
+  },
+  foto: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  imagem: {
+    width: '100%',
+    height: '100%',
+  },
+  info: {
+    flex: 1,
+  },
+  nomeItem: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: cores.textoTitulo,
+  },
+  subtextItem: {
+    fontSize: 11,
+    color: cores.textoSecundario,
+    marginTop: 3,
+  },
+
+  // Botão "Ativar" e selo "Ativado"
+  btnAtivar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: cores.primaria,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  btnAtivarTexto: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  seloAtivado: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  seloAtivadoTexto: {
+    color: cores.textoSecundario,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+
+  // Modal de preço
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    padding: 24,
   },
-  modalContainer: {
-    width: '100%',
+  modalContent: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 24,
     padding: 20,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
+    width: '100%',
+    maxWidth: 420,
+    alignSelf: 'center',
   },
-  modalTitle: {
+  modalTitulo: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#212529',
-    marginBottom: 4,
+    color: cores.textoTitulo,
   },
-  modalSubtitle: {
+  modalSubtitulo: {
     fontSize: 14,
-    color: '#6C757D',
+    color: cores.textoSecundario,
+    marginTop: 4,
     marginBottom: 16,
   },
-  labelInput: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#495057',
+  rotulo: {
+    fontSize: 12,
+    color: cores.textoRotulo,
     marginBottom: 6,
   },
-  precoInput: {
-    backgroundColor: '#F8F9FA',
+  input: {
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#CED4DA',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#28A745',
-    marginBottom: 20,
+    borderColor: cores.bordaCampo,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: cores.textoCampo,
+    marginBottom: 16,
   },
-  modalActions: {
+  modalAcoes: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
     gap: 10,
   },
   btnModal: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 6,
-    minWidth: 90,
+    flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 24,
+    paddingVertical: 12,
   },
-  btnCancelar: {
-    backgroundColor: '#E9ECEF',
+  btnContorno: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: cores.primaria,
   },
-  btnCancelarText: {
-    color: '#495057',
-    fontWeight: '600',
+  btnContornoTexto: {
+    color: cores.primaria,
+    fontSize: 14,
+    fontWeight: 'bold',
   },
-  btnConfirmar: {
-    backgroundColor: '#28A745',
+  btnPrimario: {
+    backgroundColor: cores.primaria,
   },
-  btnConfirmarText: {
+  btnPrimarioTexto: {
     color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: 'bold',
   },
 });
