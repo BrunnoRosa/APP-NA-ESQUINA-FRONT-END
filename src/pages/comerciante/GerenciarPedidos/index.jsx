@@ -1,19 +1,21 @@
-import { Ionicons } from '@expo/vector-icons';                  // 🆕
+import { Ionicons } from '@expo/vector-icons'; // 🆕
 import { useFocusEffect } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';          // 🆕
-import React, { useCallback, useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient'; // 🆕
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Modal, //novidade
   Platform,
   Text,
+  TextInput, // novidade
   TouchableOpacity,
   View,
 } from 'react-native';
 import { useAuth } from '../../../context/AuthContext';
 import api from '../../../services/api';
-import { cores } from '../../../theme';                         // 🆕
+import { cores } from '../../../theme'; // 🆕
 import { styles } from './styles';
 
 // 🆕 Formata número como moeda brasileira
@@ -29,6 +31,8 @@ export default function GerenciarPedidos({ navigation }) {
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [atualizandoId, setAtualizandoId] = useState(null);
+  const [pedidoCancelando, setPedidoCancelando] = useState(null); // id do pedido no modal
+  const [motivo, setMotivo] = useState('');
 
   function exibirAlerta(titulo, mensagem) {
     if (Platform.OS === 'web') {
@@ -93,29 +97,16 @@ export default function GerenciarPedidos({ navigation }) {
     }
   };
 
+  // Abre o modal de cancelamento (funciona em web, Android e iOS)
   const solicitarCancelamento = (idPedido) => {
-    if (Platform.OS === 'web') {
-      const motivo = window.prompt(
-        'Por que deseja cancelar este pedido?\n(Ex: Produto indisponível em estoque)'
-      );
-      if (motivo !== null) { // Se o usuário não clicou em Cancelar no prompt
-        alterarStatus(idPedido, 'CANCELADO', motivo);
-      }
-    } else {
-      Alert.prompt(
-        'Cancelar Pedido',
-        'Informe o motivo do cancelamento:',
-        [
-          { text: 'Voltar', style: 'cancel' },
-          {
-            text: 'Confirmar Cancelamento',
-            style: 'destructive',
-            onPress: (motivo) => alterarStatus(idPedido, 'CANCELADO', motivo),
-          },
-        ],
-        'plain-text'
-      );
-    }
+    setMotivo('');
+    setPedidoCancelando(idPedido);
+  };
+
+  const confirmarCancelamento = () => {
+    const id = pedidoCancelando;
+    setPedidoCancelando(null);
+    alterarStatus(id, 'CANCELADO', motivo);
   };
 
   function getStatusInfo(status) {
@@ -276,6 +267,48 @@ export default function GerenciarPedidos({ navigation }) {
           />
         )}
       </View>
+
+            {/* 🆕 Modal de cancelamento */}
+      <Modal
+        visible={pedidoCancelando !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPedidoCancelando(null)}
+      >
+        <View style={styles.modalFundo}>
+          <View style={styles.modalCaixa}>
+            <Text style={styles.modalTitulo}>Cancelar pedido #{pedidoCancelando}</Text>
+            <Text style={styles.modalTexto}>
+              Informe o motivo. O cliente poderá ver essa mensagem.
+            </Text>
+            <TextInput
+              style={styles.modalCampo}
+              value={motivo}
+              onChangeText={setMotivo}
+              placeholder="Ex.: produto indisponível no estoque"
+              placeholderTextColor="#A0A4A8"
+              multiline
+              maxLength={200}
+            />
+            <View style={styles.modalAcoes}>
+              <TouchableOpacity
+                style={[styles.btnAcao, styles.btnContorno]}
+                onPress={() => setPedidoCancelando(null)}
+                activeOpacity={0.85}
+              >
+                <Text style={[styles.btnTexto, { color: cores.primaria }]}>Voltar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.btnAcao, styles.btnPrimario]}
+                onPress={confirmarCancelamento}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.btnTexto}>Cancelar pedido</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
