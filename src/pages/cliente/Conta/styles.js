@@ -29,6 +29,14 @@ export const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 32,
   },
+
+    botaoEditar: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: cores.fundoVerMais, borderWidth: 1, borderColor: cores.primaria,
+    borderRadius: 24, height: 48, alignSelf: 'stretch', marginBottom: 12,
+  },
+  botaoEditarTexto: { color: cores.primaria, fontSize: 16, fontWeight: 'bold' },
+  
   botaoSair: {
     flexDirection: 'row',
     alignItems: 'center',

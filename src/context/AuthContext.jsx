@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setUser(null); // Isso faz o App.js trocar para a tela de Login imediatamente
     }
-  }
+  } 
 
   useEffect(() => {
     // Registra o callback no api.js para ser chamado se houver um erro 401 global
@@ -96,6 +96,17 @@ export const AuthProvider = ({ children }) => {
       await AsyncStorage.removeItem('@AppNaEsquina:user');
     }
   }
+    // 🆕 Atualiza dados do usuário logado (estado + armazenamento do aparelho)
+  async function atualizarUsuario(parcial) {
+    const novo = { ...user, ...parcial };
+    setUser(novo);
+    try {
+      const salvo = await AsyncStorage.getItem('@AppNaEsquina:user');
+      if (salvo) await AsyncStorage.setItem('@AppNaEsquina:user', JSON.stringify(novo));
+    } catch (error) {
+      console.log('Erro ao atualizar usuário no storage:', error);
+    }
+  }
 
   return (
     <AuthContext.Provider 
@@ -105,6 +116,7 @@ export const AuthProvider = ({ children }) => {
         loading, 
         login, 
         logout,
+        atualizarUsuario,   // 🆕
         // Aliases para evitar quebras se algum componente chamar signIn/signOut
         signIn: login,
         signOut: logout
