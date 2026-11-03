@@ -292,18 +292,18 @@ export default function GerenciarPedidos({ navigation }) {
             />
             <View style={styles.modalAcoes}>
               <TouchableOpacity
-                style={[styles.btnAcao, styles.btnContorno]}
+                style={[styles.btnAcao, styles.btnContorno, styles.modalBotao]}
                 onPress={() => setPedidoCancelando(null)}
                 activeOpacity={0.85}
               >
-                <Text style={[styles.btnTexto, { color: cores.primaria }]}>Voltar</Text>
+                <Text style={[styles.btnTexto, { color: cores.primaria }]} numberOfLines={1}>Voltar</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.btnAcao, styles.btnPrimario]}
+                style={[styles.btnAcao, styles.btnPrimario, styles.modalBotao]}
                 onPress={confirmarCancelamento}
                 activeOpacity={0.85}
               >
-                <Text style={styles.btnTexto}>Cancelar pedido</Text>
+                <Text style={styles.btnTexto} numberOfLines={1}>Confirmar</Text>
               </TouchableOpacity>
             </View>
           </View>
