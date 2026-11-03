@@ -1,7 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 // Contextos
 import { AuthProvider, useAuth } from './src/context/AuthContext';
@@ -69,8 +69,11 @@ function ComercianteTabs() {
 }
 
 // 3. Estrutura Geral de Rotas
+const LARGURA_MAXIMA_CELULAR = 430;
+
 function Routes() {
   const { signed, user, loading } = useAuth();
+  const { width } = useWindowDimensions();
 
   if (loading) {
     return (
@@ -80,7 +83,7 @@ function Routes() {
     );
   }
 
-  return (
+  const navegacao = (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!signed ? (
@@ -108,6 +111,19 @@ function Routes() {
       </Stack.Navigator>
     </NavigationContainer>
   );
+
+  // Telas de entrada (Abertura, Login, Cadastro): ocupam a janela toda, com a foto de fundo
+  // inteira; só o cartão com as opções fica centralizado (já limitado em cada tela).
+  // Telas do app logado, em janela larga (computador): ficam numa "moldura de celular"
+  // centralizada, para manter as proporções reais. No celular nada muda.
+  const usarMoldura = signed && width > LARGURA_MAXIMA_CELULAR + 40;
+  if (!usarMoldura) return navegacao;
+
+  return (
+    <View style={estiloMoldura.fundo}>
+      <View style={estiloMoldura.celular}>{navegacao}</View>
+    </View>
+  );
 }
 
 export default function App() {
@@ -119,3 +135,21 @@ export default function App() {
     </AuthProvider>
   );
 }
+
+const estiloMoldura = StyleSheet.create({
+  fundo: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#2B2B2B',
+  },
+  celular: {
+    flex: 1,
+    width: '100%',
+    maxWidth: LARGURA_MAXIMA_CELULAR,
+    maxHeight: 900,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+  },
+});
