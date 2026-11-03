@@ -21,6 +21,7 @@ import {
   mascaraTelefone,
   somenteDigitos,
   traduzirErro,
+  validarCnpj,
   validarEmail,
   validarEndereco,
   validarHorario,
@@ -107,7 +108,7 @@ export default function Cadastro({ navigation }) {
 
     if (perfil === "COMERCIANTE") {
       resultado.nomeFantasia = validarNomeFantasia(nomeFantasia);
-      //resultado.cnpj = validarCnpj(cnpj);
+      resultado.cnpj = validarCnpj(cnpj);
       resultado.endereco = validarEndereco(endereco);
       resultado.horarioAbertura = validarHorario(
         horarioAbertura,
@@ -370,7 +371,7 @@ export default function Cadastro({ navigation }) {
                   onChangeText={(t) =>
                     aoDigitar("cnpj", setCnpj, mascaraCnpj(t))
                   }
-                  //onBlur={() => aoSair('cnpj', cnpj, validarCnpj)}
+                  onBlur={() => aoSair("cnpj", cnpj, validarCnpj)}
                   erro={erros.cnpj}
                 />
                 <Campo
