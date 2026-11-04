@@ -1,8 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -11,15 +10,20 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { useAuth } from '../../../context/AuthContext';
-import { cores } from '../../../theme';
-import { traduzirErro, validarEmail, validarSenhaLogin } from '../../../utils/validacoes';
-import { styles } from './styles';
+} from "react-native";
+import { useAuth } from "../../../context/AuthContext";
+import { useToast } from "../../../context/ToastContext";
+import { cores } from "../../../theme";
+import {
+  traduzirErro,
+  validarEmail,
+  validarSenhaLogin,
+} from "../../../utils/validacoes";
+import { styles } from "./styles";
 
 export default function Login({ navigation }) {
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [lembrar, setLembrar] = useState(false);
   const [loadingReq, setLoadingReq] = useState(false);
@@ -28,13 +32,8 @@ export default function Login({ navigation }) {
 
   const { login } = useAuth();
 
-  function exibirAlerta(titulo, mensagem) {
-    if (Platform.OS === 'web') {
-      alert(`${titulo}\n${mensagem}`);
-    } else {
-      Alert.alert(titulo, mensagem);
-    }
-  }
+  // Toast central (em vez do alert do navegador). Mesmo formato: exibirAlerta(titulo, mensagem)
+  const { exibirAlerta } = useToast();
 
   async function handleLogin() {
     // 1) Valida no próprio app, antes de gastar uma chamada ao servidor
@@ -44,21 +43,35 @@ export default function Login({ navigation }) {
     };
     setErros(novosErros);
     if (novosErros.email || novosErros.senha) {
-      return; // as mensagens aparecem embaixo dos campos
+      // além da mensagem embaixo do campo, mostra no centro o primeiro erro encontrado
+      exibirAlerta(
+        "Confira os dados",
+        novosErros.email || novosErros.senha,
+        "aviso",
+      );
+      return;
     }
 
     setLoadingReq(true);
     try {
-        await login(email.trim().toLowerCase(), senha, lembrar);
+      await login(email.trim().toLowerCase(), senha, lembrar);
     } catch (error) {
-      console.log('Erro do Login:', error);
+      console.log("Erro do Login:", error);
 
       // traduzirErro() entende todos os tipos de falha (401, 400, 500, sem internet...)
       const erro = traduzirErro(error);
 
-      if (error.response && error.response.status === 400 && Object.keys(erro.campos).length > 0) {
+      if (
+        error.response &&
+        error.response.status === 400 &&
+        Object.keys(erro.campos).length > 0
+      ) {
         // O back apontou campos específicos: mostra embaixo de cada um
-        setErros({ email: erro.campos.email || '', senha: erro.campos.senha || '' });
+        setErros({
+          email: erro.campos.email || "",
+          senha: erro.campos.senha || "",
+        });
+        exibirAlerta(erro.titulo, erro.mensagem, "aviso");
       } else {
         exibirAlerta(erro.titulo, erro.mensagem);
       }
@@ -70,7 +83,7 @@ export default function Login({ navigation }) {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../../../../assets/images/fundo-abertura.jpg')}
+        source={require("../../../../assets/images/fundo-abertura.jpg")}
         style={styles.fotoFundo}
         resizeMode="cover"
       />
@@ -78,7 +91,7 @@ export default function Login({ navigation }) {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
           contentContainerStyle={styles.conteudo}
@@ -86,7 +99,7 @@ export default function Login({ navigation }) {
           showsVerticalScrollIndicator={false}
         >
           <Image
-            source={require('../../../../assets/images/logo-na-esquina.png')}
+            source={require("../../../../assets/images/logo-na-esquina.png")}
             style={styles.logo}
             resizeMode="contain"
             accessibilityLabel="Logo Na Esquina"
@@ -109,14 +122,20 @@ export default function Login({ navigation }) {
               maxLength={150}
               onChangeText={(texto) => {
                 setEmail(texto);
-                if (erros.email) setErros({ ...erros, email: '' }); // some o erro assim que a pessoa corrige
+                if (erros.email) setErros({ ...erros, email: "" }); // some o erro assim que a pessoa corrige
               }}
-              onBlur={() => setErros({ ...erros, email: email ? validarEmail(email) : '' })}
+              onBlur={() =>
+                setErros({ ...erros, email: email ? validarEmail(email) : "" })
+              }
             />
-            {erros.email ? <Text style={styles.textoErro}>{erros.email}</Text> : null}
+            {erros.email ? (
+              <Text style={styles.textoErro}>{erros.email}</Text>
+            ) : null}
 
             <Text style={styles.rotulo}>Senha</Text>
-            <View style={[styles.campoSenha, erros.senha ? styles.campoErro : null]}>
+            <View
+              style={[styles.campoSenha, erros.senha ? styles.campoErro : null]}
+            >
               <TextInput
                 style={styles.campoSenhaInput}
                 placeholder="Digite sua senha"
@@ -126,23 +145,27 @@ export default function Login({ navigation }) {
                 value={senha}
                 onChangeText={(texto) => {
                   setSenha(texto);
-                  if (erros.senha) setErros({ ...erros, senha: '' });
+                  if (erros.senha) setErros({ ...erros, senha: "" });
                 }}
                 onSubmitEditing={handleLogin}
               />
               <TouchableOpacity
                 onPress={() => setMostrarSenha(!mostrarSenha)}
                 accessibilityRole="button"
-                accessibilityLabel={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                accessibilityLabel={
+                  mostrarSenha ? "Ocultar senha" : "Mostrar senha"
+                }
               >
                 <Ionicons
-                  name={mostrarSenha ? 'eye-outline' : 'eye-off-outline'}
+                  name={mostrarSenha ? "eye-outline" : "eye-off-outline"}
                   size={20}
                   color={cores.icone}
                 />
               </TouchableOpacity>
             </View>
-            {erros.senha ? <Text style={styles.textoErro}>{erros.senha}</Text> : null}
+            {erros.senha ? (
+              <Text style={styles.textoErro}>{erros.senha}</Text>
+            ) : null}
 
             <View style={styles.linhaOpcoes}>
               <TouchableOpacity
@@ -152,14 +175,16 @@ export default function Login({ navigation }) {
                 accessibilityState={{ checked: lembrar }}
               >
                 <Ionicons
-                  name={lembrar ? 'checkbox' : 'square-outline'}
+                  name={lembrar ? "checkbox" : "square-outline"}
                   size={20}
                   color={lembrar ? cores.primaria : cores.icone}
                 />
                 <Text style={styles.textoOpcao}>Salvar acesso</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => navigation.navigate('RecuperarSenha')}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate("RecuperarSenha")}
+              >
                 <Text style={styles.linkVermelho}>Esqueceu a senha?</Text>
               </TouchableOpacity>
             </View>
@@ -180,7 +205,7 @@ export default function Login({ navigation }) {
 
             <View style={styles.rodape}>
               <Text style={styles.textoOpcao}>Não possui uma conta? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Cadastro')}>
+              <TouchableOpacity onPress={() => navigation.navigate("Cadastro")}>
                 <Text style={styles.linkVermelho}>Cadastre-se</Text>
               </TouchableOpacity>
             </View>
