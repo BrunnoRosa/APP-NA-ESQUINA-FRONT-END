@@ -1,53 +1,63 @@
-import { Ionicons } from '@expo/vector-icons';                  // 🆕
-import { LinearGradient } from 'expo-linear-gradient';          // 🆕
-import React, { useState } from 'react';
+import { Ionicons } from "@expo/vector-icons"; // 🆕
+import { LinearGradient } from "expo-linear-gradient"; // 🆕
+import { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
-  Image,                                                         // 🆕
+  Image, // 🆕
   KeyboardAvoidingView,
   Platform,
-  ScrollView,                                                    // 🆕
+  ScrollView, // 🆕
   Text,
   TextInput,
   TouchableOpacity,
-  View,                                                          // 🆕
-} from 'react-native';
-import api from '../../../services/api';
-import { cores } from '../../../theme';                         // 🆕
-import { traduzirErro, validarEmail } from '../../../utils/validacoes';
-import { styles } from './styles';
+  View, // 🆕
+} from "react-native";
+import { useToast } from "../../../context/ToastContext"; // 🆕
+import api from "../../../services/api";
+import { cores } from "../../../theme";
+import { traduzirErro, validarEmail } from "../../../utils/validacoes";
+import { styles } from "./styles";
 
 export default function RecuperarSenha({ navigation }) {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [loadingReq, setLoadingReq] = useState(false);
-  const [erroEmail, setErroEmail] = useState('');
+  const [erroEmail, setErroEmail] = useState("");
+  // Toast central (em vez do Alert do celular / alert do navegador)
+  const { exibirAlerta } = useToast();
 
   async function handleRecuperar() {
     // Valida o formato do e-mail antes de chamar o servidor
     const mensagem = validarEmail(email);
     setErroEmail(mensagem);
     if (mensagem) {
+      exibirAlerta("Confira o e-mail", mensagem, "aviso");
       return;
     }
 
     setLoadingReq(true);
     try {
       // Endpoint no Spring Boot responsável por enviar o e-mail de recuperação
-      await api.post('/api/auth/recuperar-senha', { email: email.trim().toLowerCase() });
+      await api.post("/api/auth/recuperar-senha", {
+        email: email.trim().toLowerCase(),
+      });
 
-      Alert.alert(
-        'Sucesso',
-        'Se o e-mail estiver cadastrado, receberá as instruções para redefinir a sua senha.',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
+      // O toast não tem botão "OK" como o Alert: mostra o aviso e já volta para o Login
+      exibirAlerta(
+        "Sucesso",
+        "Se o e-mail estiver cadastrado, receberá as instruções para redefinir a sua senha.",
       );
+      navigation.goBack();
     } catch (error) {
       // 404 = o back-end ainda não tem esta rota (recuperação de senha está pendente no back)
       if (error.response && error.response.status === 404) {
-        Alert.alert('Indisponível', 'A recuperação de senha ainda não está disponível. Fale com a equipe do Na Esquina.');
+        exibirAlerta(
+          "Indisponível",
+          "A recuperação de senha ainda não está disponível. Fale com a equipe do Na Esquina.",
+          "aviso",
+        );
       } else {
         const erro = traduzirErro(error);
-        Alert.alert(erro.titulo, erro.mensagem);
+        exibirAlerta(erro.titulo, erro.mensagem);
       }
     } finally {
       setLoadingReq(false);
@@ -62,7 +72,7 @@ export default function RecuperarSenha({ navigation }) {
     >
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
           contentContainerStyle={styles.conteudo}
@@ -70,7 +80,7 @@ export default function RecuperarSenha({ navigation }) {
           showsVerticalScrollIndicator={false}
         >
           <Image
-            source={require('../../../../assets/images/logo-na-esquina.png')}
+            source={require("../../../../assets/images/logo-na-esquina.png")}
             style={styles.logo}
             resizeMode="contain"
             accessibilityLabel="Logo Na Esquina"
@@ -94,10 +104,12 @@ export default function RecuperarSenha({ navigation }) {
               maxLength={150}
               onChangeText={(texto) => {
                 setEmail(texto);
-                if (erroEmail) setErroEmail('');
+                if (erroEmail) setErroEmail("");
               }}
             />
-            {erroEmail ? <Text style={styles.textoErro}>{erroEmail}</Text> : null}
+            {erroEmail ? (
+              <Text style={styles.textoErro}>{erroEmail}</Text>
+            ) : null}
 
             <TouchableOpacity
               style={styles.botao}
@@ -117,7 +129,11 @@ export default function RecuperarSenha({ navigation }) {
               style={styles.linkVoltar}
               activeOpacity={0.7}
             >
-              <Ionicons name="chevron-back" size={16} color={cores.textoLogin} />
+              <Ionicons
+                name="chevron-back"
+                size={16}
+                color={cores.textoLogin}
+              />
               <Text style={styles.linkVoltarTexto}>Voltar para o login</Text>
             </TouchableOpacity>
           </View>
