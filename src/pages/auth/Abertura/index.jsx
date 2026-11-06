@@ -1,16 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { FontAwesome } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useEffect, useRef, useState } from "react";
 import {
-  View,
+  Animated,
+  Image,
   Text,
   TouchableOpacity,
-  Image,
-  Animated,
-  StyleSheet,
-  Dimensions,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons, FontAwesome } from '@expo/vector-icons'; // Ícones nativos do Expo
-import { styles } from './styles';
+  View
+} from "react-native";
+import { styles } from "./styles";
 
 export default function Abertura({ navigation }) {
   const [etapa, setEtapa] = useState(1);
@@ -19,7 +17,6 @@ export default function Abertura({ navigation }) {
   const fadeTelaFinal = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Etapa 2: Revela o slogan após 1.5s
     const timer1 = setTimeout(() => {
       setEtapa(2);
       Animated.timing(fadeTexto, {
@@ -29,7 +26,6 @@ export default function Abertura({ navigation }) {
       }).start();
     }, 1500);
 
-    // Etapa 3: Transita para a tela final (Foto + Cartão) após 4.5s
     const timer2 = setTimeout(() => {
       setEtapa(3);
       Animated.timing(fadeTelaFinal, {
@@ -45,22 +41,23 @@ export default function Abertura({ navigation }) {
     };
   }, []);
 
-  // --- TELA FINAL (Etapa 3) ---
   if (etapa === 3) {
     return (
       <View style={styles.container}>
         <Image
-          source={require('../../../../assets/images/fundo-abertura.jpg')}
-          style={[StyleSheet.absoluteFillObject, { width: '100%', height: '100%' }]}
+          source={require("../../../../assets/images/fundo-abertura.jpg")}
+          style={styles.imagemFundo}
           resizeMode="cover"
         />
 
         <View style={styles.camadaOverlay} />
 
-        <Animated.View style={[styles.containerFinal, { opacity: fadeTelaFinal }]}>
+        <Animated.View
+          style={[styles.containerFinal, { opacity: fadeTelaFinal }]}
+        >
           <View style={styles.areaLogoFinal}>
             <Image
-              source={require('../../../../assets/images/logo-na-esquina.png')}
+              source={require("../../../../assets/images/logo-na-esquina.png")}
               style={styles.logoFinal}
               resizeMode="contain"
             />
@@ -69,15 +66,17 @@ export default function Abertura({ navigation }) {
           <View style={styles.cartao}>
             <TouchableOpacity
               style={styles.botaoPrincipal}
-              onPress={() => navigation.navigate('Login')}
+              onPress={() => navigation.navigate("Login")}
               activeOpacity={0.8}
             >
-              <Text style={styles.textoBotaoPrincipal}>Já possuo uma conta</Text>
+              <Text style={styles.textoBotaoPrincipal}>
+                Já possuo uma conta
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.botaoSecundario}
-              onPress={() => navigation.navigate('Cadastro')}
+              onPress={() => navigation.navigate("Cadastro")}
               activeOpacity={0.8}
             >
               <Text style={styles.textoBotaoSecundario}>Criar nova conta</Text>
@@ -89,7 +88,6 @@ export default function Abertura({ navigation }) {
               <View style={styles.linhaDivisora} />
             </View>
 
-            {/* Ícones de Redes Sociais usando Vetores Nativos */}
             <View style={styles.areaSociais}>
               <TouchableOpacity style={styles.botaoSocial}>
                 <FontAwesome name="google" size={24} color="#DB4437" />
@@ -107,15 +105,14 @@ export default function Abertura({ navigation }) {
     );
   }
 
-  // --- TELAS DE ABERTURA / SPLASH (Etapas 1 e 2) ---
   return (
     <LinearGradient
-      colors={['#FFDF6D', '#F9C043', '#F3A835']}
+      colors={["#FFDF6D", "#F9C043", "#F3A835"]}
       style={styles.containerSplash}
     >
       <View style={styles.areaConteudoSplash}>
         <Image
-          source={require('../../../../assets/images/logo-na-esquina.png')}
+          source={require("../../../../assets/images/logo-na-esquina.png")}
           style={styles.logoSplash}
           resizeMode="contain"
         />
