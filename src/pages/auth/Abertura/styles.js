@@ -1,7 +1,8 @@
 import { StyleSheet, Dimensions } from 'react-native';
 import { cores } from '../../../theme';
 
-const { width } = Dimensions.get('window');
+// Limita a largura usada nos tamanhos (no computador a janela é bem mais larga que um celular)
+const width = Math.min(Dimensions.get('window').width, 430);
 
 export const styles = StyleSheet.create({
   container: {
@@ -68,6 +69,8 @@ export const styles = StyleSheet.create({
     paddingTop: 30,
     paddingBottom: 36,
     width: '100%',
+    maxWidth: 420,                // em tela grande (navegador) o cartão não estica
+    alignSelf: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.15,

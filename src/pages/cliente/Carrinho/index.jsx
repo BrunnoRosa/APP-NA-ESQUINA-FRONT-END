@@ -1,26 +1,27 @@
-import React, { useState } from 'react';
+import { Ionicons } from "@expo/vector-icons"; // 🆕
+import { LinearGradient } from "expo-linear-gradient"; // 🆕
+import { useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Platform,
   Text,
   TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
-  Platform,
-  Alert,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';          // 🆕
-import { Ionicons } from '@expo/vector-icons';                  // 🆕
-import { useCarrinho } from '../../../context/CarrinhoContext';
-import { useAuth } from '../../../context/AuthContext';
-import api from '../../../services/api';
-import { cores } from '../../../theme';                         // 🆕
-import { styles } from './styles';
+  View,
+} from "react-native";
+import { useAuth } from "../../../context/AuthContext";
+import { useCarrinho } from "../../../context/CarrinhoContext";
+import api from "../../../services/api";
+import { cores } from "../../../theme"; // 🆕
+import { traduzirErro } from "../../../utils/validacoes";
+import { styles } from "./styles";
 
 // 🆕 Formata número como moeda brasileira (usado em 3 lugares)
 function formatarMoeda(valor) {
-  return Number(valor || 0).toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
+  return Number(valor || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
   });
 }
 
@@ -33,7 +34,7 @@ export default function Carrinho({ navigation }) {
   const idMercadinhoContext = context?.idMercadinho;
   const adicionarAoCarrinho = context?.adicionarAoCarrinho;
   const removerDoCarrinho = context?.removerDoCarrinho;
-  const removerItemCompleto = context?.removerItemCompleto;     // 🆕
+  const removerItemCompleto = context?.removerItemCompleto; // 🆕
   const limparCarrinho = context?.limparCarrinho;
 
   const { user } = useAuth();
@@ -42,11 +43,11 @@ export default function Carrinho({ navigation }) {
   // 🆕 Soma das quantidades, para mostrar "N itens"
   const totalUnidades = itens.reduce(
     (soma, item) => soma + (item?.quantidade || 1),
-    0
+    0,
   );
 
   function exibirAlerta(titulo, mensagem) {
-    if (Platform.OS === 'web') {
+    if (Platform.OS === "web") {
       alert(`${titulo}\n${mensagem}`);
     } else {
       Alert.alert(titulo, mensagem);
@@ -68,16 +69,16 @@ export default function Carrinho({ navigation }) {
 
     if (!idMercadinho) {
       exibirAlerta(
-        'Erro no Pedido',
-        'Não foi possível identificar o mercadinho deste pedido. Recarregue a página e tente novamente.'
+        "Erro no Pedido",
+        "Não foi possível identificar o mercadinho deste pedido. Recarregue a página e tente novamente.",
       );
       return;
     }
 
     if (!idCliente) {
       exibirAlerta(
-        'Erro no Pedido',
-        'Usuário não identificado. Por favor, faça login novamente.'
+        "Erro no Pedido",
+        "Usuário não identificado. Por favor, faça login novamente.",
       );
       return;
     }
@@ -94,16 +95,20 @@ export default function Carrinho({ navigation }) {
     setEnviando(true);
 
     try {
-      await api.post('/api/pedidos', payload);
+      await api.post("/api/pedidos", payload);
       if (limparCarrinho) limparCarrinho();
       exibirAlerta(
-        'Pedido Realizado! 🎉',
-        'Seu pedido foi enviado ao mercadinho e já está sendo processado.'
+        "Pedido Realizado! 🎉",
+        "Seu pedido foi enviado ao mercadinho e já está sendo processado.",
       );
-      navigation.navigate('ClienteTabs', { screen: 'MeusPedidos' });
+      navigation.navigate("ClienteTabs", { screen: "MeusPedidos" });
     } catch (error) {
-      console.error('Erro ao finalizar pedido:', error?.response?.data || error);
-      exibirAlerta('Erro', 'Não foi possível enviar o seu pedido. Tente novamente.');
+      console.error(
+        "Erro ao finalizar pedido:",
+        error?.response?.data || error,
+      );
+      const erro = traduzirErro(error);
+      exibirAlerta(erro.titulo, erro.mensagem);
     } finally {
       setEnviando(false);
     }
@@ -132,7 +137,7 @@ export default function Carrinho({ navigation }) {
             <Text style={styles.titulo}>Meu carrinho</Text>
             {!carrinhoVazio && (
               <Text style={styles.subtitulo}>
-                {totalUnidades} {totalUnidades === 1 ? 'item' : 'itens'}
+                {totalUnidades} {totalUnidades === 1 ? "item" : "itens"}
               </Text>
             )}
           </View>
@@ -174,7 +179,7 @@ export default function Carrinho({ navigation }) {
                   <View style={styles.itemCard}>
                     <View style={styles.itemInfo}>
                       <Text style={styles.itemNome} numberOfLines={2}>
-                        {item?.nome || 'Produto'}
+                        {item?.nome || "Produto"}
                       </Text>
                       <Text style={styles.itemPreco}>
                         {formatarMoeda(item?.preco)}
@@ -184,25 +189,37 @@ export default function Carrinho({ navigation }) {
                     <View style={styles.itemAcoes}>
                       {/* 🆕 Lixeira: remove o item inteiro */}
                       <TouchableOpacity
-                        onPress={() => removerItemCompleto && removerItemCompleto(idItem)}
+                        onPress={() =>
+                          removerItemCompleto && removerItemCompleto(idItem)
+                        }
                         activeOpacity={0.7}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                       >
-                        <Ionicons name="trash-outline" size={20} color={cores.textoInativo} />
+                        <Ionicons
+                          name="trash-outline"
+                          size={20}
+                          color={cores.textoInativo}
+                        />
                       </TouchableOpacity>
 
                       <View style={styles.qtdControls}>
                         <TouchableOpacity
                           style={styles.btnQtd}
-                          onPress={() => removerDoCarrinho && removerDoCarrinho(idItem)}
+                          onPress={() =>
+                            removerDoCarrinho && removerDoCarrinho(idItem)
+                          }
                           activeOpacity={0.8}
                         >
                           <Ionicons name="remove" size={16} color="#FFFFFF" />
                         </TouchableOpacity>
-                        <Text style={styles.qtdText}>{item?.quantidade || 1}</Text>
+                        <Text style={styles.qtdText}>
+                          {item?.quantidade || 1}
+                        </Text>
                         <TouchableOpacity
                           style={styles.btnQtd}
-                          onPress={() => adicionarAoCarrinho && adicionarAoCarrinho(item)}
+                          onPress={() =>
+                            adicionarAoCarrinho && adicionarAoCarrinho(item)
+                          }
                           activeOpacity={0.8}
                         >
                           <Ionicons name="add" size={16} color="#FFFFFF" />
@@ -218,7 +235,9 @@ export default function Carrinho({ navigation }) {
             <View style={styles.rodape}>
               <View style={styles.totalLinha}>
                 <Text style={styles.totalRotulo}>Total do pedido</Text>
-                <Text style={styles.totalValor}>{formatarMoeda(valorTotal)}</Text>
+                <Text style={styles.totalValor}>
+                  {formatarMoeda(valorTotal)}
+                </Text>
               </View>
 
               {enviando ? (
@@ -229,7 +248,9 @@ export default function Carrinho({ navigation }) {
                   onPress={finalizarPedido}
                   activeOpacity={0.85}
                 >
-                  <Text style={styles.botaoPrimarioTexto}>Confirmar pedido</Text>
+                  <Text style={styles.botaoPrimarioTexto}>
+                    Confirmar pedido
+                  </Text>
                 </TouchableOpacity>
               )}
             </View>

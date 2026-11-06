@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -12,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useToast } from "../../../context/ToastContext";
 import api from "../../../services/api";
 import { cores } from "../../../theme";
 import {
@@ -21,6 +21,7 @@ import {
   mascaraTelefone,
   somenteDigitos,
   traduzirErro,
+  validarCnpj,
   validarEmail,
   validarEndereco,
   validarHorario,
@@ -71,13 +72,8 @@ export default function Cadastro({ navigation }) {
   // Aviso geral acima do botão quando o envio foi barrado por erros
   const [avisoForm, setAvisoForm] = useState("");
 
-  function exibirAlerta(titulo, mensagem) {
-    if (Platform.OS === "web") {
-      alert(`${titulo}\n${mensagem}`);
-    } else {
-      Alert.alert(titulo, mensagem);
-    }
-  }
+  // Toast central (em vez do alert do navegador). Mesmo formato: exibirAlerta(titulo, mensagem)
+  const { exibirAlerta } = useToast();
 
   // Atualiza o erro de UM campo sem mexer nos outros
   function definirErro(campo, mensagem) {
@@ -107,7 +103,7 @@ export default function Cadastro({ navigation }) {
 
     if (perfil === "COMERCIANTE") {
       resultado.nomeFantasia = validarNomeFantasia(nomeFantasia);
-      //resultado.cnpj = validarCnpj(cnpj);
+      resultado.cnpj = validarCnpj(cnpj);
       resultado.endereco = validarEndereco(endereco);
       resultado.horarioAbertura = validarHorario(
         horarioAbertura,
@@ -140,7 +136,12 @@ export default function Cadastro({ navigation }) {
     setErros(errosEncontrados);
 
     if (Object.keys(errosEncontrados).length > 0) {
-      setAvisoForm("Corrija os campos destacados em vermelho.");
+      // o aviso agora aparece no centro da tela, em vez do texto pequeno acima do botão
+      exibirAlerta(
+        "Confira os dados",
+        "Corrija os campos destacados em vermelho.",
+        "aviso",
+      );
       return;
     }
     setAvisoForm("");
@@ -195,10 +196,11 @@ export default function Cadastro({ navigation }) {
       } else if (error.response && error.response.status === 409) {
         // E-mail já cadastrado: mostra direto embaixo do campo e-mail
         definirErro("email", erro.mensagem);
+        exibirAlerta(erro.titulo, erro.mensagem); // "Já cadastrado" (vermelho)
       } else if (Object.keys(erro.campos).length > 0) {
         // O back apontou campos específicos: mostra embaixo de cada um
         setErros(erro.campos);
-        setAvisoForm("Corrija os campos destacados em vermelho.");
+        exibirAlerta("Confira os dados", erro.mensagem, "aviso");
       } else {
         exibirAlerta(erro.titulo, erro.mensagem);
       }
@@ -370,7 +372,7 @@ export default function Cadastro({ navigation }) {
                   onChangeText={(t) =>
                     aoDigitar("cnpj", setCnpj, mascaraCnpj(t))
                   }
-                  //onBlur={() => aoSair('cnpj', cnpj, validarCnpj)}
+                  onBlur={() => aoSair("cnpj", cnpj, validarCnpj)}
                   erro={erros.cnpj}
                 />
                 <Campo

@@ -51,7 +51,7 @@ export default function Abertura({ navigation }) {
       <View style={styles.container}>
         <Image
           source={require('../../../../assets/images/fundo-abertura.jpg')}
-          style={StyleSheet.absoluteFillObject}
+          style={[StyleSheet.absoluteFillObject, { width: '100%', height: '100%' }]}
           resizeMode="cover"
         />
 

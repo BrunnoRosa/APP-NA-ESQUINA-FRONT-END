@@ -2,14 +2,27 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Platform } from 'react-native';
 
-// Substitua pelo IP local da sua máquina se mudar de rede
-const IP_MAQUINA = '192.168.100.14';
+// IP do computador que roda o back-end, usado só pelo app no celular (Expo Go).
+// Para mudar sem mexer no código: crie o arquivo .env.local com
+//   EXPO_PUBLIC_API_IP=192.168.0.10
+// (o .env.local não vai para o GitHub). Se não existir, usa o IP padrão abaixo.
+const IP_PADRAO = '192.168.100.14';
+const IP_MAQUINA = process.env.EXPO_PUBLIC_API_IP || IP_PADRAO;
 const PORTA_BACKEND = '8080';
 
-// No navegador Web usa localhost; no dispositivo móvel usa o IP da máquina na rede local
-const API_URL = Platform.OS === 'web'
-  ? `http://localhost:${PORTA_BACKEND}`
-  : `http://${IP_MAQUINA}:${PORTA_BACKEND}`;
+// Escolhe o endereço do back-end:
+//  - Navegador no próprio computador (localhost:8082)  -> localhost
+//  - Navegador em outro aparelho (ex.: Safari no iPhone abrindo http://IP:8082)
+//    -> o mesmo IP que está na barra de endereço, com a porta do back-end
+//  - App no celular (Expo Go)                          -> IP do .env.local ou padrão
+function descobrirHost() {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    return window.location.hostname || 'localhost';
+  }
+  return IP_MAQUINA;
+}
+
+const API_URL = `http://${descobrirHost()}:${PORTA_BACKEND}`;
 
 const api = axios.create({
   baseURL: API_URL, 

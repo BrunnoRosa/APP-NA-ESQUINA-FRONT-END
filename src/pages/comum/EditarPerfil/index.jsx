@@ -89,9 +89,16 @@ export default function EditarPerfil({ navigation }) {
       // 2) Dados do mercado (comerciante): procura na lista pública
       if (ehComerciante && user?.idMercadinho) {
         try {
-          const res = await api.get('/api/mercadinhos');
-          const lista = Array.isArray(res.data) ? res.data : res.data?.content || [];
-          const meu = lista.find((m) => Number(m.idMercadinho) === Number(user.idMercadinho));
+          // Busca só o mercado do comerciante; se a rota não existir, cai na lista
+          let meu = null;
+          try {
+            const res = await api.get(`/api/mercadinhos/${user.idMercadinho}`);
+            meu = res.data;
+          } catch (e) {
+            const res = await api.get('/api/mercadinhos');
+            const lista = Array.isArray(res.data) ? res.data : res.data?.content || [];
+            meu = lista.find((m) => Number(m.idMercadinho) === Number(user.idMercadinho));
+          }
           if (meu) {
             setNomeFantasia(meu.nomeFantasia || '');
             setEndereco(meu.endereco || '');
