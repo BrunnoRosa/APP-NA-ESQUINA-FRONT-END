@@ -234,5 +234,13 @@ export const styles = StyleSheet.create({
   modalAcoes: {
     flexDirection: 'row',
     gap: 10,
+    marginTop: 4,
+  },
+  // Os dois botões dividem a largura do modal por igual
+  modalBotao: {
+    flex: 1,
+    height: 48,
+    paddingVertical: 0,
+    paddingHorizontal: 8,
   },
 });
