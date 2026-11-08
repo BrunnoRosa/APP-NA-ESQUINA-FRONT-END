@@ -12,6 +12,7 @@ import {
   View
 } from "react-native";
 import { useAuth } from "../../../context/AuthContext";
+import { usePedidosPendentes } from '../../../context/PedidosPendentesContext';
 import { useToast } from '../../../context/ToastContext';
 import api from "../../../services/api";
 import { cores } from "../../../theme"; // 🆕
@@ -36,6 +37,7 @@ export default function GerenciarPedidos({ navigation }) {
 
     // Toast central (em vez do alert do navegador). Mesmo formato: exibirAlerta(titulo, mensagem)
   const { exibirAlerta } = useToast();
+  const { atualizar: atualizarPendentes } = usePedidosPendentes();   // atualiza o selo do menu
 
   const carregarPedidos = useCallback(
     async (isSilent = false) => {
@@ -92,6 +94,7 @@ export default function GerenciarPedidos({ navigation }) {
         `Pedido #${idPedido} atualizado com sucesso!`,
       );
       carregarPedidos(true);
+      atualizarPendentes();
     } catch (error) {
       console.error("Erro ao atualizar status:", error);
       const erro = traduzirErro(error);

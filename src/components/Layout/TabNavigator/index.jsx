@@ -2,6 +2,7 @@ import { Text, TouchableOpacity, View, useWindowDimensions } from 'react-native'
 import { styles } from './styles';
 
 import { Ionicons } from '@expo/vector-icons';
+import { usePedidosPendentes } from '../../../context/PedidosPendentesContext';
 import { cores } from '../../../theme';
 
 // Cada tela tem um ícone base. Fora da aba ativa usamos a versão "-outline".
@@ -18,6 +19,8 @@ const ICONES = {
 
 export default function TabNavigator({ state, descriptors, navigation }) {
   const { width } = useWindowDimensions();
+  const { pendentes } = usePedidosPendentes();
+  const textoSelo = pendentes > 99 ? '99+' : String(pendentes);
   const isDesktop = width >= 900;
   const isMerchant = state.routes.some((route) =>
     ['DashboardComerciante', 'GerenciarProdutos', 'GerenciarPedidos', 'GerenciarVitrine'].includes(route.name)
@@ -62,6 +65,8 @@ export default function TabNavigator({ state, descriptors, navigation }) {
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
           const isFocused = state.index === index;
+          // Selo com a quantidade de pedidos esperando o comerciante
+          const mostrarSelo = route.name === 'GerenciarPedidos' && pendentes > 0;
 
           const onPress = () => {
             const event = navigation.emit({
@@ -80,7 +85,9 @@ export default function TabNavigator({ state, descriptors, navigation }) {
               key={route.key}
               accessibilityRole="button"
               accessibilityState={isFocused ? { selected: true } : {}}
-              accessibilityLabel={options.tabBarAccessibilityLabel}
+              accessibilityLabel={
+                mostrarSelo ? `Pedidos, ${pendentes} aguardando` : options.tabBarAccessibilityLabel
+              }
               testID={options.tabBarTestID}
               onPress={onPress}
               activeOpacity={0.8}
@@ -90,11 +97,18 @@ export default function TabNavigator({ state, descriptors, navigation }) {
                 isDesktop && isFocused && styles.tabItemDesktopActive,
               ]}
             >
-              <Ionicons
-                name={getTabIcon(route.name, isFocused)}
-                size={isDesktop ? 21 : 24}
-                color={isFocused ? cores.primaria : cores.textoInativo}
-              />
+              <View style={styles.iconeArea}>
+                <Ionicons
+                  name={getTabIcon(route.name, isFocused)}
+                  size={isDesktop ? 21 : 24}
+                  color={isFocused ? cores.primaria : cores.textoInativo}
+                />
+                {mostrarSelo && !isDesktop && (
+                  <View style={styles.selo}>
+                    <Text style={styles.seloTexto}>{textoSelo}</Text>
+                  </View>
+                )}
+              </View>
               <Text
                 style={[
                   styles.tabLabel,
@@ -105,6 +119,11 @@ export default function TabNavigator({ state, descriptors, navigation }) {
               >
                 {getTabLabel(route.name)}
               </Text>
+              {mostrarSelo && isDesktop && (
+                <View style={styles.seloDesktop}>
+                  <Text style={styles.seloTexto}>{textoSelo}</Text>
+                </View>
+              )}
             </TouchableOpacity>
           );
         })}
