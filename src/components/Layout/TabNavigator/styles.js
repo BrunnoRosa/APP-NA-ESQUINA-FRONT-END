@@ -142,6 +142,43 @@ export const styles = StyleSheet.create({
     fontWeight: '800',
   },
 
+  // Selo de pedidos pendentes (menu do comerciante)
+  iconeArea: {
+    position: 'relative',
+  },
+
+  selo: {
+    position: 'absolute',
+    top: -6,
+    right: -12,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    paddingHorizontal: 4,
+    backgroundColor: cores.primaria,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  seloDesktop: {
+    marginLeft: 'auto',
+    minWidth: 24,
+    height: 24,
+    borderRadius: 12,
+    paddingHorizontal: 7,
+    backgroundColor: cores.primaria,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  seloTexto: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+
   sidebarFooter: {
     marginTop: 'auto',
     paddingTop: 18,

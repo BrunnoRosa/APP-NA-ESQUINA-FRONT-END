@@ -10,6 +10,7 @@ import {
 // Contextos
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import { CarrinhoProvider } from "./src/context/CarrinhoContext";
+import { PedidosPendentesProvider } from "./src/context/PedidosPendentesContext";
 import { ToastProvider } from "./src/context/ToastContext";
 
 // Componente Customizado do TabBar
@@ -159,9 +160,11 @@ export default function App() {
     // ToastProvider por fora de tudo: o aviso sobrevive à troca de tela
     <ToastProvider>
       <AuthProvider>
-        <CarrinhoProvider>
-          <Routes />
-        </CarrinhoProvider>
+        <PedidosPendentesProvider>
+          <CarrinhoProvider>
+            <Routes />
+          </CarrinhoProvider>
+        </PedidosPendentesProvider>
       </AuthProvider>
     </ToastProvider>
   );
