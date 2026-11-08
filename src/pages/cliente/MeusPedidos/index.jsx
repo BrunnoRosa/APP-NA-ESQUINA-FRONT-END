@@ -4,14 +4,13 @@ import { LinearGradient } from "expo-linear-gradient"; // 🆕
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
-  Platform,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { useAuth } from "../../../context/AuthContext";
+import { useToast } from '../../../context/ToastContext';
 import api from "../../../services/api";
 import { cores } from "../../../theme"; // 🆕
 import { traduzirErro } from "../../../utils/validacoes";
@@ -31,13 +30,8 @@ export default function MeusPedidos({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [atualizandoId, setAtualizandoId] = useState(null);
 
-  function exibirAlerta(titulo, mensagem) {
-    if (Platform.OS === "web") {
-      alert(`${titulo}\n${mensagem}`);
-    } else {
-      Alert.alert(titulo, mensagem);
-    }
-  }
+    // Toast central (em vez do alert do navegador). Mesmo formato: exibirAlerta(titulo, mensagem)
+  const { exibirAlerta } = useToast();
 
   const carregarPedidos = useCallback(
     async (isSilent = false) => {

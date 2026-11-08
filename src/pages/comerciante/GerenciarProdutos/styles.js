@@ -23,6 +23,14 @@ export const styles = StyleSheet.create({
     color: cores.textoSecundario,
     marginTop: 2,
   },
+  topoDesktop: {
+    paddingTop: 34,
+    paddingHorizontal: 40,
+    paddingBottom: 52,
+  },
+  tituloDesktop: {
+    fontSize: 30,
+  },
 
   // Folha branca
   folha: {
@@ -36,6 +44,17 @@ export const styles = StyleSheet.create({
   lista: {
     padding: 20,
     paddingBottom: 40,
+  },
+  folhaDesktop: {
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+  },
+  listaDesktop: {
+    width: '100%',
+    maxWidth: 1320,
+    alignSelf: 'center',
+    padding: 32,
+    paddingBottom: 56,
   },
 
   // Botão do catálogo global
@@ -52,6 +71,13 @@ export const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: 'bold',
+  },
+  btnCatalogoDesktop: {
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'flex-start',
+    borderRadius: 14,
+    paddingVertical: 15,
   },
 
   // Divisor "ou"
@@ -70,6 +96,9 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     color: cores.textoSecundario,
   },
+  divisorLinhaDesktop: {
+    maxWidth: 720,
+  },
 
   // Formulário avulso
   formCard: {
@@ -77,6 +106,14 @@ export const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 16,
     marginBottom: 22,
+  },
+  formCardDesktop: {
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'flex-start',
+    borderRadius: 18,
+    padding: 20,
+    marginBottom: 30,
   },
   formTitulo: {
     fontSize: 16,
@@ -113,6 +150,10 @@ export const styles = StyleSheet.create({
     color: cores.textoTitulo,
     marginBottom: 12,
   },
+  secaoTituloDesktop: {
+    fontSize: 21,
+    marginBottom: 18,
+  },
   vazioTexto: {
     fontSize: 14,
     color: cores.textoSecundario,
@@ -126,6 +167,15 @@ export const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 14,
     marginBottom: 12,
+  },
+  produtosLinha: {
+    gap: 14,
+  },
+  produtoCardDesktop: {
+    flex: 1,
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 14,
   },
   produtoInativo: {
     opacity: 0.6,
