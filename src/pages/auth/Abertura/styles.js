@@ -1,21 +1,32 @@
-import { StyleSheet, Dimensions } from 'react-native';
-import { cores } from '../../../theme';
+import { Dimensions, Platform, StyleSheet } from "react-native";
+import { cores } from "../../../theme";
 
-// Limita a largura usada nos tamanhos (no computador a janela é bem mais larga que um celular)
-const width = Math.min(Dimensions.get('window').width, 430);
+const { width, height } = Dimensions.get("window");
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: Platform.OS === "web" ? "100vw" : width,
+    height: Platform.OS === "web" ? "100vh" : height,
+    overflow: "hidden",
+  },
+  imagemFundo: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: Platform.OS === "web" ? "100vw" : width,
+    height: Platform.OS === "web" ? "100vh" : height,
   },
   containerSplash: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: Platform.OS === "web" ? "100vw" : width,
+    height: Platform.OS === "web" ? "100vh" : height,
+    justifyContent: "center",
+    alignItems: "center",
   },
   areaConteudoSplash: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 24,
   },
   logoSplash: {
@@ -24,37 +35,35 @@ export const styles = StyleSheet.create({
     marginBottom: 20,
   },
   areaTexto: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 10,
   },
   textoSlogan: {
-    color: '#D03010',
+    color: "#D03010",
     fontSize: 16,
-    textAlign: 'center',
-    fontWeight: '500',
+    textAlign: "center",
+    fontWeight: "500",
   },
   textoDestaque: {
-    color: '#D03010',
+    color: "#D03010",
     fontSize: 16,
-    textAlign: 'center',
-    fontWeight: 'bold',
+    textAlign: "center",
+    fontWeight: "bold",
     marginTop: 4,
   },
-
-  /* --- Estilos da Tela Final (Foto e Cartão) --- */
   camadaOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+    backgroundColor: "rgba(0, 0, 0, 0.15)",
   },
   containerFinal: {
     flex: 1,
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   areaLogoFinal: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginTop: 40,
   },
   logoFinal: {
@@ -62,66 +71,64 @@ export const styles = StyleSheet.create({
     height: 160,
   },
   cartao: {
-    backgroundColor: cores.fundoCartaoLogin || '#FFFFFF',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+    backgroundColor: cores.fundoCartaoLogin || "#FFFFFF",
+    width: "100%",
+    maxWidth: 450,
+    alignSelf: "center",
+    borderRadius: 32,
+    marginBottom: Platform.OS === "web" ? 40 : 0,
     paddingHorizontal: 28,
     paddingTop: 30,
     paddingBottom: 36,
-    width: '100%',
-    maxWidth: 420,                // em tela grande (navegador) o cartão não estica
-    alignSelf: 'center',
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 10,
   },
   botaoPrincipal: {
-    backgroundColor: cores.primaria || '#E52421',
+    backgroundColor: cores.primaria || "#E52421",
     borderRadius: 25,
     paddingVertical: 14,
-    alignItems: 'center',
+    alignItems: "center",
   },
   textoBotaoPrincipal: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   botaoSecundario: {
-    backgroundColor: cores.fundoBotaoSecundario || '#FFFFFF',
+    backgroundColor: cores.fundoBotaoSecundario || "#FFFFFF",
     borderWidth: 1.5,
-    borderColor: cores.primaria || '#E52421',
+    borderColor: cores.primaria || "#E52421",
     borderRadius: 25,
     paddingVertical: 14,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 12,
   },
   textoBotaoSecundario: {
-    color: cores.primaria || '#E52421',
+    color: cores.primaria || "#E52421",
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: "600",
   },
-
-  /* Divisor e Redes Sociais */
   areaAcessarCom: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginVertical: 20,
   },
   linhaDivisora: {
     flex: 1,
     height: 1,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: "#E0E0E0",
   },
   textoAcessarCom: {
     marginHorizontal: 12,
     fontSize: 12,
-    color: '#888888',
+    color: "#888888",
   },
   areaSociais: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     gap: 24,
   },
   botaoSocial: {
@@ -130,6 +137,6 @@ export const styles = StyleSheet.create({
   iconeSocial: {
     width: 24,
     height: 24,
-    resizeMode: 'contain',
+    resizeMode: "contain",
   },
 });
