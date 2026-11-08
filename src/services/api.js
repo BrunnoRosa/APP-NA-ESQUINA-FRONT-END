@@ -34,7 +34,9 @@ api.interceptors.request.use(
   async (config) => {
     const token = await AsyncStorage.getItem('@AppNaEsquina:token');
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      // Remove aspas extras caso tenham sido salvas junto com a String no AsyncStorage
+      const tokenFormatado = token.replace(/^"(.*)"$/, '$1').trim();
+      config.headers.Authorization = `Bearer ${tokenFormatado}`;
     }
     return config;
   },
