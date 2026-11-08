@@ -11,6 +11,7 @@ import {
 
 import BotaoCarrinho from '../../../components/BotaoCarrinho';
 import CabecalhoInicio from '../../../components/CabecalhoInicio';
+import MapaMercados from '../../../components/MapaMercados';
 import MercadoCarrossel from '../../../components/MercadoCarrossel';
 import OfertaCard from '../../../components/OfertaCard';
 import { useCarrinho } from '../../../context/CarrinhoContext';
@@ -223,6 +224,8 @@ export default function HomeCliente({ navigation }) {
               </TouchableOpacity>
             ))}
           </View>
+
+          <MapaMercados mercadinhos={mercadinhos} navigation={navigation} />
 
           {loading ? (
             <View style={styles.loadingContainer}>
