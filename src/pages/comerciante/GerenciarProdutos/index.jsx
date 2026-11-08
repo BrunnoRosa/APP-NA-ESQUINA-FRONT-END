@@ -12,13 +12,19 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { useAuth } from '../../../context/AuthContext';
+import { useToast } from '../../../context/ToastContext';
 import api from '../../../services/api';
 import { cores } from '../../../theme'; // 🆕
+import { traduzirErro, validarNomeProduto, validarPreco } from '../../../utils/validacoes';
 import { styles } from './styles';
 
 export default function GerenciarProdutos({ navigation }) {
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 900;
+  const colunasProdutos = width >= 1440 ? 3 : width >= 900 ? 2 : 1;
   const { user } = useAuth();
   const [produtos, setProdutos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,13 +40,8 @@ export default function GerenciarProdutos({ navigation }) {
   const [editNome, setEditNome] = useState('');
   const [editPreco, setEditPreco] = useState('');
 
-  function exibirAlerta(titulo, mensagem) {
-    if (Platform.OS === 'web') {
-      alert(`${titulo}\n${mensagem}`);
-    } else {
-      Alert.alert(titulo, mensagem);
-    }
-  }
+    // Toast central (em vez do alert do navegador). Mesmo formato: exibirAlerta(titulo, mensagem)
+  const { exibirAlerta } = useToast();
 
   // Obter o ID do Mercadinho resolvendo a divergência entre comerciante_id e id_mercadinho
   const obterIdMercadinho = useCallback(async () => {
@@ -110,17 +111,18 @@ export default function GerenciarProdutos({ navigation }) {
   };
 
   const handleCadastrar = async () => {
-    if (!nome.trim() || !preco.trim()) {
-      exibirAlerta('Atenção', 'Preencha o nome e o preço do produto.');
+        // Cada validação devolve o texto do erro (ou '' se estiver OK) e mostra no toast
+    const erroNome = validarNomeProduto(nome);
+    if (erroNome) {
+      exibirAlerta('Atenção', erroNome, 'aviso');
       return;
     }
-
-        // ✏️ valida o preço antes de chamar a API
+    const erroPreco = validarPreco(preco);
+    if (erroPreco) {
+      exibirAlerta('Atenção', erroPreco, 'aviso');
+      return;
+    }
     const precoNumerico = parseFloat(preco.replace(',', '.'));
-    if (isNaN(precoNumerico) || precoNumerico <= 0) {
-      exibirAlerta('Atenção', 'Informe um preço válido maior que zero.');
-      return;
-    }
 
     const idMercadinho = await obterIdMercadinho();
     if (!idMercadinho) {
@@ -147,7 +149,8 @@ export default function GerenciarProdutos({ navigation }) {
       await carregarProdutos();
     } catch (error) {
       console.error('❌ Erro ao cadastrar produto:', error);
-      exibirAlerta('Erro', 'Não foi possível cadastrar o produto.');
+      const erro = traduzirErro(error);
+      exibirAlerta(erro.titulo, erro.mensagem);
     } finally {
       setSalvando(false);
     }
@@ -162,17 +165,17 @@ export default function GerenciarProdutos({ navigation }) {
   };
 
   const handleSalvarEdicao = async () => {
-    if (!editNome.trim() || !editPreco.trim()) {
-      exibirAlerta('Atenção', 'Nome e preço são obrigatórios.');
+    const erroNome = validarNomeProduto(editNome);
+    if (erroNome) {
+      exibirAlerta('Atenção', erroNome, 'aviso');
       return;
     }
-
-        // ✏️ valida o preço antes de chamar a API
+    const erroPreco = validarPreco(editPreco);
+    if (erroPreco) {
+      exibirAlerta('Atenção', erroPreco, 'aviso');
+      return;
+    }
     const precoEditado = parseFloat(editPreco.replace(',', '.'));
-    if (isNaN(precoEditado) || precoEditado <= 0) {
-      exibirAlerta('Atenção', 'Informe um preço válido maior que zero.');
-      return;
-    }
 
     setSalvando(true);
     const idProd = produtoEditando.idProduto || produtoEditando.id;
@@ -189,7 +192,8 @@ export default function GerenciarProdutos({ navigation }) {
       await carregarProdutos();
     } catch (error) {
       console.error('Erro ao atualizar produto:', error);
-      exibirAlerta('Erro', 'Não foi possível atualizar o produto.');
+      const erro = traduzirErro(error);
+      exibirAlerta(erro.titulo, erro.mensagem);
     } finally {
       setSalvando(false);
     }
@@ -208,7 +212,8 @@ export default function GerenciarProdutos({ navigation }) {
         await carregarProdutos();
       } catch (error) {
         console.error(`Erro ao ${acaoTexto} produto:`, error);
-        exibirAlerta('Erro', `Não foi possível ${acaoTexto} o produto.`);
+        const erro = traduzirErro(error);
+        exibirAlerta(erro.titulo, erro.mensagem);
       }
     };
 
@@ -238,7 +243,7 @@ export default function GerenciarProdutos({ navigation }) {
   const cabecalhoLista = (
     <View>
       <TouchableOpacity
-        style={styles.btnCatalogo}
+        style={[styles.btnCatalogo, isDesktop && styles.btnCatalogoDesktop]}
         onPress={handleIrParaCatalogoGlobal}
         activeOpacity={0.85}
       >
@@ -246,13 +251,13 @@ export default function GerenciarProdutos({ navigation }) {
         <Text style={styles.btnCatalogoTexto}>Buscar no catálogo global</Text>
       </TouchableOpacity>
 
-      <View style={styles.divisorLinha}>
+      <View style={[styles.divisorLinha, isDesktop && styles.divisorLinhaDesktop]}>
         <View style={styles.divisorTraco} />
         <Text style={styles.divisorTexto}>ou cadastre um produto avulso</Text>
         <View style={styles.divisorTraco} />
       </View>
 
-      <View style={styles.formCard}>
+      <View style={[styles.formCard, isDesktop && styles.formCardDesktop]}>
         <Text style={styles.formTitulo}>Novo produto avulso</Text>
         <TextInput
           style={styles.input}
@@ -283,7 +288,7 @@ export default function GerenciarProdutos({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.secaoTitulo}>Produtos no seu estoque</Text>
+      <Text style={[styles.secaoTitulo, isDesktop && styles.secaoTituloDesktop]}>Produtos no seu estoque</Text>
     </View>
   );
 
@@ -292,9 +297,9 @@ export default function GerenciarProdutos({ navigation }) {
       {/* 🆕 Topo com degradê (aba: sem botão voltar) */}
       <LinearGradient
         colors={[cores.degradeInicioTopo, cores.degradeInicioBase]}
-        style={styles.topo}
+        style={[styles.topo, isDesktop && styles.topoDesktop]}
       >
-        <Text style={styles.titulo}>Meus produtos</Text>
+        <Text style={[styles.titulo, isDesktop && styles.tituloDesktop]}>Meus produtos</Text>
         {!loading && produtos.length > 0 && (
           <Text style={styles.subtitulo}>
             {produtos.length} {produtos.length === 1 ? 'produto' : 'produtos'}
@@ -303,10 +308,13 @@ export default function GerenciarProdutos({ navigation }) {
       </LinearGradient>
 
       {/* 🆕 Folha branca arredondada */}
-      <View style={styles.folha}>
+      <View style={[styles.folha, isDesktop && styles.folhaDesktop]}>
         <FlatList
+          key={isDesktop ? `desktop-${colunasProdutos}` : 'mobile'}
           data={loading ? [] : produtos}
-          contentContainerStyle={styles.lista}
+          numColumns={colunasProdutos}
+          columnWrapperStyle={colunasProdutos > 1 ? styles.produtosLinha : undefined}
+          contentContainerStyle={[styles.lista, isDesktop && styles.listaDesktop]}
           keyExtractor={(item, index) => String(item?.idProduto || item?.id || index)}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -324,7 +332,7 @@ export default function GerenciarProdutos({ navigation }) {
             const nomeExibicao = item.nome || item.nomePersonalizado || item.produtoBase?.nome || 'Produto sem nome';
 
             return (
-              <View style={[styles.produtoCard, !isAtivo && styles.produtoInativo]}>
+              <View style={[styles.produtoCard, isDesktop && styles.produtoCardDesktop, !isAtivo && styles.produtoInativo]}>
                 <View style={styles.produtoTopo}>
                   <View style={styles.produtoNomeLinha}>
                     <Text style={styles.produtoNome} numberOfLines={1}>{nomeExibicao}</Text>

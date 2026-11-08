@@ -1,21 +1,21 @@
-import { Ionicons } from '@expo/vector-icons';                  // 🆕
-import { LinearGradient } from 'expo-linear-gradient';          // 🆕
-import React, { useCallback, useEffect, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons'; // 🆕
+import { LinearGradient } from 'expo-linear-gradient'; // 🆕
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Image,
   Modal,
-  Platform,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { useAuth } from '../../../context/AuthContext';
+import { useToast } from '../../../context/ToastContext';
 import api from '../../../services/api';
-import { cores } from '../../../theme';                         // 🆕
+import { cores } from '../../../theme'; // 🆕
+import { validarPreco } from '../../../utils/validacoes';
 import { styles } from './styles';
 
 export default function AtivarProdutoCatalogo({ navigation, route }) {
@@ -34,13 +34,8 @@ export default function AtivarProdutoCatalogo({ navigation, route }) {
   const [preco, setPreco] = useState('');
   const [salvando, setSalvando] = useState(false);
 
-  function exibirAlerta(titulo, mensagem) {
-    if (Platform.OS === 'web') {
-      alert(`${titulo}\n${mensagem}`);
-    } else {
-      Alert.alert(titulo, mensagem);
-    }
-  }
+    // Toast central (em vez do alert do navegador). Mesmo formato: exibirAlerta(titulo, mensagem)
+  const { exibirAlerta } = useToast();
 
   const carregarProdutosJaAtivados = useCallback(async () => {
     if (!idMercadinho) return;
@@ -91,8 +86,9 @@ export default function AtivarProdutoCatalogo({ navigation, route }) {
   const confirmarAtivacao = async () => {
     const precoNumerico = parseFloat(preco.replace(',', '.'));
 
-    if (!preco || isNaN(precoNumerico) || precoNumerico <= 0) {
-      exibirAlerta('Atenção', 'Informe um preço válido maior que zero.');
+    const erroPreco = validarPreco(preco);
+    if (erroPreco) {
+      exibirAlerta('Atenção', erroPreco, 'aviso');
       return;
     }
 
@@ -130,11 +126,11 @@ export default function AtivarProdutoCatalogo({ navigation, route }) {
 
     } catch (error) {
       console.error('Erro ao ativar produto:', error);
-      const mensagem = error.response?.data?.message || 'Erro ao ativar produto no estoque.';
+      const erro = traduzirErro(error);
 
       setModalVisivel(false);
       setTimeout(() => {
-        exibirAlerta('Erro', mensagem);
+        exibirAlerta(erro.titulo, erro.mensagem);
       }, 100);
     } finally {
       setSalvando(false);

@@ -4,16 +4,15 @@ import { LinearGradient } from "expo-linear-gradient"; // 🆕
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
-  Modal, //novidade
-  Platform,
+  Modal,
   Text,
   TextInput, // novidade
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { useAuth } from "../../../context/AuthContext";
+import { useToast } from '../../../context/ToastContext';
 import api from "../../../services/api";
 import { cores } from "../../../theme"; // 🆕
 import { traduzirErro } from "../../../utils/validacoes";
@@ -35,13 +34,8 @@ export default function GerenciarPedidos({ navigation }) {
   const [pedidoCancelando, setPedidoCancelando] = useState(null); // id do pedido no modal
   const [motivo, setMotivo] = useState("");
 
-  function exibirAlerta(titulo, mensagem) {
-    if (Platform.OS === "web") {
-      alert(`${titulo}\n${mensagem}`);
-    } else {
-      Alert.alert(titulo, mensagem);
-    }
-  }
+    // Toast central (em vez do alert do navegador). Mesmo formato: exibirAlerta(titulo, mensagem)
+  const { exibirAlerta } = useToast();
 
   const carregarPedidos = useCallback(
     async (isSilent = false) => {

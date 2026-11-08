@@ -3,19 +3,19 @@ import { LinearGradient } from "expo-linear-gradient"; // 🆕
 import { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
-  Platform,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { useAuth } from "../../../context/AuthContext";
 import { useCarrinho } from "../../../context/CarrinhoContext";
+import { useToast } from '../../../context/ToastContext';
 import api from "../../../services/api";
 import { cores } from "../../../theme"; // 🆕
 import { traduzirErro } from "../../../utils/validacoes";
 import { styles } from "./styles";
+
 
 // 🆕 Formata número como moeda brasileira (usado em 3 lugares)
 function formatarMoeda(valor) {
@@ -46,13 +46,8 @@ export default function Carrinho({ navigation }) {
     0,
   );
 
-  function exibirAlerta(titulo, mensagem) {
-    if (Platform.OS === "web") {
-      alert(`${titulo}\n${mensagem}`);
-    } else {
-      Alert.alert(titulo, mensagem);
-    }
-  }
+    // Toast central (em vez do alert do navegador). Mesmo formato: exibirAlerta(titulo, mensagem)
+  const { exibirAlerta } = useToast();
 
   const finalizarPedido = async () => {
     if (!itens || itens.length === 0) return;

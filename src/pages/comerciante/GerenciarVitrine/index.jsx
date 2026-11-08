@@ -4,17 +4,17 @@ import { LinearGradient } from 'expo-linear-gradient'; // 🆕
 import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
-  Image, // 🆕
-  Platform,
+  Image,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { useAuth } from '../../../context/AuthContext';
+import { useToast } from '../../../context/ToastContext';
 import api from '../../../services/api';
 import { cores } from '../../../theme'; // 🆕
+import { traduzirErro } from '../../../utils/validacoes';
 import { styles } from './styles';
 
 export default function GerenciarVitrine({ navigation }) {
@@ -26,13 +26,8 @@ export default function GerenciarVitrine({ navigation }) {
   // ✏️ Sem fallback para a loja 1: usa só o mercadinho real do comerciante
   const idMercadinho = user?.idMercadinho;
 
-  function exibirAlerta(titulo, mensagem) {
-    if (Platform.OS === 'web') {
-      alert(`${titulo}\n${mensagem}`);
-    } else {
-      Alert.alert(titulo, mensagem);
-    }
-  }
+    // Toast central (em vez do alert do navegador). Mesmo formato: exibirAlerta(titulo, mensagem)
+  const { exibirAlerta } = useToast();
 
   const carregarProdutos = useCallback(async () => {
     if (!idMercadinho) {
@@ -70,7 +65,8 @@ export default function GerenciarVitrine({ navigation }) {
       carregarProdutos();
     } catch (error) {
       console.error('Erro ao alternar destaque:', error);
-      exibirAlerta('Erro', 'Não foi possível alterar a visibilidade do destaque.');
+      const erro = traduzirErro(error);
+      exibirAlerta(erro.titulo, erro.mensagem);
     } finally {
       setAlterandoId(null);
     }

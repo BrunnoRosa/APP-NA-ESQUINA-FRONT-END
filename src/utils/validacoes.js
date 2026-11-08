@@ -188,6 +188,25 @@ export function validarOrdemHorarios(abertura, fechamento) {
   return "";
 }
 
+export function validarNomeProduto(valor) {
+  const nome = limparEspacos(valor);
+  if (!nome) return 'O nome do produto é obrigatório.';
+  if (nome.length < 2) return 'O nome do produto deve ter pelo menos 2 caracteres.';
+  if (nome.length > 100) return 'O nome do produto deve ter no máximo 100 caracteres.';
+  return '';
+}
+
+// Aceita 5, 5,99 ou 5.99 (até 2 casas). Rejeita letras, negativo, zero e valores absurdos.
+export function validarPreco(valor) {
+  const texto = String(valor ?? '').trim();
+  if (!texto) return 'O preço é obrigatório.';
+  if (!/^\d+([.,]\d{1,2})?$/.test(texto)) return 'Preço inválido. Use só números, ex.: 5,99.';
+  const n = parseFloat(texto.replace(',', '.'));
+  if (!(n > 0)) return 'O preço deve ser maior que zero.';
+  if (n > 99999.99) return 'O preço máximo é R$ 99.999,99.';
+  return '';
+}
+
 // ---------------------------------------------------------------- máscaras
 // Máscara = formata o texto enquanto a pessoa digita.
 
