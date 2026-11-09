@@ -54,18 +54,36 @@ export default function MapaMercados({ mercadinhos = [], navigation }) {
   // Mantém o campo igual ao endereço atual (GPS ou digitado)
   useEffect(() => { setTexto(endereco || ''); }, [endereco]);
 
-  // Geocodifica o endereço de cada mercado (um por vez)
+  // Geocodifica o endereço de cada mercado (um por vez, respeitando limites de taxa)
   useEffect(() => {
     const minha = ++versao.current;
     (async () => {
-      const novos = {};
       for (const m of mercadinhos) {
         if (versao.current !== minha) return;
+        const idM = m.idMercadinho || m.id;
+
+        // 1. Se a loja já veio com latitude e longitude da API, usa diretamente
+        if ((m.latitude || m.lat) && (m.longitude || m.lng)) {
+          const lat = Number(m.latitude || m.lat);
+          const lng = Number(m.longitude || m.lng);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            setPontos((atual) => (atual[idM] ? atual : { ...atual, [idM]: { lat, lng } }));
+            continue;
+          }
+        }
+
+        // 2. Se já foi geocodificado anteriormente, pula para não repetir requisição
+        if (pontos[idM]) continue;
+
         if (!m.endereco) continue;
+
+        // 3. Aguarda 1 segundo entre chamadas para evitar Erro 429 (Too Many Requests)
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        if (versao.current !== minha) return;
+
         const p = await geocodificar(m.endereco, origem);
         if (p) {
-          novos[m.idMercadinho] = p;
-          setPontos((atual) => ({ ...atual, [m.idMercadinho]: p }));
+          setPontos((atual) => ({ ...atual, [idM]: p }));
         }
       }
     })();
@@ -74,13 +92,22 @@ export default function MapaMercados({ mercadinhos = [], navigation }) {
   const lojas = useMemo(() => {
     return mercadinhos
       .map((m) => {
-        const p = pontos[m.idMercadinho];
+        const idM = m.idMercadinho || m.id;
+        const p =
+          pontos[idM] ||
+          ((m.latitude || m.lat) && (m.longitude || m.lng)
+            ? { lat: Number(m.latitude || m.lat), lng: Number(m.longitude || m.lng) }
+            : null);
         if (!p) return null;
         const km = calcularDistanciaKm(origem.lat, origem.lng, p.lat, p.lng);
         if (km === null) return null;
         return {
-          id: m.idMercadinho, nome: m.nomeFantasia, endereco: m.endereco,
-          lat: p.lat, lng: p.lng, km,
+          id: idM,
+          nome: m.nomeFantasia || m.nome,
+          endereco: m.endereco,
+          lat: p.lat,
+          lng: p.lng,
+          km,
         };
       })
       .filter(Boolean);
@@ -90,7 +117,7 @@ export default function MapaMercados({ mercadinhos = [], navigation }) {
   const html = useMemo(() => montarHtml(origem, dentro), [origem, pontos, mercadinhos]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function abrirLoja(id) {
-    const m = mercadinhos.find((x) => x.idMercadinho === id);
+    const m = mercadinhos.find((x) => (x.idMercadinho || x.id) === id);
     if (m) navigation.navigate('DetalhesMercadinho', { idMercadinho: id, mercadinho: m });
   }
 
@@ -132,7 +159,11 @@ export default function MapaMercados({ mercadinhos = [], navigation }) {
     );
   }
 
-  const faltando = mercadinhos.filter((m) => m.endereco && !pontos[m.idMercadinho]).length;
+  const faltando = mercadinhos.filter((m) => {
+    const idM = m.idMercadinho || m.id;
+    const temCoords = (m.latitude || m.lat) && (m.longitude || m.lng);
+    return m.endereco && !pontos[idM] && !temCoords;
+  }).length;
 
   return (
     <View style={styles.container}>
