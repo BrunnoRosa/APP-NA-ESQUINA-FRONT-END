@@ -10,6 +10,7 @@ import {
 // Contextos
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import { CarrinhoProvider } from "./src/context/CarrinhoContext";
+import { LocalizacaoProvider } from "./src/context/LocalizacaoContext";
 import { PedidosPendentesProvider } from "./src/context/PedidosPendentesContext";
 import { ToastProvider } from "./src/context/ToastContext";
 
@@ -161,9 +162,11 @@ export default function App() {
     <ToastProvider>
       <AuthProvider>
         <PedidosPendentesProvider>
+          <LocalizacaoProvider>
           <CarrinhoProvider>
             <Routes />
           </CarrinhoProvider>
+          </LocalizacaoProvider>
         </PedidosPendentesProvider>
       </AuthProvider>
     </ToastProvider>

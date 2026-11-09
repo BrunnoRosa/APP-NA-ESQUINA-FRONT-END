@@ -1,6 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import * as Location from 'expo-location';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -11,47 +9,13 @@ import {
   View,
 } from 'react-native';
 
+import { useLocalizacao } from '../../context/LocalizacaoContext';
 import { cores } from '../../theme';
+import { geocodificar } from '../../utils/geocodificacao';
 import { calcularDistanciaKm } from '../../utils/mercado';
 import { styles } from './styles';
 
 const RAIO_KM = 2;
-const SALVADOR = { lat: -12.9714, lng: -38.5014 };
-const CHAVE_ENDERECO = '@naesquina:enderecoCliente';
-const PREFIXO_GEO = '@naesquina:geo:';
-
-const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
-
-// Endereço -> { lat, lng } via OpenStreetMap (Nominatim). Cacheia o resultado.
-async function geocodificar(texto, perto) {
-  const chave = PREFIXO_GEO + texto.trim().toLowerCase();
-  try {
-    const guardado = await AsyncStorage.getItem(chave);
-    if (guardado) return JSON.parse(guardado);
-  } catch (e) {}
-
-  const tentativas = [texto, `${texto}, Salvador, Bahia`];
-  for (const q of tentativas) {
-    let url =
-      'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=' +
-      encodeURIComponent(q);
-    if (perto) {
-      const d = 0.3;
-      url += `&viewbox=${perto.lng - d},${perto.lat + d},${perto.lng + d},${perto.lat - d}`;
-    }
-    try {
-      const resp = await fetch(url, { headers: { 'Accept-Language': 'pt-BR' } });
-      const lista = await resp.json();
-      if (Array.isArray(lista) && lista.length > 0) {
-        const ponto = { lat: parseFloat(lista[0].lat), lng: parseFloat(lista[0].lon) };
-        try { await AsyncStorage.setItem(chave, JSON.stringify(ponto)); } catch (e) {}
-        return ponto;
-      }
-    } catch (e) {}
-    await esperar(1100); // Nominatim: no máximo 1 requisição por segundo
-  }
-  return null;
-}
 
 function montarHtml(origem, lojas) {
   const dados = JSON.stringify({ origem, lojas, raio: RAIO_KM * 1000, cor: cores.primaria || '#FF3131' })
@@ -79,26 +43,16 @@ mapa.fitBounds(circulo.getBounds(),{padding:[10,10]});
 }
 
 export default function MapaMercados({ mercadinhos = [], navigation }) {
-  const [origem, setOrigem] = useState(SALVADOR);
+  const {
+    origem, endereco, carregando, aviso,
+    usarMinhaLocalizacao, definirEndereco,
+  } = useLocalizacao();
   const [texto, setTexto] = useState('');
   const [pontos, setPontos] = useState({}); // id -> {lat,lng}
-  const [carregando, setCarregando] = useState(false);
-  const [aviso, setAviso] = useState('');
   const versao = useRef(0);
 
-  // Carrega o último endereço usado
-  useEffect(() => {
-    (async () => {
-      try {
-        const salvo = await AsyncStorage.getItem(CHAVE_ENDERECO);
-        if (salvo) {
-          const { endereco, lat, lng } = JSON.parse(salvo);
-          setTexto(endereco || '');
-          setOrigem({ lat, lng });
-        }
-      } catch (e) {}
-    })();
-  }, []);
+  // Mantém o campo igual ao endereço atual (GPS ou digitado)
+  useEffect(() => { setTexto(endereco || ''); }, [endereco]);
 
   // Geocodifica o endereço de cada mercado (um por vez)
   useEffect(() => {
@@ -134,40 +88,6 @@ export default function MapaMercados({ mercadinhos = [], navigation }) {
 
   const dentro = lojas.filter((l) => l.km <= RAIO_KM);
   const html = useMemo(() => montarHtml(origem, dentro), [origem, pontos, mercadinhos]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  async function buscarEndereco() {
-    if (!texto.trim()) return;
-    setCarregando(true);
-    setAviso('');
-    const p = await geocodificar(texto, origem);
-    if (p) {
-      setOrigem(p);
-      try { await AsyncStorage.setItem(CHAVE_ENDERECO, JSON.stringify({ endereco: texto, ...p })); } catch (e) {}
-    } else {
-      setAviso('Não encontramos esse endereço. Tente incluir rua, bairro e cidade.');
-    }
-    setCarregando(false);
-  }
-
-  async function usarMinhaLocalizacao() {
-    setCarregando(true);
-    setAviso('');
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setAviso('Permissão de localização negada. Digite seu endereço.');
-      } else {
-        const pos = await Location.getCurrentPositionAsync({});
-        const p = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setOrigem(p);
-        setTexto('');
-        try { await AsyncStorage.setItem(CHAVE_ENDERECO, JSON.stringify({ endereco: '', ...p })); } catch (e) {}
-      }
-    } catch (e) {
-      setAviso('Não foi possível obter sua localização. Digite seu endereço.');
-    }
-    setCarregando(false);
-  }
 
   function abrirLoja(id) {
     const m = mercadinhos.find((x) => x.idMercadinho === id);
@@ -226,10 +146,10 @@ export default function MapaMercados({ mercadinhos = [], navigation }) {
           placeholderTextColor="#999999"
           value={texto}
           onChangeText={setTexto}
-          onSubmitEditing={buscarEndereco}
+          onSubmitEditing={() => definirEndereco(texto)}
           returnKeyType="search"
         />
-        <TouchableOpacity style={styles.botaoBuscar} onPress={buscarEndereco} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.botaoBuscar} onPress={() => definirEndereco(texto)} activeOpacity={0.8}>
           {carregando ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
