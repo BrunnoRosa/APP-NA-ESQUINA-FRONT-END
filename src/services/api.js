@@ -22,7 +22,11 @@ function descobrirHost() {
   return IP_MAQUINA;
 }
 
-const API_URL = `http://${descobrirHost()}:${PORTA_BACKEND}`;
+// Produção (Railway): defina EXPO_PUBLIC_API_URL com o endereço público do back-end,
+// ex.: https://na-esquina-back.up.railway.app  (sem barra no final).
+// Se não existir, usa o modo desenvolvimento (descobrirHost + porta 8080).
+const URL_PRODUCAO = (process.env.EXPO_PUBLIC_API_URL || '').trim().replace(/\/+$/, '');
+const API_URL = URL_PRODUCAO || `http://${descobrirHost()}:${PORTA_BACKEND}`;
 
 const api = axios.create({
   baseURL: API_URL, 
