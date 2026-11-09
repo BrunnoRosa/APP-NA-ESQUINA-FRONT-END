@@ -33,9 +33,6 @@ import {
 } from "../../../utils/validacoes";
 import { styles } from "./styles";
 
-// Campo reutilizável: rótulo em cima + caixa de texto + mensagem de erro embaixo.
-// "estiloExterno" permite ajustar a largura quando dois campos ficam lado a lado.
-// "erro" é o texto do erro (vazio = campo OK): quando existe, a borda fica vermelha.
 function Campo({ rotulo, estiloExterno, erro, ...props }) {
   return (
     <View style={estiloExterno}>
@@ -51,48 +48,41 @@ function Campo({ rotulo, estiloExterno, erro, ...props }) {
 }
 
 export default function Cadastro({ navigation }) {
-  // Estados do Usuário
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [confirmarSenha, setConfirmarSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [mostrarConfirmarSenha, setMostrarConfirmarSenha] = useState(false);
   const [telefone, setTelefone] = useState("");
   const [perfil, setPerfil] = useState("CLIENTE");
   const [loading, setLoading] = useState(false);
 
-  // Estados do Mercadinho (só usados se perfil for COMERCIANTE)
   const [nomeFantasia, setNomeFantasia] = useState("");
   const [cnpj, setCnpj] = useState("");
   const [endereco, setEndereco] = useState("");
   const [horarioAbertura, setHorarioAbertura] = useState("");
   const [horarioFechamento, setHorarioFechamento] = useState("");
 
-  // Mensagens de erro por campo: { nome: '...', email: '...', ... }. Vazio = campo OK.
   const [erros, setErros] = useState({});
-  // Aviso geral acima do botão quando o envio foi barrado por erros
   const [avisoForm, setAvisoForm] = useState("");
 
-  // Toast central (em vez do alert do navegador). Mesmo formato: exibirAlerta(titulo, mensagem)
   const { exibirAlerta } = useToast();
 
-  // Atualiza o erro de UM campo sem mexer nos outros
   function definirErro(campo, mensagem) {
     setErros((atuais) => ({ ...atuais, [campo]: mensagem }));
   }
 
-  // Ao digitar: guarda o valor (já com máscara, se houver) e apaga o erro daquele campo
   function aoDigitar(campo, definirValor, valor) {
     definirValor(valor);
     if (erros[campo]) definirErro(campo, "");
     if (avisoForm) setAvisoForm("");
   }
 
-  // Ao sair do campo: valida na hora (só se a pessoa digitou alguma coisa)
   function aoSair(campo, valor, validar) {
     if (valor) definirErro(campo, validar(valor));
   }
 
-  // Valida o formulário inteiro e devolve { campo: mensagem } só com os campos que têm erro
   function validarFormulario() {
     const resultado = {
       nome: validarNome(nome),
@@ -101,29 +91,31 @@ export default function Cadastro({ navigation }) {
       senha: validarSenha(senha),
     };
 
+    if (senha !== confirmarSenha) {
+      resultado.confirmarSenha = "As senhas não coincidem.";
+    }
+
     if (perfil === "COMERCIANTE") {
       resultado.nomeFantasia = validarNomeFantasia(nomeFantasia);
       resultado.cnpj = validarCnpj(cnpj);
       resultado.endereco = validarEndereco(endereco);
       resultado.horarioAbertura = validarHorario(
         horarioAbertura,
-        "horário de abertura",
+        "horário de abertura"
       );
       resultado.horarioFechamento = validarHorario(
         horarioFechamento,
-        "horário de fechamento",
+        "horário de fechamento"
       );
 
-      // Só compara abertura x fechamento se os dois horários estão no formato certo
       if (!resultado.horarioAbertura && !resultado.horarioFechamento) {
         resultado.horarioFechamento = validarOrdemHorarios(
           horarioAbertura,
-          horarioFechamento,
+          horarioFechamento
         );
       }
     }
 
-    // Remove os campos sem erro
     Object.keys(resultado).forEach((campo) => {
       if (!resultado[campo]) delete resultado[campo];
     });
@@ -131,16 +123,14 @@ export default function Cadastro({ navigation }) {
   }
 
   async function handleCadastro() {
-    // 1) Valida tudo no app, antes de chamar o servidor
     const errosEncontrados = validarFormulario();
     setErros(errosEncontrados);
 
     if (Object.keys(errosEncontrados).length > 0) {
-      // o aviso agora aparece no centro da tela, em vez do texto pequeno acima do botão
       exibirAlerta(
         "Confira os dados",
         "Corrija os campos destacados em vermelho.",
-        "aviso",
+        "aviso"
       );
       return;
     }
@@ -150,17 +140,16 @@ export default function Cadastro({ navigation }) {
     let usuarioCriado = false;
 
     try {
-      // 2) Cria o Usuário primeiro (manda telefone só com números e nome sem espaços sobrando)
       const userResponse = await api.post("/api/auth/register", {
         nome: limparEspacos(nome),
         email: email.trim().toLowerCase(),
         senha,
+        confirmarSenha,
         telefone: somenteDigitos(telefone),
         perfil,
       });
       usuarioCriado = true;
 
-      // 3) Se for comerciante, cria o Mercadinho em seguida
       if (perfil === "COMERCIANTE") {
         const idComerciante = userResponse.data.id;
 
@@ -168,10 +157,8 @@ export default function Cadastro({ navigation }) {
           nomeFantasia: limparEspacos(nomeFantasia),
           cnpj: somenteDigitos(cnpj),
           endereco: limparEspacos(endereco),
-          // Valores de exemplo (ajustar quando usar mapa/GPS)
           latitude: -12.9714,
           longitude: -38.5014,
-          // Formato esperado pelo LocalTime no Java (HH:mm:ss)
           horarioAbertura: horarioAbertura + ":00",
           horarioFechamento: horarioFechamento + ":00",
           idComerciante: idComerciante,
@@ -180,7 +167,7 @@ export default function Cadastro({ navigation }) {
 
       exibirAlerta(
         "Sucesso!",
-        "Conta criada com sucesso. Faça login para continuar.",
+        "Conta criada com sucesso. Faça login para continuar."
       );
       navigation.navigate("Login");
     } catch (error) {
@@ -188,17 +175,14 @@ export default function Cadastro({ navigation }) {
       const erro = traduzirErro(error);
 
       if (usuarioCriado) {
-        // A conta foi criada, mas o mercadinho não. (O back ainda não faz as duas coisas juntas.)
         exibirAlerta(
           "Conta criada, mas o mercadinho não foi salvo",
-          `${erro.mensagem}\n\nSua conta já existe. Avise a equipe para vincular o mercadinho.`,
+          `${erro.mensagem}\n\nSua conta já existe. Avise a equipe para vincular o mercadinho.`
         );
       } else if (error.response && error.response.status === 409) {
-        // E-mail já cadastrado: mostra direto embaixo do campo e-mail
         definirErro("email", erro.mensagem);
-        exibirAlerta(erro.titulo, erro.mensagem); // "Já cadastrado" (vermelho)
+        exibirAlerta(erro.titulo, erro.mensagem);
       } else if (Object.keys(erro.campos).length > 0) {
-        // O back apontou campos específicos: mostra embaixo de cada um
         setErros(erro.campos);
         exibirAlerta("Confira os dados", erro.mensagem, "aviso");
       } else {
@@ -235,7 +219,6 @@ export default function Cadastro({ navigation }) {
           />
 
           <View style={styles.cartao}>
-            {/* Seletor de perfil */}
             <View style={styles.seletor}>
               <TouchableOpacity
                 style={[
@@ -346,7 +329,48 @@ export default function Cadastro({ navigation }) {
               </Text>
             )}
 
-            {/* --- CAMPOS DO MERCADINHO (só para Dono do comércio) --- */}
+            <Text style={styles.rotulo}>Confirmar Senha</Text>
+            <View
+              style={[
+                styles.campoSenha,
+                erros.confirmarSenha ? styles.campoErro : null,
+              ]}
+            >
+              <TextInput
+                style={styles.campoSenhaInput}
+                placeholder="Confirme sua senha"
+                placeholderTextColor={cores.icone}
+                secureTextEntry={!mostrarConfirmarSenha}
+                autoCapitalize="none"
+                maxLength={72}
+                value={confirmarSenha}
+                onChangeText={(t) =>
+                  aoDigitar("confirmarSenha", setConfirmarSenha, t)
+                }
+                onBlur={() => {
+                  if (confirmarSenha && confirmarSenha !== senha) {
+                    definirErro("confirmarSenha", "As senhas não coincidem.");
+                  }
+                }}
+              />
+              <TouchableOpacity
+                onPress={() => setMostrarConfirmarSenha(!mostrarConfirmarSenha)}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  mostrarConfirmarSenha ? "Ocultar senha" : "Mostrar senha"
+                }
+              >
+                <Ionicons
+                  name={mostrarConfirmarSenha ? "eye-outline" : "eye-off-outline"}
+                  size={20}
+                  color={cores.icone}
+                />
+              </TouchableOpacity>
+            </View>
+            {erros.confirmarSenha ? (
+              <Text style={styles.textoErro}>{erros.confirmarSenha}</Text>
+            ) : null}
+
             {perfil === "COMERCIANTE" && (
               <View>
                 <Text style={styles.subtitulo}>Dados do mercadinho</Text>
@@ -396,12 +420,12 @@ export default function Cadastro({ navigation }) {
                       aoDigitar(
                         "horarioAbertura",
                         setHorarioAbertura,
-                        mascaraHorario(t),
+                        mascaraHorario(t)
                       )
                     }
                     onBlur={() =>
                       aoSair("horarioAbertura", horarioAbertura, (v) =>
-                        validarHorario(v, "horário de abertura"),
+                        validarHorario(v, "horário de abertura")
                       )
                     }
                     erro={erros.horarioAbertura}
@@ -417,12 +441,12 @@ export default function Cadastro({ navigation }) {
                       aoDigitar(
                         "horarioFechamento",
                         setHorarioFechamento,
-                        mascaraHorario(t),
+                        mascaraHorario(t)
                       )
                     }
                     onBlur={() =>
                       aoSair("horarioFechamento", horarioFechamento, (v) =>
-                        validarHorario(v, "horário de fechamento"),
+                        validarHorario(v, "horário de fechamento")
                       )
                     }
                     erro={erros.horarioFechamento}
@@ -430,7 +454,6 @@ export default function Cadastro({ navigation }) {
                 </View>
               </View>
             )}
-            {/* ------------------------------------------------------ */}
 
             {avisoForm ? (
               <Text style={styles.avisoFormulario}>{avisoForm}</Text>
