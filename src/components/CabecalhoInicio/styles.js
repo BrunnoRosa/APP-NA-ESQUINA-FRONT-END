@@ -14,6 +14,7 @@ export const styles = StyleSheet.create({
     gap: 4,
   },
   endereco: {
+    maxWidth: '85%',
     fontSize: 12,
     color: cores.textoEndereco,
   },

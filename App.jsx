@@ -3,7 +3,6 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import {
   ActivityIndicator,
-  StyleSheet,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -11,6 +10,8 @@ import {
 // Contextos
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import { CarrinhoProvider } from "./src/context/CarrinhoContext";
+import { LocalizacaoProvider } from "./src/context/LocalizacaoContext";
+import { PedidosPendentesProvider } from "./src/context/PedidosPendentesContext";
 import { ToastProvider } from "./src/context/ToastContext";
 
 // Componente Customizado do TabBar
@@ -46,10 +47,18 @@ const Tab = createBottomTabNavigator();
 
 // 1. Navegação por Abas do Cliente
 function ClienteTabs() {
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 900;
+
   return (
     <Tab.Navigator
       tabBar={(props) => <TabNavigator {...props} />}
-      screenOptions={{ headerShown: false }}
+      screenOptions={{
+        headerShown: false,
+        tabBarPosition: isDesktop ? "left" : "bottom",
+        tabBarVariant: isDesktop ? "material" : "uikit",
+        sceneStyle: { flex: 1 },
+      }}
     >
       <Tab.Screen name="HomeCliente" component={HomeCliente} />
       <Tab.Screen name="BuscarProdutos" component={BuscarProdutos} />
@@ -61,10 +70,18 @@ function ClienteTabs() {
 
 // 2. Navegação por Abas do Comerciante
 function ComercianteTabs() {
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 900;
+
   return (
     <Tab.Navigator
       tabBar={(props) => <TabNavigator {...props} />}
-      screenOptions={{ headerShown: false }}
+      screenOptions={{
+        headerShown: false,
+        tabBarPosition: isDesktop ? "left" : "bottom",
+        tabBarVariant: isDesktop ? "material" : "uikit",
+        sceneStyle: { flex: 1 },
+      }}
     >
       <Tab.Screen
         name="DashboardComerciante"
@@ -78,11 +95,13 @@ function ComercianteTabs() {
 }
 
 // 3. Estrutura Geral de Rotas
-const LARGURA_MAXIMA_CELULAR = 430;
 
 function Routes() {
   const { signed, user, loading } = useAuth();
   const { width } = useWindowDimensions();
+  const estiloConteudoDesktop = signed && width >= 900
+    ? { flex: 1, width: "100%", maxWidth: 1600, alignSelf: "center" }
+    : undefined;
 
   if (loading) {
     return (
@@ -94,7 +113,12 @@ function Routes() {
 
   const navegacao = (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+          contentStyle: estiloConteudoDesktop,
+        }}
+      >
         {!signed ? (
           <>
             <Stack.Screen name="Abertura" component={Abertura} />
@@ -127,18 +151,9 @@ function Routes() {
     </NavigationContainer>
   );
 
-  // Telas de entrada (Abertura, Login, Cadastro): ocupam a janela toda, com a foto de fundo
-  // inteira; só o cartão com as opções fica centralizado (já limitado em cada tela).
-  // Telas do app logado, em janela larga (computador): ficam numa "moldura de celular"
-  // centralizada, para manter as proporções reais. No celular nada muda.
-  const usarMoldura = signed && width > LARGURA_MAXIMA_CELULAR + 40;
-  if (!usarMoldura) return navegacao;
-
-  return (
-    <View style={estiloMoldura.fundo}>
-      <View style={estiloMoldura.celular}>{navegacao}</View>
-    </View>
-  );
+  // O app ocupa a janela inteira em qualquer dispositivo.
+  // A adaptação entre celular e computador acontece na navegação e nas telas.
+  return navegacao;
 }
 
 export default function App() {
@@ -146,28 +161,14 @@ export default function App() {
     // ToastProvider por fora de tudo: o aviso sobrevive à troca de tela
     <ToastProvider>
       <AuthProvider>
-        <CarrinhoProvider>
-          <Routes />
-        </CarrinhoProvider>
+        <PedidosPendentesProvider>
+          <LocalizacaoProvider>
+          <CarrinhoProvider>
+            <Routes />
+          </CarrinhoProvider>
+          </LocalizacaoProvider>
+        </PedidosPendentesProvider>
       </AuthProvider>
     </ToastProvider>
   );
 }
-
-const estiloMoldura = StyleSheet.create({
-  fundo: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#2B2B2B",
-  },
-  celular: {
-    flex: 1,
-    width: "100%",
-    maxWidth: LARGURA_MAXIMA_CELULAR,
-    maxHeight: 900,
-    overflow: "hidden",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-  },
-});

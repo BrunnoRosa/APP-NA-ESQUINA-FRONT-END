@@ -62,7 +62,7 @@ export function descobrirTipo(titulo) {
 
 // Quanto tempo o toast fica na tela (erros e textos longos ficam mais)
 function calcularDuracao(tipo, mensagem) {
-  const base = tipo === "sucesso" ? 2800 : 4200;
+  const base = tipo === "sucesso" ? 2400 : 3800;
   const extra = Math.min(String(mensagem || "").length * 25, 3000);
   return base + extra;
 }
@@ -189,8 +189,9 @@ const styles = StyleSheet.create({
   raiz: { flex: 1 },
   camada: {
     ...StyleSheet.absoluteFillObject, // cobre a tela inteira...
-    alignItems: "center", // ...e centraliza o cartão na horizontal
-    justifyContent: "top", // ...e na vertical
+    alignItems: "center", // centraliza o cartão na horizontal
+    justifyContent: "flex-start", // encosta o cartão no TOPO
+    paddingTop: 48, // espaço para a barra de status / notch do celular
     paddingHorizontal: 24,
     zIndex: 9999,
     elevation: 9999,

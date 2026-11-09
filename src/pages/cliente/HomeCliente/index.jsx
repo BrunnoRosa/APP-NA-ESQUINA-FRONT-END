@@ -3,6 +3,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
+  RefreshControl,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -11,6 +12,7 @@ import {
 
 import BotaoCarrinho from '../../../components/BotaoCarrinho';
 import CabecalhoInicio from '../../../components/CabecalhoInicio';
+import MapaMercados from '../../../components/MapaMercados';
 import MercadoCarrossel from '../../../components/MercadoCarrossel';
 import OfertaCard from '../../../components/OfertaCard';
 import { useCarrinho } from '../../../context/CarrinhoContext';
@@ -31,6 +33,7 @@ export default function HomeCliente({ navigation }) {
   const [favoritosIds, setFavoritosIds] = useState([]);
   const [categoriaAtiva, setCategoriaAtiva] = useState('TODOS');
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const { adicionarAoCarrinho } = useCarrinho();
 
@@ -140,16 +143,14 @@ export default function HomeCliente({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       carregarDados();
-
-      const intervalId = setInterval(() => {
-        carregarDados();
-      }, 3000);
-
-      return () => {
-        clearInterval(intervalId);
-      };
     }, [carregarDados])
   );
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await carregarDados();
+    setRefreshing(false);
+  }, [carregarDados]);
 
   const toggleFavorito = async (idMercadinho) => {
     const jaEhFavorito = favoritosIds.includes(idMercadinho);
@@ -172,18 +173,36 @@ export default function HomeCliente({ navigation }) {
     }
   };
 
-  const ofertasDoDia = todosProdutos.filter((p) => {
+  const idsMercadinhosProximos = mercadinhos.map((m) => Number(m.idMercadinho || m.id));
+
+  // Produtos destacados e pertencentes aos mercadinhos da região
+  const produtosDestaque = todosProdutos.filter((p) => {
     if (p.ativo === false) return false;
-    return (
+
+    const idLojaProd = Number(
+      p.idMercadinho ||
+      p.mercadinhoId ||
+      p.id_mercadinho ||
+      (typeof p.mercadinho === 'number' ? p.mercadinho : null) ||
+      p.mercadinho?.idMercadinho ||
+      p.mercadinho?.id
+    );
+
+    const pertenceAMercadoProximo =
+      idsMercadinhosProximos.length === 0 || idsMercadinhosProximos.includes(idLojaProd);
+
+    const ehDestaque =
       p.emDestaque === true ||
       p.destaque === true ||
       p.oferta === true ||
       String(p.emDestaque) === 'true' ||
-      p.emPromocao === true
-    );
+      p.emPromocao === true;
+
+    return pertenceAMercadoProximo && ehDestaque;
   });
 
-  const produtosExibidos = ofertasDoDia.length > 0 ? ofertasDoDia : todosProdutos.filter(p => p.ativo !== false);
+  // Exibe unicamente os produtos que estão em destaque (sem fallback para todos os produtos)
+  const produtosExibidos = produtosDestaque;
 
   const handleNavegar = (chave) => {
     const ts = Date.now();
@@ -201,6 +220,14 @@ export default function HomeCliente({ navigation }) {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[cores.primaria || '#FF3131']}
+            tintColor={cores.primaria || '#FF3131'}
+          />
+        }
       >
         <CabecalhoInicio
           navigation={navigation}
@@ -223,6 +250,8 @@ export default function HomeCliente({ navigation }) {
               </TouchableOpacity>
             ))}
           </View>
+
+          <MapaMercados mercadinhos={mercadinhos} navigation={navigation} />
 
           {loading ? (
             <View style={styles.loadingContainer}>
@@ -269,8 +298,7 @@ export default function HomeCliente({ navigation }) {
               <View style={styles.secaoContainer}>
                 <View style={styles.tituloLinha}>
                   <View>
-                    <Text style={styles.tituloSecao}>Ofertas do dia</Text>
-                    <Text style={styles.subtituloSecao}>[somente em 24h]</Text>
+                    <Text style={styles.tituloSecao}>Destaques da Sua Região</Text>
                   </View>
                   <TouchableOpacity
                     style={styles.verMaisBtn}
@@ -281,7 +309,7 @@ export default function HomeCliente({ navigation }) {
                 </View>
 
                 {produtosExibidos.length === 0 ? (
-                  <Text style={styles.emptyText}>Nenhum produto disponível ainda.</Text>
+                  <Text style={styles.emptyText}>Nenhum produto em destaque na sua região.</Text>
                 ) : (
                   <ScrollView
                     horizontal

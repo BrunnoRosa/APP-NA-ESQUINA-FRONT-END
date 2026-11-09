@@ -3,10 +3,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Image, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { cores } from '../../theme';
 import { useAuth } from '../../context/AuthContext';
+import { useLocalizacao } from '../../context/LocalizacaoContext';
 import { styles } from './styles';
 
 export default function CabecalhoInicio({ navigation }) {
   const { user } = useAuth();
+  const { endereco, carregando } = useLocalizacao();
 
   const primeiroNome = user?.nome ? user.nome.split(' ')[0] : 'visitante';
 
@@ -15,9 +17,11 @@ export default function CabecalhoInicio({ navigation }) {
       colors={[cores.degradeInicioTopo, cores.degradeInicioBase]}
       style={styles.container}
     >
-      {/* Endereço (por enquanto só visual) */}
+      {/* Endereço atual (GPS ou o que o cliente digitou) */}
       <View style={styles.linhaEndereco}>
-        <Text style={styles.endereco}>Av. Dendezeiros do Bonfim, 99</Text>
+        <Text style={styles.endereco} numberOfLines={1}>
+          {endereco || (carregando ? 'Buscando sua localização...' : 'Informe seu endereço')}
+        </Text>
         <Ionicons name="chevron-down" size={14} color={cores.textoEndereco} />
       </View>
 
