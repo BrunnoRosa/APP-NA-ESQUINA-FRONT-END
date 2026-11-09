@@ -18,7 +18,7 @@ import { ToastProvider } from "./src/context/ToastContext";
 import TabNavigator from "./src/components/Layout/TabNavigator";
 
 // Tela compartilhada
-import EditarPerfil from "./src/pages/comum/EditarPerfil"; // 🆕
+import EditarPerfil from "./src/pages/comum/EditarPerfil";
 
 // Telas de Autenticação
 import Abertura from "./src/pages/auth/Abertura";
@@ -34,6 +34,7 @@ import DetalhesMercadinho from "./src/pages/cliente/DetalhesMercadinho";
 import Favoritos from "./src/pages/cliente/Favoritos";
 import HomeCliente from "./src/pages/cliente/HomeCliente";
 import MeusPedidos from "./src/pages/cliente/MeusPedidos";
+import Notificacoes from "./src/pages/cliente/Notificacoes";
 
 // Telas do Comerciante
 import AtivarProdutoCatalogo from "./src/pages/comerciante/AtivarProdutoCatalogo";
@@ -111,7 +112,7 @@ function Routes() {
     );
   }
 
-  const navegacao = (
+  return (
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{
@@ -144,28 +145,24 @@ function Routes() {
             />
             <Stack.Screen name="Favoritos" component={Favoritos} />
             <Stack.Screen name="Carrinho" component={Carrinho} />
+            <Stack.Screen name="Notificacoes" component={Notificacoes} />
             <Stack.Screen name="EditarPerfil" component={EditarPerfil} />
           </>
         )}
       </Stack.Navigator>
     </NavigationContainer>
   );
-
-  // O app ocupa a janela inteira em qualquer dispositivo.
-  // A adaptação entre celular e computador acontece na navegação e nas telas.
-  return navegacao;
 }
 
 export default function App() {
   return (
-    // ToastProvider por fora de tudo: o aviso sobrevive à troca de tela
     <ToastProvider>
       <AuthProvider>
         <PedidosPendentesProvider>
           <LocalizacaoProvider>
-          <CarrinhoProvider>
-            <Routes />
-          </CarrinhoProvider>
+            <CarrinhoProvider>
+              <Routes />
+            </CarrinhoProvider>
           </LocalizacaoProvider>
         </PedidosPendentesProvider>
       </AuthProvider>

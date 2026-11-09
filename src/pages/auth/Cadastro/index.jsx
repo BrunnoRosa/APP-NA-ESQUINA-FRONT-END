@@ -58,9 +58,13 @@ export default function Cadastro({ navigation }) {
   const [perfil, setPerfil] = useState("CLIENTE");
   const [loading, setLoading] = useState(false);
 
+  // Dados do mercadinho (Comerciante)
   const [nomeFantasia, setNomeFantasia] = useState("");
   const [cnpj, setCnpj] = useState("");
   const [endereco, setEndereco] = useState("");
+  const [cep, setCep] = useState("");
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
   const [horarioAbertura, setHorarioAbertura] = useState("");
   const [horarioFechamento, setHorarioFechamento] = useState("");
 
@@ -157,8 +161,9 @@ export default function Cadastro({ navigation }) {
           nomeFantasia: limparEspacos(nomeFantasia),
           cnpj: somenteDigitos(cnpj),
           endereco: limparEspacos(endereco),
-          latitude: -12.9714,
-          longitude: -38.5014,
+          cep: limparEspacos(cep) || undefined,
+          latitude: latitude ? parseFloat(latitude.replace(",", ".")) : -12.9714,
+          longitude: longitude ? parseFloat(longitude.replace(",", ".")) : -38.5014,
           horarioAbertura: horarioAbertura + ":00",
           horarioFechamento: horarioFechamento + ":00",
           idComerciante: idComerciante,
@@ -408,6 +413,35 @@ export default function Cadastro({ navigation }) {
                   onBlur={() => aoSair("endereco", endereco, validarEndereco)}
                   erro={erros.endereco}
                 />
+                <Campo
+                  rotulo="CEP"
+                  placeholder="40000-000"
+                  keyboardType="numeric"
+                  maxLength={9}
+                  value={cep}
+                  onChangeText={(t) => aoDigitar("cep", setCep, t)}
+                  erro={erros.cep}
+                />
+                <View style={styles.linhaHorarios}>
+                  <Campo
+                    estiloExterno={{ flex: 1 }}
+                    rotulo="Latitude"
+                    placeholder="-12.9714"
+                    keyboardType="numeric"
+                    value={latitude}
+                    onChangeText={(t) => aoDigitar("latitude", setLatitude, t)}
+                    erro={erros.latitude}
+                  />
+                  <Campo
+                    estiloExterno={{ flex: 1 }}
+                    rotulo="Longitude"
+                    placeholder="-38.5014"
+                    keyboardType="numeric"
+                    value={longitude}
+                    onChangeText={(t) => aoDigitar("longitude", setLongitude, t)}
+                    erro={erros.longitude}
+                  />
+                </View>
                 <View style={styles.linhaHorarios}>
                   <Campo
                     estiloExterno={{ flex: 1 }}

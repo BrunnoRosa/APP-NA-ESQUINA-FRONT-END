@@ -1,22 +1,23 @@
-import { Ionicons } from "@expo/vector-icons"; // 🆕
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
-import { LinearGradient } from "expo-linear-gradient"; // 🆕
-import { useCallback, useState } from "react";
+import { LinearGradient } from "expo-linear-gradient";
+import * as Notifications from "expo-notifications";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { useAuth } from "../../../context/AuthContext";
-import { useToast } from '../../../context/ToastContext';
+import { useToast } from "../../../context/ToastContext";
 import api from "../../../services/api";
-import { cores } from "../../../theme"; // 🆕
+import { cores } from "../../../theme";
 import { traduzirErro } from "../../../utils/validacoes";
 import { styles } from "./styles";
 
-// 🆕 Formata número como moeda brasileira
+// Formata número como moeda brasileira
 function formatarMoeda(valor) {
   return Number(valor || 0).toLocaleString("pt-BR", {
     style: "currency",
@@ -30,7 +31,7 @@ export default function MeusPedidos({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [atualizandoId, setAtualizandoId] = useState(null);
 
-    // Toast central (em vez do alert do navegador). Mesmo formato: exibirAlerta(titulo, mensagem)
+  // Toast central
   const { exibirAlerta } = useToast();
 
   const carregarPedidos = useCallback(
@@ -62,6 +63,19 @@ export default function MeusPedidos({ navigation }) {
       return () => clearInterval(intervalId);
     }, [carregarPedidos]),
   );
+
+  // 🔔 Atualização instantânea ao receber notificação push do Expo
+  useEffect(() => {
+    const inscricaoNotificacao = Notifications.addNotificationReceivedListener(
+      () => {
+        carregarPedidos(true);
+      },
+    );
+
+    return () => {
+      inscricaoNotificacao.remove();
+    };
+  }, [carregarPedidos]);
 
   const confirmarRecebimento = async (idPedido) => {
     setAtualizandoId(idPedido);
@@ -98,9 +112,9 @@ export default function MeusPedidos({ navigation }) {
           label: "Pronto para retirada",
           bg: "#FFE9D2",
           text: "#B25E00",
-        }; // ✏️ laranja: pede ação
+        };
       case "RETIRADA_CONCLUIDO":
-        return { label: "Retirado", bg: "#DDF5D9", text: "#168A00" }; // ✏️
+        return { label: "Retirado", bg: "#DDF5D9", text: "#168A00" };
       case "CANCELADO":
         return { label: "Cancelado", bg: "#FFE0E0", text: "#C41F1F" };
       default:
@@ -125,7 +139,6 @@ export default function MeusPedidos({ navigation }) {
           </View>
         </View>
 
-        {/* ✏️ ícone no lugar do emoji */}
         <View style={styles.lojaLinha}>
           <Ionicons
             name="storefront-outline"
@@ -189,7 +202,6 @@ export default function MeusPedidos({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* 🆕 Topo com degradê (sem botão voltar: esta tela é uma aba) */}
       <LinearGradient
         colors={[cores.degradeInicioTopo, cores.degradeInicioBase]}
         style={styles.topo}
@@ -202,7 +214,6 @@ export default function MeusPedidos({ navigation }) {
         )}
       </LinearGradient>
 
-      {/* 🆕 Folha branca arredondada */}
       <View style={styles.folha}>
         {loading ? (
           <View style={styles.centro}>
