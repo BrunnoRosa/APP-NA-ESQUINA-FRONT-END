@@ -37,6 +37,20 @@ export default function HomeCliente({ navigation }) {
 
   const { adicionarAoCarrinho } = useCarrinho();
 
+  // Função para formatar URLs de imagens (Resolve o erro arroz.jpg / ERR_NAME_NOT_RESOLVED)
+  const formatarUrlImagem = (url) => {
+    if (!url) return null;
+    if (typeof url === 'string') {
+      if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+        return url;
+      }
+      const baseURL = api.defaults?.baseURL || 'http://localhost:8080';
+      const path = url.startsWith('/') ? url : `/${url}`;
+      return `${baseURL}${path}`;
+    }
+    return url;
+  };
+
   // Função auxiliar para montar o mapa idProduto -> idMercadinho
   const mapearLojasEProdutos = async (listaLojas, listaProdutos) => {
     const mapa = new Map();
@@ -85,10 +99,13 @@ export default function HomeCliente({ navigation }) {
         prod.mercadinho?.id;
 
       const idFinal = idDireto ? Number(idDireto) : mapa.get(Number(prod.idProduto || prod.id));
+      const imgTratada = formatarUrlImagem(prod.imagemUrl || prod.imagem || prod.foto);
 
       return {
         ...prod,
         idMercadinho: idFinal || null,
+        imagem: imgTratada,
+        imagemUrl: imgTratada,
       };
     });
   };
@@ -112,11 +129,16 @@ export default function HomeCliente({ navigation }) {
             api
               .get(`/api/produtos/mercadinho/${loja.idMercadinho || loja.id}`)
               .then((res) =>
-                (res.data || []).map((p) => ({
-                  ...p,
-                  idMercadinho: loja.idMercadinho || loja.id,
-                  nomeMercadinho: loja.nomeFantasia,
-                }))
+                (res.data || []).map((p) => {
+                  const imgTratada = formatarUrlImagem(p.imagemUrl || p.imagem || p.foto);
+                  return {
+                    ...p,
+                    idMercadinho: loja.idMercadinho || loja.id,
+                    nomeMercadinho: loja.nomeFantasia,
+                    imagem: imgTratada,
+                    imagemUrl: imgTratada,
+                  };
+                })
               )
               .catch(() => [])
           )
@@ -201,17 +223,26 @@ export default function HomeCliente({ navigation }) {
     return pertenceAMercadoProximo && ehDestaque;
   });
 
-  // Exibe unicamente os produtos que estão em destaque (sem fallback para todos os produtos)
+  // Exibe unicamente os produtos que estão em destaque
   const produtosExibidos = produtosDestaque;
 
   const handleNavegar = (chave) => {
     const ts = Date.now();
-    if (chave === 'mercados') {
-      navigation.navigate('BuscarProdutos', { modo: 'mercados', aba: 'mercados', _ts: ts });
-    } else if (chave === 'promocoes') {
-      navigation.navigate('BuscarProdutos', { modo: 'promocoes', aba: 'produtos', emPromocao: true, emDestaque: true, _ts: ts });
-    } else {
-      navigation.navigate('BuscarProdutos', { modo: 'produtos', aba: 'produtos', _ts: ts });
+    const params =
+      chave === 'mercados'
+        ? { modo: 'mercados', aba: 'mercados', _ts: ts }
+        : chave === 'promocoes'
+        ? { modo: 'promocoes', aba: 'produtos', emPromocao: true, emDestaque: true, _ts: ts }
+        : { modo: 'produtos', aba: 'produtos', _ts: ts };
+
+    try {
+      navigation.navigate('BuscarProdutos', params);
+    } catch (e) {
+      try {
+        navigation.navigate('Pesquisar', params);
+      } catch (err) {
+        navigation.navigate('Buscar', params);
+      }
     }
   };
 
@@ -321,6 +352,21 @@ export default function HomeCliente({ navigation }) {
                       <OfertaCard
                         key={String(prod.idProduto || prod.id)}
                         produto={prod}
+                        onPress={() => {
+                          const idLoja =
+                            prod.idMercadinho ||
+                            prod.mercadinhoId ||
+                            prod.id_mercadinho ||
+                            prod.mercadinho?.idMercadinho ||
+                            prod.mercadinho?.id;
+
+                          if (idLoja) {
+                            navigation.navigate('DetalhesMercadinho', {
+                              idMercadinho: idLoja,
+                              produtoSelecionado: prod,
+                            });
+                          }
+                        }}
                         onAdicionar={() =>
                           adicionarAoCarrinho({
                             ...prod,

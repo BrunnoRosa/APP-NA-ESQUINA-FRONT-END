@@ -63,10 +63,12 @@ export default function EditarPerfil({ navigation }) {
   // Dados do mercado (só comerciante)
   const [nomeFantasia, setNomeFantasia] = useState('');
   const [endereco, setEndereco] = useState('');
+  const [cep, setCep] = useState('');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
   const [abertura, setAbertura] = useState('');
   const [fechamento, setFechamento] = useState('');
   const [cnpj, setCnpj] = useState('');
-  const [coordenadas, setCoordenadas] = useState({});
 
   // Senha (opcional)
   const [trocarSenha, setTrocarSenha] = useState(false);
@@ -77,35 +79,38 @@ export default function EditarPerfil({ navigation }) {
 
   useEffect(() => {
     async function carregar() {
-      // 1) Dados do usuário: se o back ainda não tem /me, seguimos com o que o login guardou
+      // 1) Dados do usuário
       try {
         const res = await api.get('/api/usuarios/me');
         if (res.data?.nome) setNome(res.data.nome);
         if (res.data?.telefone) setTelefone(mascaraTelefone(res.data.telefone));
       } catch (e) {
-        // sem endpoint ainda: tudo bem
+        // Fallback: mantém dados do AuthContext
       }
 
-      // 2) Dados do mercado (comerciante): procura na lista pública
-      if (ehComerciante && user?.idMercadinho) {
+      // 2) Dados do mercado (comerciante)
+      if (ehComerciante && (user?.idMercadinho || user?.mercadinhoId)) {
+        const idM = user.idMercadinho || user.mercadinhoId;
         try {
-          // Busca só o mercado do comerciante; se a rota não existir, cai na lista
           let meu = null;
           try {
-            const res = await api.get(`/api/mercadinhos/${user.idMercadinho}`);
+            const res = await api.get(`/api/mercadinhos/${idM}`);
             meu = res.data;
           } catch (e) {
             const res = await api.get('/api/mercadinhos');
             const lista = Array.isArray(res.data) ? res.data : res.data?.content || [];
-            meu = lista.find((m) => Number(m.idMercadinho) === Number(user.idMercadinho));
+            meu = lista.find((m) => Number(m.idMercadinho || m.id) === Number(idM));
           }
+
           if (meu) {
             setNomeFantasia(meu.nomeFantasia || '');
             setEndereco(meu.endereco || '');
+            setCep(meu.cep || '');
+            setLatitude(meu.latitude != null ? String(meu.latitude) : '');
+            setLongitude(meu.longitude != null ? String(meu.longitude) : '');
             setAbertura(String(meu.horarioAbertura || '').slice(0, 5));
             setFechamento(String(meu.horarioFechamento || '').slice(0, 5));
             setCnpj(meu.cnpj || '');
-            setCoordenadas({ latitude: meu.latitude, longitude: meu.longitude });
           }
         } catch (e) {
           setAviso({ tipo: 'erro', texto: 'Não foi possível carregar os dados do mercado.' });
@@ -114,41 +119,49 @@ export default function EditarPerfil({ navigation }) {
       setCarregando(false);
     }
     carregar();
-  }, []);
+  }, [ehComerciante, user]);
 
   function validar() {
     const e = {};
     const eNome = validarNome(nome);
     if (eNome) e.nome = eNome;
-    // telefone só é cobrado se a pessoa preencheu (o back ainda pode não devolver o atual)
+
     if (telefone) {
       const eTel = validarTelefone(telefone);
       if (eTel) e.telefone = eTel;
     }
+
     if (ehComerciante) {
       const eNf = validarNomeFantasia(nomeFantasia);
       if (eNf) e.nomeFantasia = eNf;
+
       const eEnd = validarEndereco(endereco);
       if (eEnd) e.endereco = eEnd;
+
       const eAb = validarHorario(abertura, 'horário de abertura');
       if (eAb) e.abertura = eAb;
+
       const eFe = validarHorario(fechamento, 'horário de fechamento');
       if (eFe) e.fechamento = eFe;
+
       if (!eAb && !eFe) {
         const eOrd = validarOrdemHorarios(abertura, fechamento);
         if (eOrd) e.fechamento = eOrd;
       }
     }
+
     if (trocarSenha) {
       if (!senhaAtual) e.senhaAtual = 'Informe a senha atual.';
-      if (novaSenha.length < 8 || novaSenha.length > 72) e.novaSenha = 'A nova senha deve ter de 8 a 72 caracteres.';
-      else if (!/[A-Za-z]/.test(novaSenha) || !/\d/.test(novaSenha)) e.novaSenha = 'Use letras e números.';
+      if (novaSenha.length < 8 || novaSenha.length > 72)
+        e.novaSenha = 'A nova senha deve ter de 8 a 72 caracteres.';
+      else if (!/[A-Za-z]/.test(novaSenha) || !/\d/.test(novaSenha))
+        e.novaSenha = 'Use letras e números.';
     }
+
     setErros(e);
     return Object.keys(e).length === 0;
   }
 
-  // Tenta uma chamada; se o back ainda não tem a rota (404/405), devolve "indisponivel"
   async function tentar(chamada) {
     try {
       await chamada();
@@ -168,6 +181,7 @@ export default function EditarPerfil({ navigation }) {
     try {
       const resultados = [];
 
+      // Atualiza usuário
       resultados.push(
         await tentar(() =>
           api.put('/api/usuarios/me', {
@@ -177,23 +191,28 @@ export default function EditarPerfil({ navigation }) {
         )
       );
 
-      if (ehComerciante && user?.idMercadinho) {
+      // Atualiza mercadinho
+      const idM = user?.idMercadinho || user?.mercadinhoId;
+      if (ehComerciante && idM) {
         resultados.push(
           await tentar(() =>
-            api.put(`/api/mercadinhos/${user.idMercadinho}`, {
+            api.put(`/api/mercadinhos/${idM}`, {
               nomeFantasia: limparEspacos(nomeFantasia),
               endereco: limparEspacos(endereco),
-              horarioAbertura: `${abertura}:00`,
-              horarioFechamento: `${fechamento}:00`,
-              ...coordenadas,
+              cep: limparEspacos(cep) || undefined,
+              horarioAbertura: abertura ? `${abertura}:00` : undefined,
+              horarioFechamento: fechamento ? `${fechamento}:00` : undefined,
+              latitude: latitude ? parseFloat(latitude.replace(',', '.')) : null,
+              longitude: longitude ? parseFloat(longitude.replace(',', '.')) : null,
             })
           )
         );
       }
 
+      // Alteração de senha
       if (trocarSenha) {
         resultados.push(
-          await tentar(() => api.put('/api/usuarios/me/senha', { senhaAtual, novaSenha }))
+          await tentar(() => api.put('/api/usuarios/me/senha', { senhaAtual, novaSenha, senha: novaSenha }))
         );
       }
 
@@ -265,7 +284,13 @@ export default function EditarPerfil({ navigation }) {
 
             <Text style={styles.secao}>Dados pessoais</Text>
             <View style={styles.cartao}>
-              <Campo rotulo="Nome completo" valor={nome} aoMudar={setNome} erro={erros.nome} autoCapitalize="words" />
+              <Campo
+                rotulo="Nome completo"
+                valor={nome}
+                aoMudar={setNome}
+                erro={erros.nome}
+                autoCapitalize="words"
+              />
               <Campo
                 rotulo="Telefone"
                 valor={telefone}
@@ -281,8 +306,48 @@ export default function EditarPerfil({ navigation }) {
               <>
                 <Text style={styles.secao}>Dados do mercado</Text>
                 <View style={styles.cartao}>
-                  <Campo rotulo="Nome do mercadinho" valor={nomeFantasia} aoMudar={setNomeFantasia} erro={erros.nomeFantasia} />
-                  <Campo rotulo="Endereço" valor={endereco} aoMudar={setEndereco} erro={erros.endereco} />
+                  <Campo
+                    rotulo="Nome do mercadinho"
+                    valor={nomeFantasia}
+                    aoMudar={setNomeFantasia}
+                    erro={erros.nomeFantasia}
+                  />
+                  <Campo
+                    rotulo="Endereço"
+                    valor={endereco}
+                    aoMudar={setEndereco}
+                    erro={erros.endereco}
+                    placeholder="Rua, número e bairro"
+                  />
+                  <Campo
+                    rotulo="CEP"
+                    valor={cep}
+                    aoMudar={setCep}
+                    keyboardType="numeric"
+                    placeholder="40000-000"
+                  />
+
+                  <View style={styles.linha}>
+                    <View style={{ flex: 1 }}>
+                      <Campo
+                        rotulo="Latitude"
+                        valor={latitude}
+                        aoMudar={setLatitude}
+                        keyboardType="numeric"
+                        placeholder="-12.9714"
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Campo
+                        rotulo="Longitude"
+                        valor={longitude}
+                        aoMudar={setLongitude}
+                        keyboardType="numeric"
+                        placeholder="-38.5014"
+                      />
+                    </View>
+                  </View>
+
                   <View style={styles.linha}>
                     <View style={{ flex: 1 }}>
                       <Campo
@@ -305,20 +370,38 @@ export default function EditarPerfil({ navigation }) {
                       />
                     </View>
                   </View>
-                  {!!cnpj && <Campo rotulo="CNPJ (não pode ser alterado)" valor={cnpj} somenteLeitura />}
+                  {!!cnpj && (
+                    <Campo rotulo="CNPJ (não pode ser alterado)" valor={cnpj} somenteLeitura />
+                  )}
                 </View>
               </>
             )}
 
             <TouchableOpacity style={styles.linkSenha} onPress={() => setTrocarSenha(!trocarSenha)}>
               <Ionicons name="lock-closed-outline" size={18} color={cores.primaria} />
-              <Text style={styles.linkSenhaTexto}>{trocarSenha ? 'Cancelar troca de senha' : 'Alterar senha'}</Text>
+              <Text style={styles.linkSenhaTexto}>
+                {trocarSenha ? 'Cancelar troca de senha' : 'Alterar senha'}
+              </Text>
             </TouchableOpacity>
 
             {trocarSenha && (
               <View style={styles.cartao}>
-                <Campo rotulo="Senha atual" valor={senhaAtual} aoMudar={setSenhaAtual} erro={erros.senhaAtual} secureTextEntry autoCapitalize="none" />
-                <Campo rotulo="Nova senha" valor={novaSenha} aoMudar={setNovaSenha} erro={erros.novaSenha} secureTextEntry autoCapitalize="none" />
+                <Campo
+                  rotulo="Senha atual"
+                  valor={senhaAtual}
+                  aoMudar={setSenhaAtual}
+                  erro={erros.senhaAtual}
+                  secureTextEntry
+                  autoCapitalize="none"
+                />
+                <Campo
+                  rotulo="Nova senha"
+                  valor={novaSenha}
+                  aoMudar={setNovaSenha}
+                  erro={erros.novaSenha}
+                  secureTextEntry
+                  autoCapitalize="none"
+                />
               </View>
             )}
 

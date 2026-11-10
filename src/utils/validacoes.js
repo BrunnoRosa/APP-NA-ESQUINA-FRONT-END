@@ -166,6 +166,81 @@ export function validarEndereco(valor) {
     return "O endereço deve ter no máximo 200 caracteres.";
   return "";
 }
+// CEP: 8 números (40015-000 ou 40015000). `obrigatorio` = false deixa vazio passar.
+export function validarCep(valor, obrigatorio = true) {
+  const digitos = somenteDigitos(valor);
+  if (!digitos) return obrigatorio ? "O CEP é obrigatório." : "";
+  if (digitos.length !== 8) return "O CEP deve ter 8 números.";
+  return "";
+}
+
+// Base para rua, bairro e cidade. `rotulo` vem com artigo: "a rua", "o bairro"...
+function validarTextoEndereco(valor, rotulo, minimo, maximo) {
+  const texto = limparEspacos(valor);
+  if (!texto) return `Informe ${rotulo}.`;
+  if (texto.length < minimo || texto.length > maximo)
+    return `Confira ${rotulo}: use de ${minimo} a ${maximo} caracteres.`;
+  return "";
+}
+
+export const validarRua = (v) => validarTextoEndereco(v, "a rua", 3, 80);
+export const validarBairro = (v) => validarTextoEndereco(v, "o bairro", 2, 40);
+export const validarCidade = (v) => validarTextoEndereco(v, "a cidade", 2, 50);
+
+// Número do endereço: "120", "120-A" ou "S/N" (sem número).
+export function validarNumeroEndereco(valor) {
+  const numero = limparEspacos(valor);
+  if (!numero) return "Informe o número ou S/N.";
+  if (numero.length > 10) return "O número deve ter no máximo 10 caracteres.";
+  if (!/^[0-9A-Za-z/\-\s]+$/.test(numero))
+    return "Use só letras, números, / ou -.";
+  return "";
+}
+
+const UFS = [
+  "AC",
+  "AL",
+  "AP",
+  "AM",
+  "BA",
+  "CE",
+  "DF",
+  "ES",
+  "GO",
+  "MA",
+  "MT",
+  "MS",
+  "MG",
+  "PA",
+  "PB",
+  "PR",
+  "PE",
+  "PI",
+  "RJ",
+  "RN",
+  "RS",
+  "RO",
+  "RR",
+  "SC",
+  "SP",
+  "SE",
+  "TO",
+];
+
+export function validarUf(valor) {
+  const uf = String(valor ?? "")
+    .trim()
+    .toUpperCase();
+  if (!uf) return "Informe o estado.";
+  if (!UFS.includes(uf)) return "Estado inválido. Ex.: BA.";
+  return "";
+}
+
+// Junta os campos num texto só, que é o formato que o back guarda em `endereco`:
+// "Rua Chile, 10, Pelourinho, Salvador - BA"
+export function montarEndereco({ rua, numero, bairro, cidade, uf }) {
+  return `${limparEspacos(rua)}, ${limparEspacos(numero)}, ${limparEspacos(bairro)}, ${limparEspacos(cidade)} - ${String(uf).trim().toUpperCase()}`;
+}
 
 // Horário no formato HH:mm (00:00 a 23:59).
 export function validarHorario(valor, rotulo = "horário") {
@@ -190,21 +265,24 @@ export function validarOrdemHorarios(abertura, fechamento) {
 
 export function validarNomeProduto(valor) {
   const nome = limparEspacos(valor);
-  if (!nome) return 'O nome do produto é obrigatório.';
-  if (nome.length < 2) return 'O nome do produto deve ter pelo menos 2 caracteres.';
-  if (nome.length > 100) return 'O nome do produto deve ter no máximo 100 caracteres.';
-  return '';
+  if (!nome) return "O nome do produto é obrigatório.";
+  if (nome.length < 2)
+    return "O nome do produto deve ter pelo menos 2 caracteres.";
+  if (nome.length > 100)
+    return "O nome do produto deve ter no máximo 100 caracteres.";
+  return "";
 }
 
 // Aceita 5, 5,99 ou 5.99 (até 2 casas). Rejeita letras, negativo, zero e valores absurdos.
 export function validarPreco(valor) {
-  const texto = String(valor ?? '').trim();
-  if (!texto) return 'O preço é obrigatório.';
-  if (!/^\d+([.,]\d{1,2})?$/.test(texto)) return 'Preço inválido. Use só números, ex.: 5,99.';
-  const n = parseFloat(texto.replace(',', '.'));
-  if (!(n > 0)) return 'O preço deve ser maior que zero.';
-  if (n > 99999.99) return 'O preço máximo é R$ 99.999,99.';
-  return '';
+  const texto = String(valor ?? "").trim();
+  if (!texto) return "O preço é obrigatório.";
+  if (!/^\d+([.,]\d{1,2})?$/.test(texto))
+    return "Preço inválido. Use só números, ex.: 5,99.";
+  const n = parseFloat(texto.replace(",", "."));
+  if (!(n > 0)) return "O preço deve ser maior que zero.";
+  if (n > 99999.99) return "O preço máximo é R$ 99.999,99.";
+  return "";
 }
 
 // ---------------------------------------------------------------- máscaras
@@ -229,6 +307,13 @@ export function mascaraCnpj(valor) {
   if (d.length > 8) r += `/${d.slice(8, 12)}`;
   if (d.length > 12) r += `-${d.slice(12, 14)}`;
   return r;
+}
+
+// 40015000 -> 40015-000
+export function mascaraCep(valor) {
+  const d = somenteDigitos(valor).slice(0, 8);
+  if (d.length <= 5) return d;
+  return `${d.slice(0, 5)}-${d.slice(5)}`;
 }
 
 // 0800 -> 08:00

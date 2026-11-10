@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -13,31 +13,41 @@ import {
 } from "react-native";
 import { useToast } from "../../../context/ToastContext";
 import api from "../../../services/api";
+import { buscarCep } from "../../../services/cep";
 import { cores } from "../../../theme";
 import {
   limparEspacos,
+  mascaraCep,
   mascaraCnpj,
   mascaraHorario,
   mascaraTelefone,
+  montarEndereco,
   somenteDigitos,
   traduzirErro,
+  validarBairro,
+  validarCep,
+  validarCidade,
   validarCnpj,
   validarEmail,
-  validarEndereco,
   validarHorario,
   validarNome,
   validarNomeFantasia,
+  validarNumeroEndereco,
   validarOrdemHorarios,
+  validarRua,
   validarSenha,
   validarTelefone,
+  validarUf,
 } from "../../../utils/validacoes";
 import { styles } from "./styles";
 
-function Campo({ rotulo, estiloExterno, erro, ...props }) {
+// inputRef (opcional): permite à tela mandar o cursor para este campo (ex.: depois da busca de CEP)
+function Campo({ rotulo, estiloExterno, erro, inputRef, ...props }) {
   return (
     <View style={estiloExterno}>
       <Text style={styles.rotulo}>{rotulo}</Text>
       <TextInput
+        ref={inputRef}
         style={[styles.campo, erro ? styles.campoErro : null]}
         placeholderTextColor={cores.icone}
         {...props}
@@ -58,9 +68,18 @@ export default function Cadastro({ navigation }) {
   const [perfil, setPerfil] = useState("CLIENTE");
   const [loading, setLoading] = useState(false);
 
+  // Dados do mercadinho (Comerciante)
   const [nomeFantasia, setNomeFantasia] = useState("");
   const [cnpj, setCnpj] = useState("");
-  const [endereco, setEndereco] = useState("");
+  const [cep, setCep] = useState("");
+  const [rua, setRua] = useState("");
+  const [numero, setNumero] = useState("");
+  const [bairro, setBairro] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [uf, setUf] = useState("");
+  const [buscandoCep, setBuscandoCep] = useState(false);
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
   const [horarioAbertura, setHorarioAbertura] = useState("");
   const [horarioFechamento, setHorarioFechamento] = useState("");
 
@@ -68,6 +87,15 @@ export default function Cadastro({ navigation }) {
   const [avisoForm, setAvisoForm] = useState("");
 
   const { exibirAlerta } = useToast();
+
+  // --- Busca de CEP -------------------------------------------------------
+  // numeroRef / ruaRef: para levar o cursor ao campo certo depois de preencher.
+  // contadorBusca: identifica a busca mais recente (ignora respostas "velhas").
+  // ultimoCep: evita buscar duas vezes o mesmo CEP seguido.
+  const numeroRef = useRef(null);
+  const ruaRef = useRef(null);
+  const contadorBusca = useRef(0);
+  const ultimoCep = useRef("");
 
   function definirErro(campo, mensagem) {
     setErros((atuais) => ({ ...atuais, [campo]: mensagem }));
@@ -81,6 +109,85 @@ export default function Cadastro({ navigation }) {
 
   function aoSair(campo, valor, validar) {
     if (valor) definirErro(campo, validar(valor));
+  }
+
+  // Chamada a cada letra digitada no CEP. Com 8 números completos, busca o endereço.
+  function aoMudarCep(texto) {
+    const mascarado = mascaraCep(texto);
+    aoDigitar("cep", setCep, mascarado);
+
+    const digitos = somenteDigitos(mascarado);
+    if (digitos.length === 8) {
+      buscarEnderecoPorCep(digitos);
+    } else {
+      // CEP incompleto: cancela qualquer busca em andamento (a resposta será ignorada)
+      contadorBusca.current += 1;
+      ultimoCep.current = "";
+      setBuscandoCep(false);
+    }
+  }
+
+  async function buscarEnderecoPorCep(digitos) {
+    if (digitos === ultimoCep.current) return;
+    ultimoCep.current = digitos;
+    contadorBusca.current += 1;
+    const minhaBusca = contadorBusca.current;
+    setBuscandoCep(true);
+
+    try {
+      const e = await buscarCep(digitos);
+      if (minhaBusca !== contadorBusca.current) return; // a pessoa já mudou o CEP
+
+      // Preenche os campos (continuam editáveis) e limpa erros antigos deles
+      setRua(e.rua);
+      setBairro(e.bairro);
+      setCidade(e.cidade);
+      setUf(e.uf);
+      setErros((atuais) => ({
+        ...atuais,
+        cep: "",
+        rua: "",
+        bairro: "",
+        cidade: "",
+        uf: "",
+      }));
+
+      if (e.rua) {
+        exibirAlerta(
+          "Endereço encontrado",
+          `${e.rua}, ${e.bairro} - ${e.cidade}/${e.uf}. Agora informe o número.`,
+          "sucesso",
+        );
+        numeroRef.current?.focus();
+      } else {
+        // CEP "geral" da cidade (cidades pequenas): não traz rua nem bairro
+        exibirAlerta(
+          "CEP encontrado",
+          `Esse CEP é de ${e.cidade}/${e.uf} e não traz a rua. Preencha a rua e o bairro.`,
+          "info",
+        );
+        ruaRef.current?.focus();
+      }
+    } catch (erro) {
+      if (minhaBusca !== contadorBusca.current) return;
+      ultimoCep.current = ""; // permite tentar de novo
+      if (erro.codigo === "NAO_ENCONTRADO") {
+        definirErro("cep", "CEP não encontrado.");
+        exibirAlerta(
+          "CEP não encontrado",
+          "Confira os números ou preencha o endereço manualmente.",
+          "aviso",
+        );
+      } else {
+        exibirAlerta(
+          "Sem conexão com o serviço de CEP",
+          "Não foi possível buscar o endereço agora. Preencha manualmente.",
+          "erro",
+        );
+      }
+    } finally {
+      if (minhaBusca === contadorBusca.current) setBuscandoCep(false);
+    }
   }
 
   function validarFormulario() {
@@ -98,20 +205,25 @@ export default function Cadastro({ navigation }) {
     if (perfil === "COMERCIANTE") {
       resultado.nomeFantasia = validarNomeFantasia(nomeFantasia);
       resultado.cnpj = validarCnpj(cnpj);
-      resultado.endereco = validarEndereco(endereco);
+      resultado.cep = validarCep(cep);
+      resultado.rua = validarRua(rua);
+      resultado.numero = validarNumeroEndereco(numero);
+      resultado.bairro = validarBairro(bairro);
+      resultado.cidade = validarCidade(cidade);
+      resultado.uf = validarUf(uf);
       resultado.horarioAbertura = validarHorario(
         horarioAbertura,
-        "horário de abertura"
+        "horário de abertura",
       );
       resultado.horarioFechamento = validarHorario(
         horarioFechamento,
-        "horário de fechamento"
+        "horário de fechamento",
       );
 
       if (!resultado.horarioAbertura && !resultado.horarioFechamento) {
         resultado.horarioFechamento = validarOrdemHorarios(
           horarioAbertura,
-          horarioFechamento
+          horarioFechamento,
         );
       }
     }
@@ -130,7 +242,7 @@ export default function Cadastro({ navigation }) {
       exibirAlerta(
         "Confira os dados",
         "Corrija os campos destacados em vermelho.",
-        "aviso"
+        "aviso",
       );
       return;
     }
@@ -156,9 +268,14 @@ export default function Cadastro({ navigation }) {
         await api.post("/api/mercadinhos", {
           nomeFantasia: limparEspacos(nomeFantasia),
           cnpj: somenteDigitos(cnpj),
-          endereco: limparEspacos(endereco),
-          latitude: -12.9714,
-          longitude: -38.5014,
+          endereco: montarEndereco({ rua, numero, bairro, cidade, uf }),
+          cep: somenteDigitos(cep),
+          latitude: latitude
+            ? parseFloat(latitude.replace(",", "."))
+            : -12.9714,
+          longitude: longitude
+            ? parseFloat(longitude.replace(",", "."))
+            : -38.5014,
           horarioAbertura: horarioAbertura + ":00",
           horarioFechamento: horarioFechamento + ":00",
           idComerciante: idComerciante,
@@ -167,7 +284,7 @@ export default function Cadastro({ navigation }) {
 
       exibirAlerta(
         "Sucesso!",
-        "Conta criada com sucesso. Faça login para continuar."
+        "Conta criada com sucesso. Faça login para continuar.",
       );
       navigation.navigate("Login");
     } catch (error) {
@@ -177,7 +294,7 @@ export default function Cadastro({ navigation }) {
       if (usuarioCriado) {
         exibirAlerta(
           "Conta criada, mas o mercadinho não foi salvo",
-          `${erro.mensagem}\n\nSua conta já existe. Avise a equipe para vincular o mercadinho.`
+          `${erro.mensagem}\n\nSua conta já existe. Avise a equipe para vincular o mercadinho.`,
         );
       } else if (error.response && error.response.status === 409) {
         definirErro("email", erro.mensagem);
@@ -361,7 +478,9 @@ export default function Cadastro({ navigation }) {
                 }
               >
                 <Ionicons
-                  name={mostrarConfirmarSenha ? "eye-outline" : "eye-off-outline"}
+                  name={
+                    mostrarConfirmarSenha ? "eye-outline" : "eye-off-outline"
+                  }
                   size={20}
                   color={cores.icone}
                 />
@@ -400,14 +519,105 @@ export default function Cadastro({ navigation }) {
                   erro={erros.cnpj}
                 />
                 <Campo
-                  rotulo="Endereço completo"
-                  placeholder="Rua, número, bairro"
-                  maxLength={200}
-                  value={endereco}
-                  onChangeText={(t) => aoDigitar("endereco", setEndereco, t)}
-                  onBlur={() => aoSair("endereco", endereco, validarEndereco)}
-                  erro={erros.endereco}
+                  rotulo="CEP"
+                  placeholder="40015-000"
+                  keyboardType="numeric"
+                  maxLength={9}
+                  value={cep}
+                  onChangeText={aoMudarCep}
+                  onBlur={() => aoSair("cep", cep, validarCep)}
+                  erro={erros.cep}
                 />
+                {buscandoCep ? (
+                  <Text style={styles.textoDica}>Buscando endereço...</Text>
+                ) : null}
+                <Campo
+                  inputRef={ruaRef}
+                  rotulo="Rua / Avenida"
+                  placeholder="Nome da rua"
+                  maxLength={80}
+                  value={rua}
+                  onChangeText={(t) => aoDigitar("rua", setRua, t)}
+                  onBlur={() => aoSair("rua", rua, validarRua)}
+                  erro={erros.rua}
+                />
+                <View style={styles.linhaHorarios}>
+                  <Campo
+                    inputRef={numeroRef}
+                    estiloExterno={{ flex: 1 }}
+                    rotulo="Número"
+                    placeholder="123 ou S/N"
+                    maxLength={10}
+                    value={numero}
+                    onChangeText={(t) => aoDigitar("numero", setNumero, t)}
+                    onBlur={() =>
+                      aoSair("numero", numero, validarNumeroEndereco)
+                    }
+                    erro={erros.numero}
+                  />
+                  <Campo
+                    estiloExterno={{ flex: 2 }}
+                    rotulo="Bairro"
+                    placeholder="Bairro"
+                    maxLength={40}
+                    value={bairro}
+                    onChangeText={(t) => aoDigitar("bairro", setBairro, t)}
+                    onBlur={() => aoSair("bairro", bairro, validarBairro)}
+                    erro={erros.bairro}
+                  />
+                </View>
+                <View style={styles.linhaHorarios}>
+                  <Campo
+                    estiloExterno={{ flex: 2 }}
+                    rotulo="Cidade"
+                    placeholder="Cidade"
+                    maxLength={50}
+                    value={cidade}
+                    onChangeText={(t) => aoDigitar("cidade", setCidade, t)}
+                    onBlur={() => aoSair("cidade", cidade, validarCidade)}
+                    erro={erros.cidade}
+                  />
+                  <Campo
+                    estiloExterno={{ flex: 1 }}
+                    rotulo="UF"
+                    placeholder="BA"
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    maxLength={2}
+                    value={uf}
+                    onChangeText={(t) =>
+                      aoDigitar(
+                        "uf",
+                        setUf,
+                        t.toUpperCase().replace(/[^A-Z]/g, ""),
+                      )
+                    }
+                    onBlur={() => aoSair("uf", uf, validarUf)}
+                    erro={erros.uf}
+                  />
+                </View>
+                <View style={styles.linhaHorarios}>
+                  <Campo
+                    estiloExterno={{ flex: 1 }}
+                    rotulo="Latitude"
+                    placeholder="-12.9714"
+                    keyboardType="numeric"
+                    value={latitude}
+                    onChangeText={(t) => aoDigitar("latitude", setLatitude, t)}
+                    erro={erros.latitude}
+                  />
+                  <Campo
+                    estiloExterno={{ flex: 1 }}
+                    rotulo="Longitude"
+                    placeholder="-38.5014"
+                    keyboardType="numeric"
+                    value={longitude}
+                    onChangeText={(t) =>
+                      aoDigitar("longitude", setLongitude, t)
+                    }
+                    erro={erros.longitude}
+                  />
+                </View>
                 <View style={styles.linhaHorarios}>
                   <Campo
                     estiloExterno={{ flex: 1 }}
@@ -420,12 +630,12 @@ export default function Cadastro({ navigation }) {
                       aoDigitar(
                         "horarioAbertura",
                         setHorarioAbertura,
-                        mascaraHorario(t)
+                        mascaraHorario(t),
                       )
                     }
                     onBlur={() =>
                       aoSair("horarioAbertura", horarioAbertura, (v) =>
-                        validarHorario(v, "horário de abertura")
+                        validarHorario(v, "horário de abertura"),
                       )
                     }
                     erro={erros.horarioAbertura}
@@ -441,12 +651,12 @@ export default function Cadastro({ navigation }) {
                       aoDigitar(
                         "horarioFechamento",
                         setHorarioFechamento,
-                        mascaraHorario(t)
+                        mascaraHorario(t),
                       )
                     }
                     onBlur={() =>
                       aoSair("horarioFechamento", horarioFechamento, (v) =>
-                        validarHorario(v, "horário de fechamento")
+                        validarHorario(v, "horário de fechamento"),
                       )
                     }
                     erro={erros.horarioFechamento}
