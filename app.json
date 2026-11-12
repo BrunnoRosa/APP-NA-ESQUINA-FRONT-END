@@ -3,6 +3,10 @@
     "name": "app-na-esquina-mobile",
     "slug": "app-na-esquina-mobile",
     "version": "1.0.0",
+    "extra":{"name": "App Na Esquina"},
+    "eas": {
+      "projectId": "9a794b1e-7e12-421b-853f-bdf123456789"
+    },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "appnaesquinamobile",
@@ -10,16 +14,20 @@
     "ios": {
       "icon": "./assets/expo.icon"
     },
-    "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
-      },
-      "predictiveBackGestureEnabled": false
+    "notification": {
+      "vapidPublicKey": "BICaUlJOdIdjQa_tlTYHzn3RVA1KJ_5OMhegdr9WHuCfPwZp2uFwHWk43cXRbpn2hhTlS4NRZujVSDlrWl7-u2o",
+      "serviceWorkerPath": "/expo-service-worker.js"
     },
     "web": {
+      "android": {
+        "adaptiveIcon": {
+          "backgroundColor": "#E6F4FE",
+          "foregroundImage": "./assets/images/android-icon-foreground.png",
+          "backgroundImage": "./assets/images/android-icon-background.png",
+          "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        },
+        "predictiveBackGestureEnabled": false
+    },
       "output": "single",
       "favicon": "./assets/images/favicon.png"
     },

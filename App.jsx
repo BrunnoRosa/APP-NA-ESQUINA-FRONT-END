@@ -6,6 +6,8 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { useEffect } from "react"; 
+import api from "./src/services/api";
 
 // Contextos
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
@@ -13,6 +15,9 @@ import { CarrinhoProvider } from "./src/context/CarrinhoContext";
 import { LocalizacaoProvider } from "./src/context/LocalizacaoContext";
 import { PedidosPendentesProvider } from "./src/context/PedidosPendentesContext";
 import { ToastProvider } from "./src/context/ToastContext";
+
+// Função de Notificações
+import { registrarParaNotificacoesPushAsync } from "./src/services/notifications"; // <-- NOVO IMPORT ADICIONADO
 
 // Componente Customizado do TabBar
 import TabNavigator from "./src/components/Layout/TabNavigator";
@@ -96,10 +101,34 @@ function ComercianteTabs() {
 }
 
 // 3. Estrutura Geral de Rotas
-
 function Routes() {
   const { signed, user, loading } = useAuth();
   const { width } = useWindowDimensions();
+  
+  useEffect(() => {
+  if (signed && user) {
+    async function configurarNotificacoes() {
+      try {
+        const token = await registrarParaNotificacoesPushAsync();
+
+        if (token) {
+          console.log(`[Push Token - ${user.perfil}]:`, token);
+          await api.put('/api/usuarios/me/push-token', { token });
+        }
+      } catch (error) {
+        // Se for 409, significa que o token já está registado no backend
+        if (error?.response?.status === 409) {
+          console.log('Push token já cadastrado para este usuário.');
+        } else {
+          console.log('Erro ao registrar push token:', error);
+        }
+      }
+    }
+
+    configurarNotificacoes();
+  }
+}, [signed, user]);
+
   const estiloConteudoDesktop = signed && width >= 900
     ? { flex: 1, width: "100%", maxWidth: 1600, alignSelf: "center" }
     : undefined;
