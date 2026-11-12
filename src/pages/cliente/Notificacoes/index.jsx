@@ -1,19 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNotificacoesCliente } from '../../../context/NotificacoesClienteContext';
 import { cores } from '../../../theme';
 import { styles } from './styles';
 
 export default function Notificacoes({ navigation }) {
-  const [notificacoes, setNotificacoes] = useState([
-    {
-      id: '1',
-      titulo: 'Bem-vindo ao Na Esquina!',
-      mensagem: 'Aproveite as ofertas e promoções dos mercados próximos de si.',
-      data: 'Hoje às 10:00',
-      lida: false,
-    },
-  ]);
+  const { notificacoes, marcarTodasComoLidas } = useNotificacoesCliente();
+
+  useEffect(() => {
+    marcarTodasComoLidas();
+  }, [marcarTodasComoLidas]);
 
   return (
     <View style={styles.container}>
