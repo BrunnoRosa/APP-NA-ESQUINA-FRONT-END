@@ -14,6 +14,7 @@ import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import { CarrinhoProvider } from "./src/context/CarrinhoContext";
 import { LocalizacaoProvider } from "./src/context/LocalizacaoContext";
 import { PedidosPendentesProvider } from "./src/context/PedidosPendentesContext";
+import { NotificacoesClienteProvider } from "./src/context/NotificacoesClienteContext";
 import { ToastProvider } from "./src/context/ToastContext";
 
 // Função de Notificações
@@ -188,11 +189,13 @@ export default function App() {
     <ToastProvider>
       <AuthProvider>
         <PedidosPendentesProvider>
-          <LocalizacaoProvider>
-            <CarrinhoProvider>
-              <Routes />
-            </CarrinhoProvider>
-          </LocalizacaoProvider>
+          <NotificacoesClienteProvider>
+            <LocalizacaoProvider>
+              <CarrinhoProvider>
+                <Routes />
+              </CarrinhoProvider>
+            </LocalizacaoProvider>
+          </NotificacoesClienteProvider>
         </PedidosPendentesProvider>
       </AuthProvider>
     </ToastProvider>
