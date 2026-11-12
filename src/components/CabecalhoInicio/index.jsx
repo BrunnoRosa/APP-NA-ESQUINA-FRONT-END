@@ -1,11 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Image, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useLocalizacao } from '../../context/LocalizacaoContext';
-import api from '../../services/api';
-import { registrarParaNotificacoesPushAsync } from '../../services/notifications';
 import { cores } from '../../theme';
 import { styles } from './styles';
 
@@ -15,21 +13,6 @@ export default function CabecalhoInicio({ navigation }) {
   const [temNotificacaoNaoLida, setTemNotificacaoNaoLida] = useState(true);
 
   const primeiroNome = user?.nome ? user.nome.split(' ')[0] : 'visitante';
-
-  useEffect(() => {
-    async function inicializarNotificacoes() {
-      try {
-        const token = await registrarParaNotificacoesPushAsync();
-        if (token) {
-          await api.put('/api/usuarios/me/push-token', { token });
-        }
-      } catch (error) {
-        console.log('Erro ao registrar push token no cabeçalho:', error);
-      }
-    }
-
-    inicializarNotificacoes();
-  }, []);
 
   const handleAbrirNotificacoes = () => {
     setTemNotificacaoNaoLida(false);
