@@ -1,5 +1,5 @@
-import { createContext, useContext, useState } from 'react';
-import { Alert, Platform } from 'react-native';
+import { createContext, useContext, useState } from "react";
+import { useToast } from "./ToastContext";
 
 const CarrinhoContext = createContext({});
 
@@ -11,11 +11,12 @@ export function extrairIdMercadinho(produto) {
     produto.id_mercadinho ||
     produto.mercadinho?.idMercadinho ||
     produto.mercadinho?.id ||
-    (typeof produto.mercadinho === 'number' ? produto.mercadinho : null)
+    (typeof produto.mercadinho === "number" ? produto.mercadinho : null)
   );
 }
 
 export function CarrinhoProvider({ children }) {
+  const { confirmar } = useToast();
   const [itens, setItens] = useState([]);
   const [idMercadinho, setIdMercadinho] = useState(null);
 
@@ -32,31 +33,36 @@ export function CarrinhoProvider({ children }) {
     setItens((itensAtuais) => {
       const idProd = produto.idProduto || produto.id;
       const itemExistente = itensAtuais.find(
-        (item) => (item.idProduto || item.id) === idProd
+        (item) => (item.idProduto || item.id) === idProd,
       );
 
       const produtoFormatado = {
         ...produto,
         idMercadinho: idMercadoGarantido,
         mercadinhoId: idMercadoGarantido,
-        mercadinho: typeof produto.mercadinho === 'object' && produto.mercadinho !== null
-          ? { ...produto.mercadinho, idMercadinho: idMercadoGarantido, id: idMercadoGarantido }
-          : { idMercadinho: idMercadoGarantido, id: idMercadoGarantido }
+        mercadinho:
+          typeof produto.mercadinho === "object" && produto.mercadinho !== null
+            ? {
+                ...produto.mercadinho,
+                idMercadinho: idMercadoGarantido,
+                id: idMercadoGarantido,
+              }
+            : { idMercadinho: idMercadoGarantido, id: idMercadoGarantido },
       };
 
       if (itemExistente) {
         return itensAtuais.map((item) =>
           (item.idProduto || item.id) === idProd
-            ? { 
-                ...item, 
+            ? {
+                ...item,
                 ...produtoFormatado,
-                quantidade: item.quantidade + 1 
+                quantidade: item.quantidade + 1,
               }
             : {
                 ...item,
                 idMercadinho: item.idMercadinho || idMercadoGarantido,
                 mercadinhoId: item.mercadinhoId || idMercadoGarantido,
-              }
+              },
         );
       }
 
@@ -71,7 +77,7 @@ export function CarrinhoProvider({ children }) {
     });
   };
 
-  const adicionarAoCarrinho = (produto) => {
+  const adicionarAoCarrinho = async (produto) => {
     const idMercadinhoProduto = extrairIdMercadinho(produto);
 
     if (
@@ -80,27 +86,14 @@ export function CarrinhoProvider({ children }) {
       String(idMercadinho) !== String(idMercadinhoProduto) &&
       itens.length > 0
     ) {
-      const mensagem = 'Seu carrinho contém itens de outro mercadinho. Deseja limpar o carrinho para adicionar este item?';
-
-      if (Platform.OS === 'web') {
-        const confirmarTroca = window.confirm(mensagem);
-        if (confirmarTroca) {
-          executarLimpezaEAdicao(produto, idMercadinhoProduto);
-        }
-      } else {
-        Alert.alert(
-          'Limpar Carrinho?',
-          mensagem,
-          [
-            { text: 'Cancelar', style: 'cancel' },
-            {
-              text: 'Sim, Limpar',
-              style: 'destructive',
-              onPress: () => executarLimpezaEAdicao(produto, idMercadinhoProduto),
-            },
-          ]
-        );
-      }
+      const sim = await confirmar({
+        titulo: "Limpar carrinho?",
+        mensagem:
+          "Seu carrinho contém itens de outro mercadinho. Deseja limpar o carrinho para adicionar este item?",
+        textoConfirmar: "Sim, limpar",
+        tipo: "perigo",
+      });
+      if (sim) executarLimpezaEAdicao(produto, idMercadinhoProduto);
       return;
     }
 
@@ -112,7 +105,7 @@ export function CarrinhoProvider({ children }) {
       ...produto,
       idMercadinho: idNovoMercado,
       mercadinhoId: idNovoMercado,
-      mercadinho: { idMercadinho: idNovoMercado, id: idNovoMercado }
+      mercadinho: { idMercadinho: idNovoMercado, id: idNovoMercado },
     };
     setItens([{ ...produtoFormatado, quantidade: 1 }]);
     setIdMercadinho(idNovoMercado);
@@ -140,7 +133,7 @@ export function CarrinhoProvider({ children }) {
   const removerItemCompleto = (idProduto) => {
     setItens((itensAtuais) => {
       const novosItens = itensAtuais.filter(
-        (item) => (item.idProduto || item.id) !== idProduto
+        (item) => (item.idProduto || item.id) !== idProduto,
       );
       if (novosItens.length === 0) {
         setIdMercadinho(null);
@@ -158,7 +151,7 @@ export function CarrinhoProvider({ children }) {
 
   const valorTotal = itens.reduce(
     (acc, item) => acc + (Number(item.preco) || 0) * item.quantidade,
-    0
+    0,
   );
 
   return (
@@ -183,7 +176,9 @@ export function CarrinhoProvider({ children }) {
 export function useCarrinho() {
   const context = useContext(CarrinhoContext);
   if (!context) {
-    throw new Error('useCarrinho deve ser utilizado dentro de um CarrinhoProvider');
+    throw new Error(
+      "useCarrinho deve ser utilizado dentro de um CarrinhoProvider",
+    );
   }
   return context;
 }

@@ -1,25 +1,27 @@
-import { Ionicons } from '@expo/vector-icons'; // 🆕
-import { useFocusEffect } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient'; // 🆕
-import { useCallback, useState } from 'react'; // ✏️ sem useEffect
+import { Ionicons } from "@expo/vector-icons"; // 🆕
+import { useFocusEffect } from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient"; // 🆕
+import { useCallback, useState } from "react"; // ✏️ sem useEffect
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Modal,
-  Platform,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  useWindowDimensions,
-} from 'react-native';
-import { useAuth } from '../../../context/AuthContext';
-import { useToast } from '../../../context/ToastContext';
-import api from '../../../services/api';
-import { cores } from '../../../theme'; // 🆕
-import { traduzirErro, validarNomeProduto, validarPreco } from '../../../utils/validacoes';
-import { styles } from './styles';
+  useWindowDimensions
+} from "react-native";
+import { useAuth } from "../../../context/AuthContext";
+import { useToast } from "../../../context/ToastContext";
+import api from "../../../services/api";
+import { cores } from "../../../theme"; // 🆕
+import {
+  traduzirErro,
+  validarNomeProduto,
+  validarPreco,
+} from "../../../utils/validacoes";
+import { styles } from "./styles";
 
 export default function GerenciarProdutos({ navigation }) {
   const { width } = useWindowDimensions();
@@ -31,22 +33,25 @@ export default function GerenciarProdutos({ navigation }) {
   const [salvando, setSalvando] = useState(false);
 
   // Estados de Cadastro Avulso
-  const [nome, setNome] = useState('');
-  const [preco, setPreco] = useState('');
+  const [nome, setNome] = useState("");
+  const [preco, setPreco] = useState("");
 
   // Estados do Modal de Edição
   const [modalEditVisivel, setModalEditVisivel] = useState(false);
   const [produtoEditando, setProdutoEditando] = useState(null);
-  const [editNome, setEditNome] = useState('');
-  const [editPreco, setEditPreco] = useState('');
+  const [editNome, setEditNome] = useState("");
+  const [editPreco, setEditPreco] = useState("");
 
-    // Toast central (em vez do alert do navegador). Mesmo formato: exibirAlerta(titulo, mensagem)
-  const { exibirAlerta } = useToast();
+  // Toast central (em vez do alert do navegador). Mesmo formato: exibirAlerta(titulo, mensagem)
+  const { exibirAlerta, confirmar } = useToast();
 
   // Obter o ID do Mercadinho resolvendo a divergência entre comerciante_id e id_mercadinho
   const obterIdMercadinho = useCallback(async () => {
     // 1. Tenta obter diretamente do objeto user
-    let idMerc = user?.idMercadinho || user?.mercadinho?.idMercadinho || user?.mercadinho?.id;
+    let idMerc =
+      user?.idMercadinho ||
+      user?.mercadinho?.idMercadinho ||
+      user?.mercadinho?.id;
     if (idMerc) return idMerc;
 
     // 2. Se apenas tivermos o ID do comerciante/utilizador, consulta a API para obter o idMercadinho real
@@ -54,12 +59,14 @@ export default function GerenciarProdutos({ navigation }) {
     if (idComerciante) {
       try {
         // Ajuste esta rota para o endpoint de busca de mercadinho por comerciante, se existir
-        const res = await api.get(`/api/mercadinhos/comerciante/${idComerciante}`);
+        const res = await api.get(
+          `/api/mercadinhos/comerciante/${idComerciante}`,
+        );
         if (res.data?.idMercadinho || res.data?.id) {
           return res.data.idMercadinho || res.data.id;
         }
       } catch (e) {
-        console.warn('⚠️ Não foi possível obter idMercadinho por endpoint:', e);
+        console.warn("⚠️ Não foi possível obter idMercadinho por endpoint:", e);
       }
     }
     return null; // ✏️ antes devolvia o id do usuário (que não é o id da loja)
@@ -75,7 +82,9 @@ export default function GerenciarProdutos({ navigation }) {
         return;
       }
 
-      const response = await api.get(`/api/produtos/mercadinho/${idMercadinho}?t=${new Date().getTime()}`);
+      const response = await api.get(
+        `/api/produtos/mercadinho/${idMercadinho}?t=${new Date().getTime()}`,
+      );
 
       let listaProdutos = [];
       if (Array.isArray(response.data)) {
@@ -88,7 +97,7 @@ export default function GerenciarProdutos({ navigation }) {
 
       setProdutos(listaProdutos);
     } catch (error) {
-      console.error('❌ Erro ao carregar produtos:', error);
+      console.error("❌ Erro ao carregar produtos:", error);
     } finally {
       setLoading(false);
     }
@@ -98,35 +107,38 @@ export default function GerenciarProdutos({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       carregarProdutos();
-    }, [carregarProdutos])
+    }, [carregarProdutos]),
   );
 
   const handleIrParaCatalogoGlobal = async () => {
     const idMercadinho = await obterIdMercadinho();
     if (!idMercadinho) {
-      exibirAlerta('Erro', 'Mercadinho não identificado. Faça login novamente.');
+      exibirAlerta(
+        "Erro",
+        "Mercadinho não identificado. Faça login novamente.",
+      );
       return;
     }
-    navigation.navigate('AtivarProdutoCatalogo', { idMercadinho });
+    navigation.navigate("AtivarProdutoCatalogo", { idMercadinho });
   };
 
   const handleCadastrar = async () => {
-        // Cada validação devolve o texto do erro (ou '' se estiver OK) e mostra no toast
+    // Cada validação devolve o texto do erro (ou '' se estiver OK) e mostra no toast
     const erroNome = validarNomeProduto(nome);
     if (erroNome) {
-      exibirAlerta('Atenção', erroNome, 'aviso');
+      exibirAlerta("Atenção", erroNome, "aviso");
       return;
     }
     const erroPreco = validarPreco(preco);
     if (erroPreco) {
-      exibirAlerta('Atenção', erroPreco, 'aviso');
+      exibirAlerta("Atenção", erroPreco, "aviso");
       return;
     }
-    const precoNumerico = parseFloat(preco.replace(',', '.'));
+    const precoNumerico = parseFloat(preco.replace(",", "."));
 
     const idMercadinho = await obterIdMercadinho();
     if (!idMercadinho) {
-      exibirAlerta('Erro', 'Mercadinho não identificado.');
+      exibirAlerta("Erro", "Mercadinho não identificado.");
       return;
     }
 
@@ -137,18 +149,18 @@ export default function GerenciarProdutos({ navigation }) {
         nome: nome.trim(),
         preco: precoNumerico,
         idMercadinho: Number(idMercadinho),
-        categoria: 'OUTROS',
-        descricao: '',
-        imagemUrl: '',
+        categoria: "OUTROS",
+        descricao: "",
+        imagemUrl: "",
       };
 
-      await api.post('/api/produtos', payload);
-      exibirAlerta('Sucesso', 'Produto cadastrado com sucesso!');
-      setNome('');
-      setPreco('');
+      await api.post("/api/produtos", payload);
+      exibirAlerta("Sucesso", "Produto cadastrado com sucesso!");
+      setNome("");
+      setPreco("");
       await carregarProdutos();
     } catch (error) {
-      console.error('❌ Erro ao cadastrar produto:', error);
+      console.error("❌ Erro ao cadastrar produto:", error);
       const erro = traduzirErro(error);
       exibirAlerta(erro.titulo, erro.mensagem);
     } finally {
@@ -157,7 +169,11 @@ export default function GerenciarProdutos({ navigation }) {
   };
 
   const abrirModalEdicao = (produto) => {
-    const nomeExibicao = produto.nome || produto.nomePersonalizado || produto.produtoBase?.nome || '';
+    const nomeExibicao =
+      produto.nome ||
+      produto.nomePersonalizado ||
+      produto.produtoBase?.nome ||
+      "";
     setProdutoEditando(produto);
     setEditNome(nomeExibicao);
     setEditPreco(String(produto.preco));
@@ -167,15 +183,15 @@ export default function GerenciarProdutos({ navigation }) {
   const handleSalvarEdicao = async () => {
     const erroNome = validarNomeProduto(editNome);
     if (erroNome) {
-      exibirAlerta('Atenção', erroNome, 'aviso');
+      exibirAlerta("Atenção", erroNome, "aviso");
       return;
     }
     const erroPreco = validarPreco(editPreco);
     if (erroPreco) {
-      exibirAlerta('Atenção', erroPreco, 'aviso');
+      exibirAlerta("Atenção", erroPreco, "aviso");
       return;
     }
-    const precoEditado = parseFloat(editPreco.replace(',', '.'));
+    const precoEditado = parseFloat(editPreco.replace(",", "."));
 
     setSalvando(true);
     const idProd = produtoEditando.idProduto || produtoEditando.id;
@@ -186,12 +202,12 @@ export default function GerenciarProdutos({ navigation }) {
         preco: precoEditado,
       });
 
-      exibirAlerta('Sucesso', 'Produto atualizado com sucesso!');
+      exibirAlerta("Sucesso", "Produto atualizado com sucesso!");
       setModalEditVisivel(false);
       setProdutoEditando(null);
       await carregarProdutos();
     } catch (error) {
-      console.error('Erro ao atualizar produto:', error);
+      console.error("Erro ao atualizar produto:", error);
       const erro = traduzirErro(error);
       exibirAlerta(erro.titulo, erro.mensagem);
     } finally {
@@ -199,41 +215,36 @@ export default function GerenciarProdutos({ navigation }) {
     }
   };
 
-  const handleAlternarStatus = (produto) => {
+  const handleAlternarStatus = async (produto) => {
     const idProd = produto.idProduto || produto.id;
     const novoStatus = !(produto.ativo ?? true);
-    const acaoTexto = novoStatus ? 'ativar' : 'inativar';
-    const nomeExibicao = produto.nome || produto.nomePersonalizado || produto.produtoBase?.nome || 'este produto';
+    const acaoTexto = novoStatus ? "ativar" : "inativar";
+    const nomeExibicao =
+      produto.nome ||
+      produto.nomePersonalizado ||
+      produto.produtoBase?.nome ||
+      "este produto";
 
-    const executarAlternancia = async () => {
-      try {
-        await api.put(`/api/produtos/${idProd}/status?ativo=${novoStatus}`);
-        exibirAlerta('Sucesso', `O produto "${nomeExibicao}" foi ${novoStatus ? 'ativado' : 'inativado'} com sucesso.`);
-        await carregarProdutos();
-      } catch (error) {
-        console.error(`Erro ao ${acaoTexto} produto:`, error);
-        const erro = traduzirErro(error);
-        exibirAlerta(erro.titulo, erro.mensagem);
-      }
-    };
+    // Pergunta antes (quadro no centro). Inativar = vermelho; ativar = verde.
+    const sim = await confirmar({
+      titulo: `${novoStatus ? "Ativar" : "Inativar"} produto`,
+      mensagem: `Deseja ${acaoTexto} "${nomeExibicao}"?`,
+      textoConfirmar: novoStatus ? "Ativar" : "Inativar",
+      tipo: novoStatus ? "sucesso" : "perigo",
+    });
+    if (!sim) return;
 
-    const mensagemConfirmacao = novoStatus
-      ? `Deseja ativar "${nomeExibicao}"?`
-      : `Deseja inativar "${nomeExibicao}"?`;
-
-    if (Platform.OS === 'web') {
-      if (confirm(mensagemConfirmacao)) {
-        executarAlternancia();
-      }
-    } else {
-      Alert.alert(
-        `${novoStatus ? 'Ativar' : 'Inativar'} Produto`,
-        mensagemConfirmacao,
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: novoStatus ? 'Ativar' : 'Inativar', style: novoStatus ? 'default' : 'destructive', onPress: executarAlternancia },
-        ]
+    try {
+      await api.put(`/api/produtos/${idProd}/status?ativo=${novoStatus}`);
+      exibirAlerta(
+        "Sucesso",
+        `O produto "${nomeExibicao}" foi ${novoStatus ? "ativado" : "inativado"} com sucesso.`,
       );
+      await carregarProdutos();
+    } catch (error) {
+      console.error(`Erro ao ${acaoTexto} produto:`, error);
+      const erro = traduzirErro(error);
+      exibirAlerta(erro.titulo, erro.mensagem);
     }
   };
 
@@ -251,7 +262,9 @@ export default function GerenciarProdutos({ navigation }) {
         <Text style={styles.btnCatalogoTexto}>Buscar no catálogo global</Text>
       </TouchableOpacity>
 
-      <View style={[styles.divisorLinha, isDesktop && styles.divisorLinhaDesktop]}>
+      <View
+        style={[styles.divisorLinha, isDesktop && styles.divisorLinhaDesktop]}
+      >
         <View style={styles.divisorTraco} />
         <Text style={styles.divisorTexto}>ou cadastre um produto avulso</Text>
         <View style={styles.divisorTraco} />
@@ -288,7 +301,11 @@ export default function GerenciarProdutos({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      <Text style={[styles.secaoTitulo, isDesktop && styles.secaoTituloDesktop]}>Produtos no seu estoque</Text>
+      <Text
+        style={[styles.secaoTitulo, isDesktop && styles.secaoTituloDesktop]}
+      >
+        Produtos no seu estoque
+      </Text>
     </View>
   );
 
@@ -299,10 +316,12 @@ export default function GerenciarProdutos({ navigation }) {
         colors={[cores.degradeInicioTopo, cores.degradeInicioBase]}
         style={[styles.topo, isDesktop && styles.topoDesktop]}
       >
-        <Text style={[styles.titulo, isDesktop && styles.tituloDesktop]}>Meus produtos</Text>
+        <Text style={[styles.titulo, isDesktop && styles.tituloDesktop]}>
+          Meus produtos
+        </Text>
         {!loading && produtos.length > 0 && (
           <Text style={styles.subtitulo}>
-            {produtos.length} {produtos.length === 1 ? 'produto' : 'produtos'}
+            {produtos.length} {produtos.length === 1 ? "produto" : "produtos"}
           </Text>
         )}
       </LinearGradient>
@@ -310,32 +329,57 @@ export default function GerenciarProdutos({ navigation }) {
       {/* 🆕 Folha branca arredondada */}
       <View style={[styles.folha, isDesktop && styles.folhaDesktop]}>
         <FlatList
-          key={isDesktop ? `desktop-${colunasProdutos}` : 'mobile'}
+          key={isDesktop ? `desktop-${colunasProdutos}` : "mobile"}
           data={loading ? [] : produtos}
           numColumns={colunasProdutos}
-          columnWrapperStyle={colunasProdutos > 1 ? styles.produtosLinha : undefined}
-          contentContainerStyle={[styles.lista, isDesktop && styles.listaDesktop]}
-          keyExtractor={(item, index) => String(item?.idProduto || item?.id || index)}
+          columnWrapperStyle={
+            colunasProdutos > 1 ? styles.produtosLinha : undefined
+          }
+          contentContainerStyle={[
+            styles.lista,
+            isDesktop && styles.listaDesktop,
+          ]}
+          keyExtractor={(item, index) =>
+            String(item?.idProduto || item?.id || index)
+          }
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           ListHeaderComponent={cabecalhoLista}
           ListEmptyComponent={
             loading ? (
-              <ActivityIndicator size="large" color={cores.primaria} style={{ marginTop: 24 }} />
+              <ActivityIndicator
+                size="large"
+                color={cores.primaria}
+                style={{ marginTop: 24 }}
+              />
             ) : (
-              <Text style={styles.vazioTexto}>Nenhum produto cadastrado ainda.</Text>
+              <Text style={styles.vazioTexto}>
+                Nenhum produto cadastrado ainda.
+              </Text>
             )
           }
           renderItem={({ item }) => {
             const isAtivo = item.ativo ?? true;
             // Trata o nome caso nome_personalizado seja NULL na base de dados
-            const nomeExibicao = item.nome || item.nomePersonalizado || item.produtoBase?.nome || 'Produto sem nome';
+            const nomeExibicao =
+              item.nome ||
+              item.nomePersonalizado ||
+              item.produtoBase?.nome ||
+              "Produto sem nome";
 
             return (
-              <View style={[styles.produtoCard, isDesktop && styles.produtoCardDesktop, !isAtivo && styles.produtoInativo]}>
+              <View
+                style={[
+                  styles.produtoCard,
+                  isDesktop && styles.produtoCardDesktop,
+                  !isAtivo && styles.produtoInativo,
+                ]}
+              >
                 <View style={styles.produtoTopo}>
                   <View style={styles.produtoNomeLinha}>
-                    <Text style={styles.produtoNome} numberOfLines={1}>{nomeExibicao}</Text>
+                    <Text style={styles.produtoNome} numberOfLines={1}>
+                      {nomeExibicao}
+                    </Text>
                     {!isAtivo && (
                       <View style={styles.tagInativo}>
                         <Text style={styles.tagInativoTexto}>INATIVO</Text>
@@ -343,9 +387,9 @@ export default function GerenciarProdutos({ navigation }) {
                     )}
                   </View>
                   <Text style={styles.produtoPreco}>
-                    {Number(item.preco || 0).toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
+                    {Number(item.preco || 0).toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
                     })}
                   </Text>
                 </View>
@@ -356,22 +400,37 @@ export default function GerenciarProdutos({ navigation }) {
                     onPress={() => abrirModalEdicao(item)}
                     activeOpacity={0.85}
                   >
-                    <Ionicons name="create-outline" size={16} color={cores.primaria} />
+                    <Ionicons
+                      name="create-outline"
+                      size={16}
+                      color={cores.primaria}
+                    />
                     <Text style={styles.btnContornoTexto}>Editar</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[styles.btnAcao, isAtivo ? styles.btnContorno : styles.btnSucesso]}
+                    style={[
+                      styles.btnAcao,
+                      isAtivo ? styles.btnContorno : styles.btnSucesso,
+                    ]}
                     onPress={() => handleAlternarStatus(item)}
                     activeOpacity={0.85}
                   >
                     <Ionicons
-                      name={isAtivo ? 'ban-outline' : 'checkmark-circle-outline'}
+                      name={
+                        isAtivo ? "ban-outline" : "checkmark-circle-outline"
+                      }
                       size={16}
-                      color={isAtivo ? cores.primaria : '#FFFFFF'}
+                      color={isAtivo ? cores.primaria : "#FFFFFF"}
                     />
-                    <Text style={isAtivo ? styles.btnContornoTexto : styles.btnSucessoTexto}>
-                      {isAtivo ? 'Inativar' : 'Ativar'}
+                    <Text
+                      style={
+                        isAtivo
+                          ? styles.btnContornoTexto
+                          : styles.btnSucessoTexto
+                      }
+                    >
+                      {isAtivo ? "Inativar" : "Ativar"}
                     </Text>
                   </TouchableOpacity>
                 </View>
