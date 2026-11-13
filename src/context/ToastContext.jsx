@@ -10,6 +10,7 @@ import {
 } from "react";
 import {
   Animated,
+  BackHandler,
   Platform,
   Pressable,
   StyleSheet,
@@ -22,12 +23,22 @@ import { cores } from "../theme";
 // Toast centralizado do Na Esquina.
 //
 // Substitui os alert() / Alert.alert() de AVISO (erro, sucesso, validação).
-// Perguntas com botões (ex.: "Deseja sair?") continuam usando confirm/Alert.
+// Perguntas com botões (ex.: "Deseja sair?") usam o confirmar() deste mesmo arquivo.
 //
 // Como usar em qualquer tela:
 //   const { exibirAlerta } = useToast();
 //   exibirAlerta('Erro', 'Não foi possível salvar.');            // tipo descoberto pelo título
 //   exibirAlerta('Atenção', 'Preencha o nome.', 'aviso');         // ou informe o tipo
+//
+// Pergunta Sim/Não (quadro no centro da tela):
+//   const { confirmar } = useToast();
+//   const sim = await confirmar({
+//     titulo: 'Sair da conta',
+//     mensagem: 'Deseja realmente sair da sua conta?',
+//     textoConfirmar: 'Sim, sair',
+//     tipo: 'perigo',            // 'perigo' (vermelho) | 'padrao' | 'sucesso' (verde)
+//   });
+//   if (sim) signOut();
 // ---------------------------------------------------------------------------
 
 const ToastContext = createContext(null);
@@ -38,6 +49,21 @@ const TIPOS = {
   erro: { cor: cores.erro, icone: "close-circle" },
   aviso: { cor: cores.laranjaDistancia, icone: "alert-circle" },
   info: { cor: cores.textoLogin, icone: "information-circle" },
+};
+
+// Tipos do quadro de confirmação: cor da faixa/ícone e cor do botão "confirmar"
+const TIPOS_CONFIRMACAO = {
+  perigo: { cor: cores.erro, icone: "warning", botao: cores.erro },
+  padrao: {
+    cor: cores.textoLogin,
+    icone: "help-circle",
+    botao: cores.primaria,
+  },
+  sucesso: {
+    cor: cores.sucesso,
+    icone: "checkmark-circle",
+    botao: cores.sucesso,
+  },
 };
 
 // Descobre o tipo pelo título, para as telas antigas não precisarem informar nada.
@@ -126,6 +152,104 @@ export function ToastProvider({ children }) {
     [opacidade, escala, esconder, usarNativo],
   );
 
+  // ----------------------------- quadro de confirmação -----------------------------
+  const [dialogo, setDialogo] = useState(null); // opções da pergunta aberta
+  const opacidadeDlg = useRef(new Animated.Value(0)).current;
+  const escalaDlg = useRef(new Animated.Value(0.92)).current;
+  const resolverDlg = useRef(null); // função que entrega a resposta (true/false) a quem perguntou
+
+  // Fecha o quadro e entrega a resposta. Só responde UMA vez (evita toque duplo).
+  const responder = useCallback(
+    (resposta) => {
+      const resolver = resolverDlg.current;
+      if (!resolver) return;
+      resolverDlg.current = null;
+      resolver(resposta);
+
+      Animated.parallel([
+        Animated.timing(opacidadeDlg, {
+          toValue: 0,
+          duration: 140,
+          useNativeDriver: usarNativo,
+        }),
+        Animated.timing(escalaDlg, {
+          toValue: 0.92,
+          duration: 140,
+          useNativeDriver: usarNativo,
+        }),
+      ]).start(() => setDialogo(null));
+    },
+    [opacidadeDlg, escalaDlg, usarNativo],
+  );
+
+  // confirmar({...}) devolve uma Promise: true = "Sim", false = cancelou / tocou fora / voltou.
+  // Também aceita onConfirmar / onCancelar, se preferir callbacks.
+  const confirmar = useCallback(
+    (opcoes) =>
+      new Promise((resolve) => {
+        // Se já havia uma pergunta aberta, ela é respondida como "não"
+        if (resolverDlg.current) resolverDlg.current(false);
+
+        resolverDlg.current = (resposta) => {
+          if (resposta) opcoes.onConfirmar?.();
+          else opcoes.onCancelar?.();
+          resolve(resposta);
+        };
+
+        setDialogo({
+          titulo: opcoes.titulo,
+          mensagem: opcoes.mensagem,
+          textoConfirmar: opcoes.textoConfirmar || "Confirmar",
+          textoCancelar: opcoes.textoCancelar || "Cancelar",
+          tipo: opcoes.tipo || "padrao",
+        });
+
+        opacidadeDlg.setValue(0);
+        escalaDlg.setValue(0.92);
+        Animated.parallel([
+          Animated.timing(opacidadeDlg, {
+            toValue: 1,
+            duration: 160,
+            useNativeDriver: usarNativo,
+          }),
+          Animated.spring(escalaDlg, {
+            toValue: 1,
+            friction: 8,
+            useNativeDriver: usarNativo,
+          }),
+        ]).start();
+      }),
+    [opacidadeDlg, escalaDlg, usarNativo],
+  );
+
+  // Enquanto o quadro está aberto: botão "voltar" do Android e tecla Esc (web) = cancelar
+  useEffect(() => {
+    if (!dialogo) return undefined;
+
+    const aoVoltar = () => {
+      responder(false);
+      return true; // true = "eu tratei", o app não volta de tela
+    };
+    // BackHandler só existe no celular; na web ele avisa no console, então nem registramos
+    const assinatura =
+      Platform.OS === "web"
+        ? null
+        : BackHandler.addEventListener("hardwareBackPress", aoVoltar);
+
+    let aoTeclar;
+    if (Platform.OS === "web" && typeof document !== "undefined") {
+      aoTeclar = (e) => {
+        if (e.key === "Escape") responder(false);
+      };
+      document.addEventListener("keydown", aoTeclar);
+    }
+
+    return () => {
+      assinatura?.remove?.();
+      if (aoTeclar) document.removeEventListener("keydown", aoTeclar);
+    };
+  }, [dialogo, responder]);
+
   // Limpa o temporizador se o app for fechado
   useEffect(() => () => timer.current && clearTimeout(timer.current), []);
 
@@ -136,11 +260,14 @@ export function ToastProvider({ children }) {
   );
 
   const valor = useMemo(
-    () => ({ mostrar, exibirAlerta, esconder }),
-    [mostrar, exibirAlerta, esconder],
+    () => ({ mostrar, exibirAlerta, esconder, confirmar }),
+    [mostrar, exibirAlerta, esconder, confirmar],
   );
 
   const estilo = toast ? TIPOS[toast.tipo] || TIPOS.info : TIPOS.info;
+  const estiloDlg = dialogo
+    ? TIPOS_CONFIRMACAO[dialogo.tipo] || TIPOS_CONFIRMACAO.padrao
+    : TIPOS_CONFIRMACAO.padrao;
 
   return (
     <ToastContext.Provider value={valor}>
@@ -169,6 +296,67 @@ export function ToastProvider({ children }) {
               </Pressable>
             </Animated.View>
           </View>
+        )}
+
+        {dialogo && (
+          // Fica POR CIMA do toast. O fundo escuro bloqueia os toques na tela de trás.
+          <Animated.View style={[styles.fundoDlg, { opacity: opacidadeDlg }]}>
+            {/* Tocar fora do cartão = cancelar */}
+            <Pressable
+              style={StyleSheet.absoluteFill}
+              onPress={() => responder(false)}
+              accessibilityLabel="Fechar"
+            />
+            <Animated.View
+              accessibilityRole="alert"
+              style={[
+                styles.cartaoDlg,
+                {
+                  borderTopColor: estiloDlg.cor,
+                  transform: [{ scale: escalaDlg }],
+                },
+              ]}
+            >
+              <Ionicons
+                name={estiloDlg.icone}
+                size={38}
+                color={estiloDlg.cor}
+              />
+              {!!dialogo.titulo && (
+                <Text style={styles.titulo}>{dialogo.titulo}</Text>
+              )}
+              {!!dialogo.mensagem && (
+                <Text style={styles.mensagem}>{dialogo.mensagem}</Text>
+              )}
+
+              <View style={styles.botoesDlg}>
+                <Pressable
+                  onPress={() => responder(false)}
+                  style={({ pressed }) => [
+                    styles.botaoDlg,
+                    styles.botaoCancelar,
+                    pressed && styles.botaoPressionado,
+                  ]}
+                >
+                  <Text style={styles.textoCancelar}>
+                    {dialogo.textoCancelar}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => responder(true)}
+                  style={({ pressed }) => [
+                    styles.botaoDlg,
+                    { backgroundColor: estiloDlg.botao },
+                    pressed && styles.botaoPressionado,
+                  ]}
+                >
+                  <Text style={styles.textoConfirmar}>
+                    {dialogo.textoConfirmar}
+                  </Text>
+                </Pressable>
+              </View>
+            </Animated.View>
+          </Animated.View>
         )}
       </View>
     </ToastContext.Provider>
@@ -226,4 +414,53 @@ const styles = StyleSheet.create({
     color: cores.textoSecundario,
     textAlign: "center",
   },
+
+  // ----- quadro de confirmação -----
+  fundoDlg: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(35, 36, 71, 0.5)", // azul-escuro da marca com transparência
+    alignItems: "center",
+    justifyContent: "center", // confirmações ficam no CENTRO
+    paddingHorizontal: 24,
+    zIndex: 10000, // acima do toast (9999)
+    elevation: 10000,
+  },
+  cartaoDlg: {
+    width: "100%",
+    maxWidth: 340,
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: cores.fundoCartaoLogin, // mesmo cartão do toast
+    borderRadius: 16,
+    borderTopWidth: 5,
+    paddingTop: 22,
+    paddingBottom: 18,
+    paddingHorizontal: 22,
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 14,
+  },
+  botoesDlg: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 16,
+    width: "100%",
+  },
+  botaoDlg: {
+    flex: 1,
+    height: 46,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  botaoCancelar: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1.5,
+    borderColor: cores.icone,
+  },
+  botaoPressionado: { opacity: 0.8 },
+  textoCancelar: { fontSize: 15, fontWeight: "700", color: cores.textoLogin },
+  textoConfirmar: { fontSize: 15, fontWeight: "700", color: "#FFFFFF" },
 });
