@@ -15,6 +15,7 @@ import { useToast } from "../../../context/ToastContext";
 import api from "../../../services/api";
 import { buscarCep } from "../../../services/cep";
 import { cores } from "../../../theme";
+import { coordenadasDoEndereco } from "../../../utils/geocodificacao";
 import {
   limparEspacos,
   mascaraCep,
@@ -78,8 +79,6 @@ export default function Cadastro({ navigation }) {
   const [cidade, setCidade] = useState("");
   const [uf, setUf] = useState("");
   const [buscandoCep, setBuscandoCep] = useState(false);
-  const [latitude, setLatitude] = useState("");
-  const [longitude, setLongitude] = useState("");
   const [horarioAbertura, setHorarioAbertura] = useState("");
   const [horarioFechamento, setHorarioFechamento] = useState("");
 
@@ -252,6 +251,18 @@ export default function Cadastro({ navigation }) {
     let usuarioCriado = false;
 
     try {
+      // Descobre a localização no mapa a partir do endereço (o botão fica em "carregando")
+      let coordenadas = null;
+      if (perfil === "COMERCIANTE") {
+        coordenadas = await coordenadasDoEndereco({
+          rua: limparEspacos(rua),
+          numero: limparEspacos(numero),
+          bairro: limparEspacos(bairro),
+          cidade: limparEspacos(cidade),
+          uf,
+        });
+      }
+
       const userResponse = await api.post("/api/auth/register", {
         nome: limparEspacos(nome),
         email: email.trim().toLowerCase(),
@@ -270,22 +281,31 @@ export default function Cadastro({ navigation }) {
           cnpj: somenteDigitos(cnpj),
           endereco: montarEndereco({ rua, numero, bairro, cidade, uf }),
           cep: somenteDigitos(cep),
-          latitude: latitude
-            ? parseFloat(latitude.replace(",", "."))
-            : -12.9714,
-          longitude: longitude
-            ? parseFloat(longitude.replace(",", "."))
-            : -38.5014,
+          // Se não achou o endereço no mapa, usa um ponto padrão de Salvador
+          latitude: coordenadas ? coordenadas.lat : -12.9714,
+          longitude: coordenadas ? coordenadas.lng : -38.5014,
           horarioAbertura: horarioAbertura + ":00",
           horarioFechamento: horarioFechamento + ":00",
           idComerciante: idComerciante,
         });
       }
 
-      exibirAlerta(
-        "Sucesso!",
-        "Conta criada com sucesso. Faça login para continuar.",
-      );
+      if (
+        perfil === "COMERCIANTE" &&
+        (!coordenadas || coordenadas.precisao !== "endereco")
+      ) {
+        // Cadastrou, mas a posição no mapa é aproximada
+        exibirAlerta(
+          "Conta criada com sucesso",
+          "Não achamos o número exato no mapa, então a posição do mercadinho é aproximada. Faça login para continuar.",
+          "sucesso",
+        );
+      } else {
+        exibirAlerta(
+          "Sucesso!",
+          "Conta criada com sucesso. Faça login para continuar.",
+        );
+      }
       navigation.navigate("Login");
     } catch (error) {
       console.log("Erro no cadastro:", error);
@@ -596,28 +616,7 @@ export default function Cadastro({ navigation }) {
                     erro={erros.uf}
                   />
                 </View>
-                <View style={styles.linhaHorarios}>
-                  <Campo
-                    estiloExterno={{ flex: 1 }}
-                    rotulo="Latitude"
-                    placeholder="-12.9714"
-                    keyboardType="numeric"
-                    value={latitude}
-                    onChangeText={(t) => aoDigitar("latitude", setLatitude, t)}
-                    erro={erros.latitude}
-                  />
-                  <Campo
-                    estiloExterno={{ flex: 1 }}
-                    rotulo="Longitude"
-                    placeholder="-38.5014"
-                    keyboardType="numeric"
-                    value={longitude}
-                    onChangeText={(t) =>
-                      aoDigitar("longitude", setLongitude, t)
-                    }
-                    erro={erros.longitude}
-                  />
-                </View>
+
                 <View style={styles.linhaHorarios}>
                   <Campo
                     estiloExterno={{ flex: 1 }}
