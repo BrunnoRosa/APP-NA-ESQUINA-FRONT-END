@@ -115,6 +115,13 @@ export const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 30,
   },
+  produtoFoto: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    marginRight: 10,
+    backgroundColor: '#FFFFFF',
+  },
   formTitulo: {
     fontSize: 16,
     fontWeight: 'bold',

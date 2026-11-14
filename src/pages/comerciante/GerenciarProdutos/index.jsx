@@ -5,6 +5,7 @@ import { useCallback, useState } from "react"; // ✏️ sem useEffect
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   Modal,
   Text,
   TextInput,
@@ -12,6 +13,7 @@ import {
   View,
   useWindowDimensions
 } from "react-native";
+import FotoProduto from "../../../components/FotoProduto";
 import { useAuth } from "../../../context/AuthContext";
 import { useToast } from "../../../context/ToastContext";
 import api from "../../../services/api";
@@ -35,12 +37,14 @@ export default function GerenciarProdutos({ navigation }) {
   // Estados de Cadastro Avulso
   const [nome, setNome] = useState("");
   const [preco, setPreco] = useState("");
+  const [foto, setFoto] = useState(""); // foto nova do cadastro avulso (data URI)
 
   // Estados do Modal de Edição
   const [modalEditVisivel, setModalEditVisivel] = useState(false);
   const [produtoEditando, setProdutoEditando] = useState(null);
   const [editNome, setEditNome] = useState("");
   const [editPreco, setEditPreco] = useState("");
+  const [editFoto, setEditFoto] = useState(""); // só preenchida se o comerciante trocar a foto
 
   // Toast central (em vez do alert do navegador). Mesmo formato: exibirAlerta(titulo, mensagem)
   const { exibirAlerta, confirmar } = useToast();
@@ -151,13 +155,14 @@ export default function GerenciarProdutos({ navigation }) {
         idMercadinho: Number(idMercadinho),
         categoria: "OUTROS",
         descricao: "",
-        imagemUrl: "",
+        imagemUrl: foto || "",
       };
 
       await api.post("/api/produtos", payload);
       exibirAlerta("Sucesso", "Produto cadastrado com sucesso!");
       setNome("");
       setPreco("");
+      setFoto("");
       await carregarProdutos();
     } catch (error) {
       console.error("❌ Erro ao cadastrar produto:", error);
@@ -177,6 +182,7 @@ export default function GerenciarProdutos({ navigation }) {
     setProdutoEditando(produto);
     setEditNome(nomeExibicao);
     setEditPreco(String(produto.preco));
+    setEditFoto("");
     setModalEditVisivel(true);
   };
 
@@ -200,6 +206,7 @@ export default function GerenciarProdutos({ navigation }) {
       await api.put(`/api/produtos/${idProd}`, {
         nome: editNome.trim(),
         preco: precoEditado,
+        ...(editFoto ? { imagemUrl: editFoto } : {}),
       });
 
       exibirAlerta("Sucesso", "Produto atualizado com sucesso!");
@@ -287,6 +294,7 @@ export default function GerenciarProdutos({ navigation }) {
           value={preco}
           onChangeText={setPreco}
         />
+        <FotoProduto valor={foto} onChange={setFoto} />
         <TouchableOpacity
           style={styles.btnPrimario}
           onPress={handleCadastrar}
@@ -377,6 +385,9 @@ export default function GerenciarProdutos({ navigation }) {
               >
                 <View style={styles.produtoTopo}>
                   <View style={styles.produtoNomeLinha}>
+                    {item.imagemUrl ? (
+                      <Image source={{ uri: item.imagemUrl }} style={styles.produtoFoto} />
+                    ) : null}
                     <Text style={styles.produtoNome} numberOfLines={1}>
                       {nomeExibicao}
                     </Text>
@@ -464,6 +475,11 @@ export default function GerenciarProdutos({ navigation }) {
               keyboardType="numeric"
               value={editPreco}
               onChangeText={setEditPreco}
+            />
+            <FotoProduto
+              valor={editFoto}
+              onChange={setEditFoto}
+              imagemAtual={produtoEditando?.imagemUrl}
             />
 
             <View style={styles.modalAcoes}>
