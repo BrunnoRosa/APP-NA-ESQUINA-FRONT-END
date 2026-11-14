@@ -407,3 +407,11 @@ function mensagemPorStatus(status) {
   if (status >= 500) return "Erro no servidor. Tente novamente em instantes.";
   return "Não foi possível concluir a operação.";
 }
+
+// Complemento do endereço (sala, loja, bloco...): opcional, no máximo 60 caracteres.
+export function validarComplemento(valor) {
+  const complemento = limparEspacos(valor);
+  if (complemento.length > 60)
+    return "O complemento deve ter no máximo 60 caracteres.";
+  return "";
+}
