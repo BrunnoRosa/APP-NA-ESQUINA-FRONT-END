@@ -22,13 +22,13 @@ import {
   mascaraCnpj,
   mascaraHorario,
   mascaraTelefone,
-  montarEndereco,
   somenteDigitos,
   traduzirErro,
   validarBairro,
   validarCep,
   validarCidade,
   validarCnpj,
+  validarComplemento,
   validarEmail,
   validarHorario,
   validarNome,
@@ -76,6 +76,7 @@ export default function Cadastro({ navigation }) {
   const [rua, setRua] = useState("");
   const [numero, setNumero] = useState("");
   const [bairro, setBairro] = useState("");
+  const [complemento, setComplemento] = useState("");
   const [cidade, setCidade] = useState("");
   const [uf, setUf] = useState("");
   const [buscandoCep, setBuscandoCep] = useState(false);
@@ -163,7 +164,7 @@ export default function Cadastro({ navigation }) {
         exibirAlerta(
           "CEP encontrado",
           `Esse CEP é de ${e.cidade}/${e.uf} e não traz a rua. Preencha a rua e o bairro.`,
-          "info",
+          "aviso",
         );
         ruaRef.current?.focus();
       }
@@ -208,6 +209,7 @@ export default function Cadastro({ navigation }) {
       resultado.rua = validarRua(rua);
       resultado.numero = validarNumeroEndereco(numero);
       resultado.bairro = validarBairro(bairro);
+      resultado.complemento = validarComplemento(complemento);
       resultado.cidade = validarCidade(cidade);
       resultado.uf = validarUf(uf);
       resultado.horarioAbertura = validarHorario(
@@ -279,8 +281,14 @@ export default function Cadastro({ navigation }) {
         await api.post("/api/mercadinhos", {
           nomeFantasia: limparEspacos(nomeFantasia),
           cnpj: somenteDigitos(cnpj),
-          endereco: montarEndereco({ rua, numero, bairro, cidade, uf }),
+          // Endereço em campos separados: o back valida e monta o texto completo
           cep: somenteDigitos(cep),
+          rua: limparEspacos(rua),
+          numero: limparEspacos(numero),
+          bairro: limparEspacos(bairro),
+          complemento: limparEspacos(complemento),
+          cidade: limparEspacos(cidade),
+          uf,
           // Se não achou o endereço no mapa, usa um ponto padrão de Salvador
           latitude: coordenadas ? coordenadas.lat : -12.9714,
           longitude: coordenadas ? coordenadas.lng : -38.5014,
@@ -586,6 +594,19 @@ export default function Cadastro({ navigation }) {
                     erro={erros.bairro}
                   />
                 </View>
+                <Campo
+                  rotulo="Complemento (opcional)"
+                  placeholder="Sala, loja, bloco, ponto de referência..."
+                  maxLength={60}
+                  value={complemento}
+                  onChangeText={(t) =>
+                    aoDigitar("complemento", setComplemento, t)
+                  }
+                  onBlur={() =>
+                    aoSair("complemento", complemento, validarComplemento)
+                  }
+                  erro={erros.complemento}
+                />
                 <View style={styles.linhaHorarios}>
                   <Campo
                     estiloExterno={{ flex: 2 }}

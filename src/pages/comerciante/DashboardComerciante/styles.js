@@ -28,14 +28,7 @@ export const styles = StyleSheet.create({
     color: cores.textoTitulo,
     marginTop: 2,
   },
-  botaoSair: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  
 
   // Folha branca
   folha: {
@@ -135,4 +128,41 @@ export const styles = StyleSheet.create({
     marginTop: 2,
     lineHeight: 17,
   },
+
+  
+  // Minha conta (mesmo visual da tela Conta do cliente)
+  cartaoMenu: {
+    backgroundColor: cores.fundoCartao,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    marginBottom: 12,
+  },
+  itemMenu: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+  },
+  itemIcone: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  itemTexto: { flex: 1, fontSize: 15, color: cores.textoTitulo },
+
+  // Sair (igual ao da tela Conta do cliente)
+  botaoSair: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: cores.primaria,
+    borderRadius: 28,
+    height: 52,
+    marginTop: 8,
+  },
+  botaoSairTexto: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
 });

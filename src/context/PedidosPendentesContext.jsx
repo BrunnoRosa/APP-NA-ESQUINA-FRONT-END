@@ -31,11 +31,12 @@ export function PedidosPendentesProvider({ children }) {
       const total = lista.filter((p) => p.status === 'PENDENTE').length;
 
       if (anterior.current !== null && total > anterior.current) {
-        avisoRef.current(
+                avisoRef.current(
           'Novo pedido recebido',
           total === 1
             ? 'Há 1 pedido aguardando separação.'
-            : `Há ${total} pedidos aguardando separação.`
+            : `Há ${total} pedidos aguardando separação.`,
+          'sucesso' // verde, igual aos avisos de pedido do cliente // se precisar trocar pra laranja só trocar sucesso pra 'aviso' aqui
         );
       }
       anterior.current = total;
