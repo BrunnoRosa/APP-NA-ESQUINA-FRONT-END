@@ -16,7 +16,7 @@ import { useToast } from "../../../context/ToastContext";
 import api from "../../../services/api";
 import { buscarCep } from "../../../services/cep";
 import { cores } from "../../../theme";
-import { geocodificar } from "../../../utils/geocodificacao";
+import { coordenadasDoEndereco } from "../../../utils/geocodificacao";
 import {
   limparEspacos,
   mascaraCep,
@@ -24,22 +24,37 @@ import {
   mascaraTelefone,
   somenteDigitos,
   traduzirErro,
+  validarBairro,
   validarCep,
+  validarCidade,
+  validarComplemento,
   validarEndereco,
   validarHorario,
   validarNome,
   validarNomeFantasia,
+  validarNumeroEndereco,
   validarOrdemHorarios,
+  validarRua,
   validarTelefone,
+  validarUf,
 } from "../../../utils/validacoes";
 import { styles } from "./styles";
 
 // Campo reutilizável: rótulo + input + mensagem de erro
-function Campo({ rotulo, valor, aoMudar, erro, somenteLeitura, ...resto }) {
+function Campo({
+  rotulo,
+  valor,
+  aoMudar,
+  erro,
+  somenteLeitura,
+  inputRef,
+  ...resto
+}) {
   return (
     <View style={styles.grupo}>
       <Text style={styles.rotulo}>{rotulo}</Text>
       <TextInput
+        ref={inputRef}
         style={[
           styles.campo,
           erro && styles.campoErro,
@@ -56,18 +71,28 @@ function Campo({ rotulo, valor, aoMudar, erro, somenteLeitura, ...resto }) {
   );
 }
 
-// O endereço precisa ter o número da loja (ex.: "Rua Chile, 123, Centro") ou "S/N".
-function enderecoTemNumero(texto) {
-  return /\d|\bs\/?n\b/i.test(texto);
+// Descobre a posição no mapa, mas nunca deixa o "Salvar" travado:
+// se o serviço de mapas não responder em 15 segundos, desiste e devolve null.
+function descobrirPosicao(dados) {
+  const limite = new Promise((resolve) =>
+    setTimeout(() => resolve(null), 15000),
+  );
+  return Promise.race([
+    coordenadasDoEndereco(dados).catch(() => null),
+    limite,
+  ]);
 }
 
-// Descobre a posição no mapa, mas nunca deixa o "Salvar" travado:
-// se o serviço de mapas não responder em 8 segundos, desiste e devolve null.
-function descobrirPosicao(texto) {
-  const limite = new Promise((resolve) =>
-    setTimeout(() => resolve(null), 8000),
-  );
-  return Promise.race([geocodificar(texto).catch(() => null), limite]);
+// Normaliza o endereço para comparar "o que estava salvo" com "o que está na tela"
+function normalizarLocal({ cep, rua, numero, bairro, cidade, uf }) {
+  return {
+    cep: somenteDigitos(cep),
+    rua: limparEspacos(rua),
+    numero: limparEspacos(numero),
+    bairro: limparEspacos(bairro),
+    cidade: limparEspacos(cidade),
+    uf: String(uf || "").trim().toUpperCase(),
+  };
 }
 
 export default function EditarPerfil({ navigation }) {
@@ -86,8 +111,15 @@ export default function EditarPerfil({ navigation }) {
 
   // Dados do mercado (só comerciante)
   const [nomeFantasia, setNomeFantasia] = useState("");
-  const [endereco, setEndereco] = useState("");
   const [cep, setCep] = useState("");
+  const [rua, setRua] = useState("");
+  const [numero, setNumero] = useState("");
+  const [bairro, setBairro] = useState("");
+  const [complemento, setComplemento] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [uf, setUf] = useState("");
+  // Texto único do endereço (contas antigas, criadas antes dos campos separados)
+  const [enderecoAntigo, setEnderecoAntigo] = useState("");
   // Latitude/longitude NÃO aparecem mais na tela: ficam guardadas aqui só para reenviar
   // quando o endereço não mudou, e são recalculadas automaticamente quando ele muda.
   const [latitude, setLatitude] = useState("");
@@ -96,8 +128,12 @@ export default function EditarPerfil({ navigation }) {
   const [fechamento, setFechamento] = useState("");
   const [cnpj, setCnpj] = useState("");
 
-  // Endereço/CEP como vieram do servidor: serve para saber se o usuário mudou o local
-  const original = useRef({ endereco: "", cep: "" });
+  // Local como veio do servidor: serve para saber se o usuário mudou o endereço (e refazer o mapa)
+  const original = useRef(
+    normalizarLocal({ cep: "", rua: "", numero: "", bairro: "", cidade: "", uf: "" }),
+  );
+  const numeroRef = useRef(null);
+  const ruaRef = useRef(null);
   // Último CEP já consultado: evita repetir a busca e ignora respostas atrasadas
   const ultimoCep = useRef("");
 
@@ -139,17 +175,20 @@ export default function EditarPerfil({ navigation }) {
 
           if (meu) {
             setNomeFantasia(meu.nomeFantasia || "");
-            setEndereco(meu.endereco || "");
+            setEnderecoAntigo(meu.endereco || "");
             setCep(mascaraCep(meu.cep || ""));
+            setRua(meu.rua || "");
+            setNumero(meu.numero || "");
+            setBairro(meu.bairro || "");
+            setComplemento(meu.complemento || "");
+            setCidade(meu.cidade || "");
+            setUf(meu.uf || "");
             setLatitude(meu.latitude != null ? String(meu.latitude) : "");
             setLongitude(meu.longitude != null ? String(meu.longitude) : "");
             setAbertura(String(meu.horarioAbertura || "").slice(0, 5));
             setFechamento(String(meu.horarioFechamento || "").slice(0, 5));
             setCnpj(meu.cnpj || "");
-            original.current = {
-              endereco: limparEspacos(meu.endereco || ""),
-              cep: somenteDigitos(meu.cep || ""),
-            };
+            original.current = normalizarLocal(meu);
             ultimoCep.current = somenteDigitos(meu.cep || ""); // não busca de novo o CEP que já estava salvo
           }
         } catch (e) {
@@ -165,12 +204,20 @@ export default function EditarPerfil({ navigation }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ehComerciante, user]);
 
-  // O usuário mudou o local da loja? (endereço ou CEP diferentes do que está salvo)
-  function mudouLocal() {
-    return (
-      limparEspacos(endereco) !== original.current.endereco ||
-      somenteDigitos(cep) !== original.current.cep
+  // O usuário preencheu algum campo do endereço em partes?
+  function temEnderecoEmPartes() {
+    return [rua, numero, bairro, cidade, uf].some(
+      (campo) => limparEspacos(campo) !== "",
     );
+  }
+
+  // Conta antiga: só tem o texto único salvo, sem os campos separados
+  const contaAntiga = !original.current.rua && !!limparEspacos(enderecoAntigo);
+
+  // O usuário mudou o local da loja? (o complemento não muda a posição no mapa)
+  function mudouLocal() {
+    const atual = normalizarLocal({ cep, rua, numero, bairro, cidade, uf });
+    return Object.keys(atual).some((k) => atual[k] !== original.current[k]);
   }
 
   // ---------------------------- busca de CEP ----------------------------
@@ -182,25 +229,36 @@ export default function EditarPerfil({ navigation }) {
 
       setErros((a) => ({ ...a, cep: "" }));
 
-      // CEP "geral" da cidade (sem rua): não mexe no endereço, só orienta
+      // Preenche os campos (continuam editáveis)
+      if (d.cidade) setCidade(d.cidade);
+      if (d.uf) setUf(d.uf);
+
+      // CEP "geral" da cidade (sem rua): só orienta
       if (!d.rua) {
         exibirAlerta(
           "CEP encontrado",
-          `${d.cidade} - ${d.uf}. Esse CEP não tem rua: digite o endereço completo.`,
+          `${d.cidade} - ${d.uf}. Esse CEP não tem rua: preencha a rua e o bairro.`,
           "aviso",
         );
+        ruaRef.current?.focus();
         return;
       }
 
-      // Monta "Rua, Bairro, Cidade - UF". O NÚMERO a pessoa acrescenta depois da rua.
-      const partes = [d.rua, d.bairro, `${d.cidade} - ${d.uf}`].filter(Boolean);
-      setEndereco(partes.join(", "));
-      setErros((a) => ({ ...a, endereco: "" }));
+      setRua(d.rua);
+      setBairro(d.bairro || "");
+      setErros((a) => ({
+        ...a,
+        rua: "",
+        bairro: "",
+        cidade: "",
+        uf: "",
+      }));
       exibirAlerta(
         "Endereço encontrado",
-        "Acrescente o número depois da rua (ex.: Rua Chile, 123, Centro).",
+        `${d.rua}, ${d.bairro} - ${d.cidade}/${d.uf}. Agora informe o número.`,
         "sucesso",
       );
+      numeroRef.current?.focus();
     } catch (erro) {
       if (ultimoCep.current !== digitos) return;
       if (erro.codigo === "NAO_ENCONTRADO") {
@@ -255,16 +313,30 @@ export default function EditarPerfil({ navigation }) {
       const eNf = validarNomeFantasia(nomeFantasia);
       if (eNf) e.nomeFantasia = eNf;
 
-      const eEnd = validarEndereco(endereco);
-      if (eEnd) e.endereco = eEnd;
-      // Só cobra o número quando o local foi alterado (contas antigas continuam salvando normalmente)
-      else if (mudouLocal() && !enderecoTemNumero(endereco))
-        e.endereco =
-          "Informe o número do local (ou S/N). Ex.: Rua Chile, 123, Centro";
-
-      // CEP continua opcional aqui, mas se foi digitado precisa estar completo
-      const eCep = validarCep(cep, false);
-      if (eCep) e.cep = eCep;
+      if (temEnderecoEmPartes()) {
+        // Endereço em campos separados: confere todos (o complemento é opcional)
+        const eCep = validarCep(cep);
+        if (eCep) e.cep = eCep;
+        const eRua = validarRua(rua);
+        if (eRua) e.rua = eRua;
+        const eNum = validarNumeroEndereco(numero);
+        if (eNum) e.numero = eNum;
+        const eBai = validarBairro(bairro);
+        if (eBai) e.bairro = eBai;
+        const eCom = validarComplemento(complemento);
+        if (eCom) e.complemento = eCom;
+        const eCid = validarCidade(cidade);
+        if (eCid) e.cidade = eCid;
+        const eUf = validarUf(uf);
+        if (eUf) e.uf = eUf;
+      } else {
+        // Nenhum campo preenchido: só é aceito em conta antiga, que mantém o texto único
+        const eEnd = validarEndereco(enderecoAntigo);
+        if (eEnd || !contaAntiga) e.rua = "Informe o endereço do mercadinho.";
+        // CEP continua opcional nesse caso, mas se foi digitado precisa estar completo
+        const eCep = validarCep(cep, false);
+        if (eCep) e.cep = eCep;
+      }
 
       const eAb = validarHorario(abertura, "horário de abertura");
       if (eAb) e.abertura = eAb;
@@ -315,6 +387,7 @@ export default function EditarPerfil({ navigation }) {
     try {
       const resultados = [];
       let posicaoNaoAtualizada = false;
+      let avisoPosicaoAproximada = false;
 
       // Atualiza usuário
       resultados.push(
@@ -334,23 +407,44 @@ export default function EditarPerfil({ navigation }) {
         let lng = longitude ? parseFloat(longitude.replace(",", ".")) : null;
 
         // ...e só é recalculada se o endereço/CEP mudou
-        if (mudouLocal()) {
-          const ponto = await descobrirPosicao(limparEspacos(endereco));
+        let posicaoAproximada = false;
+        if (temEnderecoEmPartes() && mudouLocal()) {
+          const ponto = await descobrirPosicao({
+            rua: limparEspacos(rua),
+            numero: limparEspacos(numero),
+            bairro: limparEspacos(bairro),
+            cidade: limparEspacos(cidade),
+            uf,
+          });
           if (ponto) {
             lat = ponto.lat;
             lng = ponto.lng;
             setLatitude(String(lat));
             setLongitude(String(lng));
+            posicaoAproximada = ponto.precisao !== "endereco";
           } else {
             posicaoNaoAtualizada = true; // salva o endereço, mas avisa que o mapa ficou como estava
           }
         }
 
+        // Endereço em partes (o back monta o texto completo) ou, em conta antiga
+        // sem alteração, o texto único de antes
+        const enderecoPayload = temEnderecoEmPartes()
+          ? {
+              rua: limparEspacos(rua),
+              numero: limparEspacos(numero),
+              bairro: limparEspacos(bairro),
+              complemento: limparEspacos(complemento),
+              cidade: limparEspacos(cidade),
+              uf,
+            }
+          : { endereco: limparEspacos(enderecoAntigo) };
+
         resultados.push(
           await tentar(() =>
             api.put(`/api/mercadinhos/${idM}`, {
               nomeFantasia: limparEspacos(nomeFantasia),
-              endereco: limparEspacos(endereco),
+              ...enderecoPayload,
               cep: somenteDigitos(cep) || undefined,
               horarioAbertura: abertura ? `${abertura}:00` : undefined,
               horarioFechamento: fechamento ? `${fechamento}:00` : undefined,
@@ -362,10 +456,17 @@ export default function EditarPerfil({ navigation }) {
 
         // Passou a ser o "novo normal"; se a posição falhou, deixa para tentar de novo no próximo salvar
         if (!posicaoNaoAtualizada) {
-          original.current = {
-            endereco: limparEspacos(endereco),
-            cep: somenteDigitos(cep),
-          };
+          original.current = normalizarLocal({
+            cep,
+            rua,
+            numero,
+            bairro,
+            cidade,
+            uf,
+          });
+        }
+        if (posicaoAproximada) {
+          avisoPosicaoAproximada = true;
         }
       }
 
@@ -400,6 +501,12 @@ export default function EditarPerfil({ navigation }) {
         exibirAlerta(
           "Dados salvos, mas a posição não mudou",
           "Não foi possível localizar o novo endereço no mapa agora. Os clientes ainda veem a posição anterior; salve de novo mais tarde.",
+          "aviso",
+        );
+      } else if (avisoPosicaoAproximada) {
+        exibirAlerta(
+          "Dados salvos",
+          "Não achamos o número exato no mapa, então a posição do mercadinho é aproximada.",
           "aviso",
         );
       } else {
@@ -504,16 +611,100 @@ export default function EditarPerfil({ navigation }) {
                     placeholder="40000-000"
                     maxLength={9}
                   />
+                  {contaAntiga && (
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: cores.textoRotulo,
+                        marginBottom: 8,
+                      }}
+                    >
+                      Endereço cadastrado: {enderecoAntigo}. Para atualizar,
+                      preencha os campos abaixo.
+                    </Text>
+                  )}
                   <Campo
-                    rotulo="Endereço"
-                    valor={endereco}
+                    inputRef={ruaRef}
+                    rotulo="Rua / Avenida"
+                    valor={rua}
                     aoMudar={(v) => {
-                      setEndereco(v);
-                      setErros((a) => ({ ...a, endereco: "" }));
+                      setRua(v);
+                      setErros((a) => ({ ...a, rua: "" }));
                     }}
-                    erro={erros.endereco}
-                    placeholder="Rua, número e bairro"
+                    erro={erros.rua}
+                    placeholder="Nome da rua"
+                    maxLength={80}
                   />
+                  <View style={styles.linha}>
+                    <View style={{ flex: 1 }}>
+                      <Campo
+                        inputRef={numeroRef}
+                        rotulo="Número"
+                        valor={numero}
+                        aoMudar={(v) => {
+                          setNumero(v);
+                          setErros((a) => ({ ...a, numero: "" }));
+                        }}
+                        erro={erros.numero}
+                        placeholder="123 ou S/N"
+                        maxLength={10}
+                      />
+                    </View>
+                    <View style={{ flex: 2 }}>
+                      <Campo
+                        rotulo="Bairro"
+                        valor={bairro}
+                        aoMudar={(v) => {
+                          setBairro(v);
+                          setErros((a) => ({ ...a, bairro: "" }));
+                        }}
+                        erro={erros.bairro}
+                        placeholder="Bairro"
+                        maxLength={40}
+                      />
+                    </View>
+                  </View>
+                  <Campo
+                    rotulo="Complemento (opcional)"
+                    valor={complemento}
+                    aoMudar={(v) => {
+                      setComplemento(v);
+                      setErros((a) => ({ ...a, complemento: "" }));
+                    }}
+                    erro={erros.complemento}
+                    placeholder="Sala, loja, bloco, ponto de referência..."
+                    maxLength={60}
+                  />
+                  <View style={styles.linha}>
+                    <View style={{ flex: 2 }}>
+                      <Campo
+                        rotulo="Cidade"
+                        valor={cidade}
+                        aoMudar={(v) => {
+                          setCidade(v);
+                          setErros((a) => ({ ...a, cidade: "" }));
+                        }}
+                        erro={erros.cidade}
+                        placeholder="Cidade"
+                        maxLength={50}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Campo
+                        rotulo="UF"
+                        valor={uf}
+                        aoMudar={(v) => {
+                          setUf(v.toUpperCase().replace(/[^A-Z]/g, ""));
+                          setErros((a) => ({ ...a, uf: "" }));
+                        }}
+                        erro={erros.uf}
+                        placeholder="BA"
+                        autoCapitalize="characters"
+                        autoCorrect={false}
+                        maxLength={2}
+                      />
+                    </View>
+                  </View>
 
                   <View style={styles.linha}>
                     <View style={{ flex: 1 }}>

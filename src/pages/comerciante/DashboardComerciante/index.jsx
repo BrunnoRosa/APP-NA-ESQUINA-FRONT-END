@@ -1,6 +1,6 @@
-import { Ionicons } from "@expo/vector-icons"; // 🆕
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
-import { LinearGradient } from "expo-linear-gradient"; // 🆕
+import { LinearGradient } from "expo-linear-gradient";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -10,13 +10,11 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../../context/AuthContext";
-import { useToast } from "../../../context/ToastContext";
 import api from "../../../services/api";
-import { cores } from "../../../theme"; // 🆕
+import { cores } from "../../../theme";
 import { styles } from "./styles";
-// 🗑️ removido: import Header (o topo agora é o degradê desta tela)
 
-// 🆕 Atalhos da tela: a lista evita repetir 3 blocos quase iguais
+// Atalhos da tela: a lista evita repetir 3 blocos quase iguais
 const ACOES = [
   {
     rota: "GerenciarProdutos",
@@ -40,25 +38,13 @@ const ACOES = [
 ];
 
 export default function DashboardComerciante({ navigation }) {
-  const { user, signOut } = useAuth();
-  const { confirmar } = useToast();
+  const { user } = useAuth();
   const [totalProdutos, setTotalProdutos] = useState(0);
   const [totalDestaques, setTotalDestaques] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [nomeMercado, setNomeMercado] = useState(""); // 🆕
+  const [nomeMercado, setNomeMercado] = useState("");
 
-  // Pergunta antes de sair (quadro no centro da tela)
-  async function confirmarSaida() {
-    const sim = await confirmar({
-      titulo: "Sair da conta",
-      mensagem: "Deseja realmente sair da sua conta?",
-      textoConfirmar: "Sim, sair",
-      tipo: "perigo",
-    });
-    if (sim) signOut();
-  }
-
-  // ✏️ Sem fallback para a loja 1: usa só o mercadinho real do comerciante
+  // Sem fallback para a loja 1: usa só o mercadinho real do comerciante
   const idMercadinho = user?.idMercadinho;
 
   const carregarMetricas = useCallback(async () => {
@@ -75,7 +61,7 @@ export default function DashboardComerciante({ navigation }) {
       const prods = response.data || [];
       setTotalProdutos(prods.length);
       setTotalDestaques(prods.filter((p) => p.emDestaque).length);
-      // 🆕 Busca o nome da loja (falha aqui não deve derrubar as métricas)
+      // Busca o nome da loja (falha aqui não deve derrubar as métricas)
       try {
         const resLojas = await api.get("/api/mercadinhos");
         const lojas = Array.isArray(resLojas.data)
@@ -103,7 +89,7 @@ export default function DashboardComerciante({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* 🆕 Topo com degradê */}
+      {/* Topo com degradê */}
       <LinearGradient
         colors={[cores.degradeInicioTopo, cores.degradeInicioBase]}
         style={styles.topo}
@@ -115,28 +101,10 @@ export default function DashboardComerciante({ navigation }) {
               {nomeMercado || user?.nome || user?.email || "Minha loja"}
             </Text>
           </View>
-
-          <TouchableOpacity
-            style={[styles.botaoSair, { marginRight: 8 }]}
-            onPress={() => navigation.navigate("EditarPerfil")}
-            activeOpacity={0.8}
-            accessibilityLabel="Editar perfil"
-          >
-            <Ionicons name="create-outline" size={22} color={cores.primaria} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.botaoSair}
-            onPress={confirmarSaida}
-            activeOpacity={0.8}
-            accessibilityLabel="Sair da conta"
-          >
-            <Ionicons name="log-out-outline" size={22} color={cores.primaria} />
-          </TouchableOpacity>
         </View>
       </LinearGradient>
 
-      {/* 🆕 Folha branca arredondada */}
+      {/* Folha branca arredondada */}
       <View style={styles.folha}>
         <ScrollView
           contentContainerStyle={styles.conteudo}
