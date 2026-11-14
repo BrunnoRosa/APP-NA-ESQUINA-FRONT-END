@@ -1,20 +1,20 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useEffect } from "react";
 import {
   ActivityIndicator,
   useWindowDimensions,
   View,
 } from "react-native";
-import { useEffect } from "react"; 
 import api from "./src/services/api";
 
 // Contextos
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import { CarrinhoProvider } from "./src/context/CarrinhoContext";
 import { LocalizacaoProvider } from "./src/context/LocalizacaoContext";
-import { PedidosPendentesProvider } from "./src/context/PedidosPendentesContext";
 import { NotificacoesClienteProvider } from "./src/context/NotificacoesClienteContext";
+import { PedidosPendentesProvider } from "./src/context/PedidosPendentesContext";
 import { ToastProvider } from "./src/context/ToastContext";
 
 // Função de Notificações
@@ -44,6 +44,7 @@ import Notificacoes from "./src/pages/cliente/Notificacoes";
 
 // Telas do Comerciante
 import AtivarProdutoCatalogo from "./src/pages/comerciante/AtivarProdutoCatalogo";
+import ContaComerciante from "./src/pages/comerciante/ContaComerciante";
 import DashboardComerciante from "./src/pages/comerciante/DashboardComerciante";
 import GerenciarPedidos from "./src/pages/comerciante/GerenciarPedidos";
 import GerenciarProdutos from "./src/pages/comerciante/GerenciarProdutos";
@@ -97,6 +98,8 @@ function ComercianteTabs() {
       <Tab.Screen name="GerenciarProdutos" component={GerenciarProdutos} />
       <Tab.Screen name="GerenciarPedidos" component={GerenciarPedidos} />
       <Tab.Screen name="GerenciarVitrine" component={GerenciarVitrine} />
+      {/* Conta do comerciante: mesmo padrão da aba Conta do cliente */}
+      <Tab.Screen name="Conta" component={ContaComerciante} />
     </Tab.Navigator>
   );
 }

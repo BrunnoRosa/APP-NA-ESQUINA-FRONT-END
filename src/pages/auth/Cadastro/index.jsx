@@ -163,7 +163,7 @@ export default function Cadastro({ navigation }) {
         exibirAlerta(
           "CEP encontrado",
           `Esse CEP é de ${e.cidade}/${e.uf} e não traz a rua. Preencha a rua e o bairro.`,
-          "info",
+          "aviso",
         );
         ruaRef.current?.focus();
       }
