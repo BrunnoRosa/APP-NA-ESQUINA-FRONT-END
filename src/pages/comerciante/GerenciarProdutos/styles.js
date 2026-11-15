@@ -115,6 +115,31 @@ export const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 30,
   },
+  rotuloCampo: {
+    fontSize: 13,
+    color: cores.textoRotulo || '#6C757D',
+    marginBottom: 6,
+  },
+  chipsLinha: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 12,
+  },
+  chip: {
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: cores.bordaCampo,
+    backgroundColor: '#FFFFFF',
+  },
+  chipAtivo: {
+    backgroundColor: cores.primaria,
+    borderColor: cores.primaria,
+  },
+  chipTexto: { fontSize: 13, color: cores.textoCampo, fontWeight: '600' },
+  chipTextoAtivo: { color: '#FFFFFF' },
   produtoFoto: {
     width: 40,
     height: 40,
