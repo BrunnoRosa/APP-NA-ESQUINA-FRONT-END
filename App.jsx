@@ -61,6 +61,8 @@ function ClienteTabs() {
   return (
     <Tab.Navigator
       tabBar={(props) => <TabNavigator {...props} />}
+      // "history": o botão de voltar volta para a aba de onde o cliente veio (Início, Conta...)
+      backBehavior="history"
       screenOptions={{
         headerShown: false,
         tabBarPosition: isDesktop ? "left" : "bottom",

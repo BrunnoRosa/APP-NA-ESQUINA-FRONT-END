@@ -106,6 +106,7 @@ export default function Conta({ navigation }) {
               selo={totalItens}
               aoPressionar={() => navigation.navigate("Carrinho")}
             />
+          
           </View>
 
           <Text style={styles.secao}>Ajuda</Text>

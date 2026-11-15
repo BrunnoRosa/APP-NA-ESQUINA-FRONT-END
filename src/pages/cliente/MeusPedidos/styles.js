@@ -13,6 +13,19 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 44,
   },
+  topoLinha: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  botaoVoltar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   titulo: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -136,6 +149,24 @@ export const styles = StyleSheet.create({
   },
   confirmButtonText: {
     color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+
+  // Botão "Cancelar pedido" (contorno vermelho, menos chamativo que o "Já retirei")
+  cancelButton: {
+    marginTop: 10,
+    borderWidth: 1.5,
+    borderColor: cores.primaria,
+    borderRadius: 24,
+    paddingVertical: 11,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  cancelButtonText: {
+    color: cores.primaria,
     fontSize: 14,
     fontWeight: 'bold',
   },

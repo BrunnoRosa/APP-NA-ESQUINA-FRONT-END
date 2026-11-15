@@ -12,10 +12,10 @@ import {
 } from "react-native";
 import { useAuth } from "../../../context/AuthContext";
 import { useToast } from "../../../context/ToastContext";
+import { usePuxarParaAtualizar } from "../../../hooks/usePuxarParaAtualizar";
 import api from "../../../services/api";
 import { cores } from "../../../theme";
 import { traduzirErro } from "../../../utils/validacoes";
-import { usePuxarParaAtualizar } from "../../../hooks/usePuxarParaAtualizar";
 import { styles } from "./styles";
 
 // Formata número como moeda brasileira
@@ -32,8 +32,8 @@ export default function MeusPedidos({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [atualizandoId, setAtualizandoId] = useState(null);
 
-  // Toast central
-  const { exibirAlerta } = useToast();
+  // Toast central: exibirAlerta = avisos | confirmar = perguntas com botões (Sim / Não)
+  const { exibirAlerta, confirmar } = useToast();
 
   const carregarPedidos = useCallback(
     async (isSilent = false) => {
@@ -80,7 +80,23 @@ export default function MeusPedidos({ navigation }) {
     };
   }, [carregarPedidos]);
 
+  // Botão de voltar: volta para a tela de onde o cliente veio (Início ou Conta)
+  function voltar() {
+    if (navigation.canGoBack()) navigation.goBack();
+    else navigation.navigate("HomeCliente");
+  }
+
   const confirmarRecebimento = async (idPedido) => {
+    // Concluir é definitivo (não dá para reabrir o pedido), então pergunta antes
+    const sim = await confirmar({
+      titulo: "Confirmar retirada",
+      mensagem: `Você já retirou os produtos do pedido #${idPedido}?`,
+      textoConfirmar: "Sim, retirei",
+      textoCancelar: "Ainda não",
+      tipo: "sucesso",
+    });
+    if (!sim) return;
+
     setAtualizandoId(idPedido);
     try {
       await api.put(
@@ -95,6 +111,45 @@ export default function MeusPedidos({ navigation }) {
       console.error("Erro ao confirmar a retirada do pedido:", error);
       const erro = traduzirErro(error);
       exibirAlerta(erro.titulo, erro.mensagem);
+    } finally {
+      setAtualizandoId(null);
+    }
+  };
+
+  // O cliente pode cancelar enquanto o pedido NÃO foi concluído nem cancelado
+  function podeCancelar(status) {
+    return (
+      status === "PENDENTE" ||
+      status === "EM_SEPARACAO" ||
+      status === "AGUARDANDO_RETIRADA"
+    );
+  }
+
+  const cancelarPedido = async (idPedido) => {
+    const sim = await confirmar({
+      titulo: "Cancelar pedido",
+      mensagem: `Deseja realmente cancelar o pedido #${idPedido}? Essa ação não pode ser desfeita.`,
+      textoConfirmar: "Sim, cancelar",
+      textoCancelar: "Não, manter",
+      tipo: "perigo",
+    });
+    if (!sim) return;
+
+    setAtualizandoId(idPedido);
+    try {
+      await api.put(`/api/pedidos/${idPedido}/cancelar`);
+      exibirAlerta(
+        "Pedido cancelado",
+        `O pedido #${idPedido} foi cancelado.`,
+        "sucesso",
+      );
+      carregarPedidos(true);
+    } catch (error) {
+      console.error("Erro ao cancelar o pedido:", error);
+      const erro = traduzirErro(error);
+      exibirAlerta(erro.titulo, erro.mensagem);
+      // Se a loja concluiu/cancelou no mesmo instante, atualiza a lista com o status real
+      carregarPedidos(true);
     } finally {
       setAtualizandoId(null);
     }
@@ -173,7 +228,7 @@ export default function MeusPedidos({ navigation }) {
           </Text>
         </View>
 
-        {item.status === "AGUARDANDO_RETIRADA" &&
+        {podeCancelar(item.status) &&
           (isBusy ? (
             <ActivityIndicator
               style={{ marginTop: 12 }}
@@ -181,16 +236,33 @@ export default function MeusPedidos({ navigation }) {
               color={cores.primaria}
             />
           ) : (
-            <TouchableOpacity
-              style={styles.confirmButton}
-              onPress={() => confirmarRecebimento(item.idPedido)}
-              activeOpacity={0.85}
-            >
-              <Ionicons name="bag-check-outline" size={18} color="#FFFFFF" />
-              <Text style={styles.confirmButtonText}>
-                Já retirei os produtos
-              </Text>
-            </TouchableOpacity>
+            <>
+              {item.status === "AGUARDANDO_RETIRADA" && (
+                <TouchableOpacity
+                  style={styles.confirmButton}
+                  onPress={() => confirmarRecebimento(item.idPedido)}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="bag-check-outline" size={18} color="#FFFFFF" />
+                  <Text style={styles.confirmButtonText}>
+                    Já retirei os produtos
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => cancelarPedido(item.idPedido)}
+                activeOpacity={0.85}
+              >
+                <Ionicons
+                  name="close-circle-outline"
+                  size={18}
+                  color={cores.primaria}
+                />
+                <Text style={styles.cancelButtonText}>Cancelar pedido</Text>
+              </TouchableOpacity>
+            </>
           ))}
 
         {item.status === "CANCELADO" && item.motivoCancelamento && (
@@ -210,12 +282,26 @@ export default function MeusPedidos({ navigation }) {
         colors={[cores.degradeInicioTopo, cores.degradeInicioBase]}
         style={styles.topo}
       >
-        <Text style={styles.titulo}>Meus pedidos</Text>
-        {!loading && pedidos.length > 0 && (
-          <Text style={styles.subtitulo}>
-            {pedidos.length} {pedidos.length === 1 ? "pedido" : "pedidos"}
-          </Text>
-        )}
+        <View style={styles.topoLinha}>
+          <TouchableOpacity
+            style={styles.botaoVoltar}
+            onPress={voltar}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Voltar"
+          >
+            <Ionicons name="chevron-back" size={22} color={cores.textoTitulo} />
+          </TouchableOpacity>
+
+          <View>
+            <Text style={styles.titulo}>Meus pedidos</Text>
+            {!loading && pedidos.length > 0 && (
+              <Text style={styles.subtitulo}>
+                {pedidos.length} {pedidos.length === 1 ? "pedido" : "pedidos"}
+              </Text>
+            )}
+          </View>
+        </View>
       </LinearGradient>
 
       <View style={styles.folha}>
