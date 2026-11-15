@@ -3,7 +3,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
-  RefreshControl,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -19,6 +18,7 @@ import { useCarrinho } from '../../../context/CarrinhoContext';
 import api from '../../../services/api';
 import { cores } from '../../../theme';
 import { ordenarAbertasPrimeiro } from '../../../utils/mercado';
+import { usePuxarParaAtualizar } from '../../../hooks/usePuxarParaAtualizar';
 import { styles } from './styles';
 
 const ATALHOS = [
@@ -33,7 +33,6 @@ export default function HomeCliente({ navigation }) {
   const [favoritosIds, setFavoritosIds] = useState([]);
   const [categoriaAtiva, setCategoriaAtiva] = useState('TODOS');
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
 
   const { adicionarAoCarrinho } = useCarrinho();
 
@@ -168,11 +167,8 @@ export default function HomeCliente({ navigation }) {
     }, [carregarDados])
   );
 
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await carregarDados();
-    setRefreshing(false);
-  }, [carregarDados]);
+  const pull = usePuxarParaAtualizar(carregarDados);
+
 
   const toggleFavorito = async (idMercadinho) => {
     const jaEhFavorito = favoritosIds.includes(idMercadinho);
@@ -248,17 +244,11 @@ export default function HomeCliente({ navigation }) {
 
   return (
     <View style={styles.container}>
+      {pull.indicador}
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[cores.primaria || '#FF3131']}
-            tintColor={cores.primaria || '#FF3131'}
-          />
-        }
+        {...pull.props}
       >
         <CabecalhoInicio
           navigation={navigation}
@@ -282,7 +272,11 @@ export default function HomeCliente({ navigation }) {
             ))}
           </View>
 
-          <MapaMercados mercadinhos={mercadinhos} navigation={navigation} />
+          <MapaMercados
+            mercadinhos={mercadinhos}
+            navigation={navigation}
+            aoAtualizar={carregarDados}
+          />
 
           {loading ? (
             <View style={styles.loadingContainer}>

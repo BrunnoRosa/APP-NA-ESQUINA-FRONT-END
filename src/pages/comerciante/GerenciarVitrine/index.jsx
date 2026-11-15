@@ -15,6 +15,7 @@ import { useToast } from '../../../context/ToastContext';
 import api from '../../../services/api';
 import { cores } from '../../../theme'; // 🆕
 import { traduzirErro } from '../../../utils/validacoes';
+import { usePuxarParaAtualizar } from '../../../hooks/usePuxarParaAtualizar';
 import { styles } from './styles';
 
 export default function GerenciarVitrine({ navigation }) {
@@ -45,6 +46,8 @@ export default function GerenciarVitrine({ navigation }) {
       setLoading(false);
     }
   }, [idMercadinho]);
+
+  const pull = usePuxarParaAtualizar(carregarProdutos);
 
   useFocusEffect(
     useCallback(() => {
@@ -92,6 +95,7 @@ export default function GerenciarVitrine({ navigation }) {
 
   return (
     <View style={styles.container}>
+      {pull.indicador}
       {/* 🆕 Topo com degradê (aba: sem botão voltar) */}
       <LinearGradient
         colors={[cores.degradeInicioTopo, cores.degradeInicioBase]}
@@ -107,7 +111,7 @@ export default function GerenciarVitrine({ navigation }) {
 
       {/* 🆕 Folha branca arredondada */}
       <View style={styles.folha}>
-        <FlatList
+        <FlatList {...pull.props}
           data={loading ? [] : produtos}
           keyExtractor={(item) => String(item.idProduto)}
           contentContainerStyle={styles.lista}

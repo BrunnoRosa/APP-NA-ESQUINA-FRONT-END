@@ -17,6 +17,7 @@ import { useToast } from '../../../context/ToastContext';
 import api from "../../../services/api";
 import { cores } from "../../../theme"; // 🆕
 import { traduzirErro } from "../../../utils/validacoes";
+import { usePuxarParaAtualizar } from "../../../hooks/usePuxarParaAtualizar";
 import { styles } from "./styles";
 
 // 🆕 Formata número como moeda brasileira
@@ -67,6 +68,8 @@ export default function GerenciarPedidos({ navigation }) {
     },
     [user],
   );
+
+  const pull = usePuxarParaAtualizar(() => carregarPedidos(true));
 
   useFocusEffect(
     useCallback(() => {
@@ -272,6 +275,7 @@ export default function GerenciarPedidos({ navigation }) {
 
   return (
     <View style={styles.container}>
+      {pull.indicador}
       {/* 🆕 Topo com degradê (aba: sem botão voltar) */}
       <LinearGradient
         colors={[cores.degradeInicioTopo, cores.degradeInicioBase]}
@@ -309,7 +313,7 @@ export default function GerenciarPedidos({ navigation }) {
             </Text>
           </View>
         ) : (
-          <FlatList
+          <FlatList {...pull.props}
             data={pedidos}
             keyExtractor={(item) => String(item.idPedido)}
             renderItem={renderPedido}
