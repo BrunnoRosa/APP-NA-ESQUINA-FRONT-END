@@ -23,6 +23,7 @@ import {
   validarNomeProduto,
   validarPreco,
 } from "../../../utils/validacoes";
+import { usePuxarParaAtualizar } from "../../../hooks/usePuxarParaAtualizar";
 import { styles } from "./styles";
 
 // Botões de categoria (usado no cadastro avulso e na edição)
@@ -148,6 +149,8 @@ export default function GerenciarProdutos({ navigation }) {
   }, [obterIdMercadinho]);
 
   // 🗑️ removido o useEffect duplicado: o useFocusEffect já carrega ao abrir a tela
+  const pull = usePuxarParaAtualizar(carregarProdutos);
+
   useFocusEffect(
     useCallback(() => {
       carregarProdutos();
@@ -371,6 +374,7 @@ export default function GerenciarProdutos({ navigation }) {
 
   return (
     <View style={styles.container}>
+      {pull.indicador}
       {/* 🆕 Topo com degradê (aba: sem botão voltar) */}
       <LinearGradient
         colors={[cores.degradeInicioTopo, cores.degradeInicioBase]}
@@ -388,7 +392,7 @@ export default function GerenciarProdutos({ navigation }) {
 
       {/* 🆕 Folha branca arredondada */}
       <View style={[styles.folha, isDesktop && styles.folhaDesktop]}>
-        <FlatList
+        <FlatList {...pull.props}
           key={isDesktop ? `desktop-${colunasProdutos}` : "mobile"}
           data={loading ? [] : produtos}
           numColumns={colunasProdutos}

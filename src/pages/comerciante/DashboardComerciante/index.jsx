@@ -12,6 +12,7 @@ import {
 import { useAuth } from "../../../context/AuthContext";
 import api from "../../../services/api";
 import { cores } from "../../../theme";
+import { usePuxarParaAtualizar } from "../../../hooks/usePuxarParaAtualizar";
 import { styles } from "./styles";
 
 // Atalhos da tela: a lista evita repetir 3 blocos quase iguais
@@ -81,6 +82,8 @@ export default function DashboardComerciante({ navigation }) {
     }
   }, [idMercadinho]);
 
+  const pull = usePuxarParaAtualizar(carregarMetricas);
+
   useFocusEffect(
     useCallback(() => {
       carregarMetricas();
@@ -89,6 +92,7 @@ export default function DashboardComerciante({ navigation }) {
 
   return (
     <View style={styles.container}>
+      {pull.indicador}
       {/* Topo com degradê */}
       <LinearGradient
         colors={[cores.degradeInicioTopo, cores.degradeInicioBase]}
@@ -106,7 +110,7 @@ export default function DashboardComerciante({ navigation }) {
 
       {/* Folha branca arredondada */}
       <View style={styles.folha}>
-        <ScrollView
+        <ScrollView {...pull.props}
           contentContainerStyle={styles.conteudo}
           showsVerticalScrollIndicator={false}
         >

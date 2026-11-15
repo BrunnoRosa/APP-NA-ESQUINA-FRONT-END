@@ -13,6 +13,7 @@ import {
 import api from '../../../services/api';
 import { cores } from '../../../theme';
 import { estaAberto, formatarHora } from '../../../utils/mercado'; // 🆕
+import { usePuxarParaAtualizar } from '../../../hooks/usePuxarParaAtualizar';
 import { styles } from './styles';
 // 🗑️ removido: import MercadoCarrossel (o cartão agora é desta tela)
 
@@ -32,6 +33,8 @@ export default function Favoritos({ navigation }) {
       setLoading(false);
     }
   }, []);
+
+  const pull = usePuxarParaAtualizar(carregarFavoritos);
 
   useFocusEffect(
     useCallback(() => {
@@ -109,6 +112,7 @@ export default function Favoritos({ navigation }) {
 
   return (
     <View style={styles.container}>
+      {pull.indicador}
       {/* 🆕 Topo com degradê */}
       <LinearGradient
         colors={[cores.degradeInicioTopo, cores.degradeInicioBase]}
@@ -158,7 +162,7 @@ export default function Favoritos({ navigation }) {
             </TouchableOpacity>
           </View>
         ) : (
-          <FlatList
+          <FlatList {...pull.props}
             data={favoritos}
             keyExtractor={(item) => String(item.idMercadinho || item.id)}
             renderItem={renderFavorito}
