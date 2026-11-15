@@ -22,6 +22,7 @@ function descobrirHost() {
   return IP_MAQUINA;
 }
 
+
 // Produção (Railway): defina EXPO_PUBLIC_API_URL com o endereço público do back-end,
 // ex.: https://na-esquina-back.up.railway.app  (sem barra no final).
 // Se não existir, usa o modo desenvolvimento (descobrirHost + porta 8080).
