@@ -17,14 +17,13 @@ import BotaoCarrinho from '../../../components/BotaoCarrinho';
 import LojaCard from '../../../components/LojaCard';
 import ProdutoCard from '../../../components/ProdutoCard';
 import { useCarrinho } from '../../../context/CarrinhoContext';
+import { useLocalizacao } from '../../../context/LocalizacaoContext';
 import api from '../../../services/api';
 import { cores } from '../../../theme';
 import { calcularDistanciaKm, ordenarAbertasPrimeiro } from '../../../utils/mercado';
 import { styles } from './styles';
 
 const CATEGORIAS = ['TODAS', 'ALIMENTOS', 'BEBIDAS', 'LIMPEZA', 'HIGIENE', 'HORTIFRUTI', 'PADARIA', 'OUTROS'];
-
-const LOCALIZACAO_USUARIO = { lat: -12.9714, lng: -38.5014 };
 
 export default function BuscarProdutos({ navigation, route }) {
   const [termo, setTermo] = useState('');
@@ -43,7 +42,8 @@ export default function BuscarProdutos({ navigation, route }) {
   const [modoAba, setModoAba] = useState(null);
   const [apenasPromocoes, setApenasPromocoes] = useState(false);
 
-  const userCoords = LOCALIZACAO_USUARIO;
+  const { origem } = useLocalizacao();
+  const userCoords = origem;
   const { adicionarAoCarrinho } = useCarrinho();
 
   // Reage aos parâmetros passados na navegação a partir da HomeCliente
@@ -72,7 +72,7 @@ export default function BuscarProdutos({ navigation, route }) {
     }
   }, [route?.params?._ts, route?.params?.modo, route?.params?.aba]);
 
-  // Carrega as lojas sempre que a aba ganha foco
+  // Carrega as lojas sempre que a aba ganha foco ou a localização mudar
   useFocusEffect(
     useCallback(() => {
       async function carregarLojas() {
@@ -90,7 +90,7 @@ export default function BuscarProdutos({ navigation, route }) {
         }
       }
       carregarLojas();
-    }, [userCoords])
+    }, [userCoords.lat, userCoords.lng])
   );
 
   const buscar = useCallback(async () => {
@@ -107,7 +107,7 @@ export default function BuscarProdutos({ navigation, route }) {
     } finally {
       setLoading(false);
     }
-  }, [termo, categoriaAtiva, ordenarPor, userCoords]);
+  }, [termo, categoriaAtiva, ordenarPor, userCoords.lat, userCoords.lng]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -231,9 +231,43 @@ export default function BuscarProdutos({ navigation, route }) {
             <FlatList
               data={produtosExibidos}
               keyExtractor={(item) => String(item.idProduto || item.id || item.idProdutoBase)}
-              renderItem={({ item }) => (
-                <ProdutoCard produto={item} onAdicionar={() => adicionarAoCarrinho(item)} />
-              )}
+              renderItem={({ item }) => {
+                const idLoja =
+                  item.idMercadinho ||
+                  item.mercadinhoId ||
+                  item.mercadinho?.idMercadinho ||
+                  item.mercadinho?.id;
+
+                const lojaEncontrada = lojas.find(
+                  (l) => Number(l.idMercadinho || l.id) === Number(idLoja)
+                );
+
+                const distanciaCalculada =
+                  lojaEncontrada && userCoords
+                    ? calcularDistanciaKm(
+                        userCoords.lat,
+                        userCoords.lng,
+                        lojaEncontrada.latitude,
+                        lojaEncontrada.longitude
+                      )
+                    : undefined;
+
+                const produtoComDistancia = {
+                  ...item,
+                  distanciaEmKm:
+                    item.distanciaEmKm ??
+                    item.distanciaKm ??
+                    item.distancia ??
+                    distanciaCalculada,
+                };
+
+                return (
+                  <ProdutoCard
+                    produto={produtoComDistancia}
+                    onAdicionar={() => adicionarAoCarrinho(produtoComDistancia)}
+                  />
+                );
+              }}
               ListEmptyComponent={
                 <Text style={styles.emptyText}>Nenhum produto encontrado para esta busca.</Text>
               }

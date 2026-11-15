@@ -15,9 +15,10 @@ import MapaMercados from '../../../components/MapaMercados';
 import MercadoCarrossel from '../../../components/MercadoCarrossel';
 import OfertaCard from '../../../components/OfertaCard';
 import { useCarrinho } from '../../../context/CarrinhoContext';
+import { useLocalizacao } from '../../../context/LocalizacaoContext';
 import api from '../../../services/api';
 import { cores } from '../../../theme';
-import { ordenarAbertasPrimeiro } from '../../../utils/mercado';
+import { calcularDistanciaKm, ordenarAbertasPrimeiro } from '../../../utils/mercado';
 import { usePuxarParaAtualizar } from '../../../hooks/usePuxarParaAtualizar';
 import { styles } from './styles';
 
@@ -35,6 +36,7 @@ export default function HomeCliente({ navigation }) {
   const [loading, setLoading] = useState(true);
 
   const { adicionarAoCarrinho } = useCarrinho();
+  const { origem } = useLocalizacao();
 
   // Função para formatar URLs de imagens (Resolve o erro arroz.jpg / ERR_NAME_NOT_RESOLVED)
   const formatarUrlImagem = (url) => {
@@ -169,7 +171,6 @@ export default function HomeCliente({ navigation }) {
 
   const pull = usePuxarParaAtualizar(carregarDados);
 
-
   const toggleFavorito = async (idMercadinho) => {
     const jaEhFavorito = favoritosIds.includes(idMercadinho);
 
@@ -299,17 +300,26 @@ export default function HomeCliente({ navigation }) {
                       {ordenarAbertasPrimeiro(mercadinhos).map((m) => {
                         const idM = m.idMercadinho || m.id;
                         const isFavorito = favoritosIds.includes(idM);
+                        const distanciaKm = origem
+                          ? calcularDistanciaKm(
+                              origem.lat,
+                              origem.lng,
+                              m.latitude,
+                              m.longitude
+                            )
+                          : null;
 
                         return (
                           <MercadoCarrossel
                             key={String(idM)}
-                            mercadinho={m}
+                            mercadinho={{ ...m, distanciaKm }}
+                            distanciaKm={distanciaKm}
                             isFavorito={isFavorito}
                             onToggleFavorito={() => toggleFavorito(idM)}
                             onPress={() =>
                               navigation.navigate('DetalhesMercadinho', {
                                 idMercadinho: idM,
-                                mercadinho: m,
+                                mercadinho: { ...m, distanciaKm },
                               })
                             }
                           />
