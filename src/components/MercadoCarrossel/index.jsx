@@ -5,11 +5,12 @@ import { estaAberto, formatarHora } from '../../utils/mercado';
 import { cores } from '../../theme';
 import { styles } from './styles';
 
-export default function MercadoCarrossel({ 
-  mercadinho, 
-  onPress, 
-  isFavorito = false, 
-  onToggleFavorito 
+export default function MercadoCarrossel({
+  mercadinho,
+  distanciaKm,
+  onPress,
+  isFavorito = false,
+  onToggleFavorito,
 }) {
   const nome = mercadinho?.nomeFantasia || mercadinho?.nome || 'Mercadinho';
   const endereco = mercadinho?.endereco || 'Endereço não informado';
@@ -19,10 +20,18 @@ export default function MercadoCarrossel({
   // Garante que o selo exiba texto simples sem causar nós de texto inválidos
   const textoSelo = aberto ? (fecha ? `Aberto até às ${fecha}` : 'Aberto') : 'Fechado';
 
-  const distancia =
-    typeof mercadinho?.distanciaKm === 'number'
-      ? `${mercadinho.distanciaKm.toFixed(1)} km`
-      : null;
+  const valorDistancia =
+    distanciaKm ??
+    mercadinho?.distanciaEmKm ??
+    mercadinho?.distanciaKm ??
+    mercadinho?.distancia;
+
+  const distanciaNumero =
+    valorDistancia !== null && valorDistancia !== undefined && valorDistancia !== ''
+      ? Number(valorDistancia)
+      : NaN;
+
+  const distancia = Number.isFinite(distanciaNumero) ? `${distanciaNumero.toFixed(1)} km` : null;
 
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.8} onPress={onPress}>
@@ -65,13 +74,31 @@ export default function MercadoCarrossel({
 
       <View style={styles.linhaInfo}>
         <Ionicons name="location-outline" size={13} color={cores.textoSecundario || '#666666'} />
-        <Text style={styles.endereco} numberOfLines={1}>
+        <Text style={[styles.endereco, { flex: 1 }]} numberOfLines={1}>
           {String(endereco)}
         </Text>
       </View>
 
       {distancia ? (
-        <Text style={styles.distancia}>{String(distancia)}</Text>
+        <View style={[styles.linhaInfo, { marginTop: 2 }]}>
+          <Ionicons
+            name="location-outline"
+            size={13}
+            color={cores.laranjaDistancia || '#F59E0B'}
+          />
+          <Text
+            style={[
+              styles.distancia,
+              {
+                color: cores.laranjaDistancia || '#F59E0B',
+                fontWeight: '700',
+                marginLeft: 2,
+              },
+            ]}
+          >
+            {String(distancia)}
+          </Text>
+        </View>
       ) : null}
     </TouchableOpacity>
   );
