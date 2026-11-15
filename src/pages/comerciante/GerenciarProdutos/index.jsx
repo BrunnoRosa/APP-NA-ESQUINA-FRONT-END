@@ -1,6 +1,6 @@
-import { Ionicons } from "@expo/vector-icons"; // 🆕
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
-import { LinearGradient } from "expo-linear-gradient"; // 🆕
+import { LinearGradient } from "expo-linear-gradient";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -11,19 +11,23 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  useWindowDimensions
+  useWindowDimensions,
 } from "react-native";
 import FotoProduto from "../../../components/FotoProduto";
 import { useAuth } from "../../../context/AuthContext";
 import { useToast } from "../../../context/ToastContext";
+import { usePuxarParaAtualizar } from "../../../hooks/usePuxarParaAtualizar";
 import api from "../../../services/api";
-import { cores } from "../../../theme"; // 🆕
+import {
+  buscarNoOpenFoodFacts,
+  sugerirCategoriaId,
+} from "../../../services/openFoodFacts";
+import { cores } from "../../../theme";
 import {
   traduzirErro,
   validarNomeProduto,
   validarPreco,
 } from "../../../utils/validacoes";
-import { usePuxarParaAtualizar } from "../../../hooks/usePuxarParaAtualizar";
 import { styles } from "./styles";
 
 // Botões de categoria (usado no cadastro avulso e na edição)
@@ -67,11 +71,16 @@ export default function GerenciarProdutos({ navigation }) {
   // Estados de Cadastro Avulso
   const [nome, setNome] = useState("");
   const [preco, setPreco] = useState("");
-  const [foto, setFoto] = useState(""); // foto nova do cadastro avulso (data URI)
-  const [categorias, setCategorias] = useState([]); // vindas de GET /api/categorias
-  const [categoriaId, setCategoriaId] = useState(null); // categoria escolhida no cadastro avulso
+  const [foto, setFoto] = useState(""); // data URI ou URL do Open Food Facts
+  const [categorias, setCategorias] = useState([]);
+  const [categoriaId, setCategoriaId] = useState(null);
 
-  // Carrega as categorias (Hortifruti, Laticínios, Bebidas...) uma vez
+  // Estados da Busca Open Food Facts (Cadastro)
+  const [termoOff, setTermoOff] = useState("");
+  const [buscandoOff, setBuscandoOff] = useState(false);
+  const [sugestoesOff, setSugestoesOff] = useState([]);
+
+  // Carrega as categorias uma vez
   useEffect(() => {
     api
       .get("/api/categorias")
@@ -84,26 +93,23 @@ export default function GerenciarProdutos({ navigation }) {
   const [produtoEditando, setProdutoEditando] = useState(null);
   const [editNome, setEditNome] = useState("");
   const [editPreco, setEditPreco] = useState("");
-  const [editFoto, setEditFoto] = useState(""); // só preenchida se o comerciante trocar a foto
+  const [editFoto, setEditFoto] = useState("");
   const [editCategoriaId, setEditCategoriaId] = useState(null);
+  const [buscandoFotoEdit, setBuscandoFotoEdit] = useState(false);
 
-  // Toast central (em vez do alert do navegador). Mesmo formato: exibirAlerta(titulo, mensagem)
   const { exibirAlerta, confirmar } = useToast();
 
-  // Obter o ID do Mercadinho resolvendo a divergência entre comerciante_id e id_mercadinho
+  // Obter o ID do Mercadinho
   const obterIdMercadinho = useCallback(async () => {
-    // 1. Tenta obter diretamente do objeto user
     let idMerc =
       user?.idMercadinho ||
       user?.mercadinho?.idMercadinho ||
       user?.mercadinho?.id;
     if (idMerc) return idMerc;
 
-    // 2. Se apenas tivermos o ID do comerciante/utilizador, consulta a API para obter o idMercadinho real
     const idComerciante = user?.idUsuario || user?.id;
     if (idComerciante) {
       try {
-        // Ajuste esta rota para o endpoint de busca de mercadinho por comerciante, se existir
         const res = await api.get(
           `/api/mercadinhos/comerciante/${idComerciante}`,
         );
@@ -114,7 +120,7 @@ export default function GerenciarProdutos({ navigation }) {
         console.warn("⚠️ Não foi possível obter idMercadinho por endpoint:", e);
       }
     }
-    return null; // ✏️ antes devolvia o id do usuário (que não é o id da loja)
+    return null;
   }, [user]);
 
   const carregarProdutos = useCallback(async () => {
@@ -148,7 +154,6 @@ export default function GerenciarProdutos({ navigation }) {
     }
   }, [obterIdMercadinho]);
 
-  // 🗑️ removido o useEffect duplicado: o useFocusEffect já carrega ao abrir a tela
   const pull = usePuxarParaAtualizar(carregarProdutos);
 
   useFocusEffect(
@@ -169,8 +174,78 @@ export default function GerenciarProdutos({ navigation }) {
     navigation.navigate("AtivarProdutoCatalogo", { idMercadinho });
   };
 
+  // Busca produto no Open Food Facts por nome ou código de barras
+  const handleBuscarOpenFoodFacts = async () => {
+    const consulta = termoOff.trim();
+    if (consulta.length < 3) {
+      exibirAlerta(
+        "Atenção",
+        "Digite o código de barras ou pelo menos 3 letras do produto.",
+        "aviso",
+      );
+      return;
+    }
+
+    setBuscandoOff(true);
+    setSugestoesOff([]);
+    const resultados = await buscarNoOpenFoodFacts(consulta);
+    setBuscandoOff(false);
+
+    if (resultados.length === 0) {
+      exibirAlerta(
+        "Não encontrado",
+        "Nenhum produto encontrado no Open Food Facts para essa busca.",
+        "aviso",
+      );
+      return;
+    }
+
+    // Se buscou por código de barras e achou 1 exato, já preenche direto
+    if (/^\d{8,14}$/.test(consulta) && resultados.length === 1) {
+      selecionarSugestaoOff(resultados[0]);
+      return;
+    }
+
+    setSugestoesOff(resultados);
+  };
+
+  const selecionarSugestaoOff = (item) => {
+    setNome(item.nome);
+    if (item.imagemUrl) {
+      setFoto(item.imagemUrl);
+    }
+    if (!categoriaId) {
+      const catSugerida = sugerirCategoriaId(item, categorias);
+      if (catSugerida) setCategoriaId(catSugerida);
+    }
+    setSugestoesOff([]);
+    exibirAlerta(
+      "Preenchido",
+      item.imagemUrl
+        ? "Nome e foto preenchidos! Informe o preço e confirme a categoria."
+        : "Nome preenchido (sem foto na base). Informe o preço e a categoria.",
+    );
+  };
+
+  const handleBuscarFotoNaEdicao = async () => {
+    if (editNome.trim().length < 3) {
+      exibirAlerta("Atenção", "Informe o nome do produto para buscar a foto.", "aviso");
+      return;
+    }
+    setBuscandoFotoEdit(true);
+    const resultados = await buscarNoOpenFoodFacts(editNome.trim());
+    setBuscandoFotoEdit(false);
+
+    const comFoto = resultados.find((r) => r.imagemUrl);
+    if (comFoto) {
+      setEditFoto(comFoto.imagemUrl);
+      exibirAlerta("Foto encontrada", "Imagem carregada do Open Food Facts. Clique em Salvar para aplicar.");
+    } else {
+      exibirAlerta("Sem foto", "Nenhuma imagem encontrada para esse nome no Open Food Facts.", "aviso");
+    }
+  };
+
   const handleCadastrar = async () => {
-    // Cada validação devolve o texto do erro (ou '' se estiver OK) e mostra no toast
     const erroNome = validarNomeProduto(nome);
     if (erroNome) {
       exibirAlerta("Atenção", erroNome, "aviso");
@@ -211,6 +286,8 @@ export default function GerenciarProdutos({ navigation }) {
       setPreco("");
       setFoto("");
       setCategoriaId(null);
+      setTermoOff("");
+      setSugestoesOff([]);
       await carregarProdutos();
     } catch (error) {
       console.error("❌ Erro ao cadastrar produto:", error);
@@ -282,7 +359,6 @@ export default function GerenciarProdutos({ navigation }) {
       produto.produtoBase?.nome ||
       "este produto";
 
-    // Pergunta antes (quadro no centro). Inativar = vermelho; ativar = verde.
     const sim = await confirmar({
       titulo: `${novoStatus ? "Ativar" : "Inativar"} produto`,
       mensagem: `Deseja ${acaoTexto} "${nomeExibicao}"?`,
@@ -305,9 +381,6 @@ export default function GerenciarProdutos({ navigation }) {
     }
   };
 
-  // ✏️ Visual novo a partir daqui
-
-  // 🆕 Tudo o que fica ACIMA da lista (vai dentro da mesma rolagem)
   const cabecalhoLista = (
     <View>
       <TouchableOpacity
@@ -329,6 +402,147 @@ export default function GerenciarProdutos({ navigation }) {
 
       <View style={[styles.formCard, isDesktop && styles.formCardDesktop]}>
         <Text style={styles.formTitulo}>Novo produto avulso</Text>
+
+        {/* Busca automática no Open Food Facts (Nome ou Código de Barras) */}
+        <View
+          style={{
+            backgroundColor: "#F8FAFC",
+            borderWidth: 1,
+            borderColor: "#E2E8F0",
+            borderRadius: 12,
+            padding: 10,
+            marginBottom: 12,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: "600",
+              color: "#475569",
+              marginBottom: 6,
+            }}
+          >
+            Preencher nome e foto automaticamente (Open Food Facts)
+          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <TextInput
+              style={[styles.input, { flex: 1, marginBottom: 0, backgroundColor: "#FFFFFF" }]}
+              placeholder="Nome ou código de barras (EAN)"
+              placeholderTextColor={cores.icone}
+              value={termoOff}
+              onChangeText={setTermoOff}
+              returnKeyType="search"
+              onSubmitEditing={handleBuscarOpenFoodFacts}
+            />
+            <TouchableOpacity
+              style={{
+                backgroundColor: cores.primaria,
+                paddingHorizontal: 14,
+                height: 46,
+                borderRadius: 10,
+                justifyContent: "center",
+                alignItems: "center",
+                flexDirection: "row",
+                gap: 6,
+              }}
+              onPress={handleBuscarOpenFoodFacts}
+              disabled={buscandoOff}
+              activeOpacity={0.85}
+            >
+              {buscandoOff ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <Ionicons name="barcode-outline" size={18} color="#FFFFFF" />
+                  <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 13 }}>
+                    Buscar
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {sugestoesOff.length > 0 && (
+            <View style={{ marginTop: 10, gap: 6 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ fontSize: 11, color: "#64748B", fontWeight: "600" }}>
+                  Toque em um item para preencher:
+                </Text>
+                <TouchableOpacity onPress={() => setSugestoesOff([])}>
+                  <Text style={{ fontSize: 11, color: cores.primaria, fontWeight: "700" }}>
+                    Fechar
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {sugestoesOff.map((sug, idx) => (
+                <TouchableOpacity
+                  key={`${sug.codigoBarra}-${idx}`}
+                  onPress={() => selecionarSugestaoOff(sug)}
+                  activeOpacity={0.8}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    backgroundColor: "#FFFFFF",
+                    borderWidth: 1,
+                    borderColor: "#E2E8F0",
+                    borderRadius: 10,
+                    padding: 8,
+                    gap: 10,
+                  }}
+                >
+                  {sug.imagemMiniatura ? (
+                    <Image
+                      source={{ uri: sug.imagemMiniatura }}
+                      style={{
+                        width: 42,
+                        height: 42,
+                        borderRadius: 6,
+                        backgroundColor: "#F1F5F9",
+                      }}
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <View
+                      style={{
+                        width: 42,
+                        height: 42,
+                        borderRadius: 6,
+                        backgroundColor: "#F1F5F9",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Ionicons name="image-outline" size={18} color="#94A3B8" />
+                    </View>
+                  )}
+
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{ fontSize: 13, fontWeight: "600", color: "#1E293B" }}
+                      numberOfLines={2}
+                    >
+                      {sug.nome}
+                    </Text>
+                    <Text style={{ fontSize: 11, color: "#64748B", marginTop: 2 }}>
+                      {sug.imagemUrl ? "Com foto oficial" : "Sem foto"}
+                      {sug.codigoBarra ? ` • EAN ${sug.codigoBarra}` : ""}
+                    </Text>
+                  </View>
+
+                  <Ionicons name="add-circle" size={22} color={cores.primaria} />
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+
         <TextInput
           style={styles.input}
           placeholder="Nome do produto (ex: Feijão Preto 1kg)"
@@ -375,7 +589,6 @@ export default function GerenciarProdutos({ navigation }) {
   return (
     <View style={styles.container}>
       {pull.indicador}
-      {/* 🆕 Topo com degradê (aba: sem botão voltar) */}
       <LinearGradient
         colors={[cores.degradeInicioTopo, cores.degradeInicioBase]}
         style={[styles.topo, isDesktop && styles.topoDesktop]}
@@ -390,9 +603,9 @@ export default function GerenciarProdutos({ navigation }) {
         )}
       </LinearGradient>
 
-      {/* 🆕 Folha branca arredondada */}
       <View style={[styles.folha, isDesktop && styles.folhaDesktop]}>
-        <FlatList {...pull.props}
+        <FlatList
+          {...pull.props}
           key={isDesktop ? `desktop-${colunasProdutos}` : "mobile"}
           data={loading ? [] : produtos}
           numColumns={colunasProdutos}
@@ -424,7 +637,6 @@ export default function GerenciarProdutos({ navigation }) {
           }
           renderItem={({ item }) => {
             const isAtivo = item.ativo ?? true;
-            // Trata o nome caso nome_personalizado seja NULL na base de dados
             const nomeExibicao =
               item.nome ||
               item.nomePersonalizado ||
@@ -442,7 +654,10 @@ export default function GerenciarProdutos({ navigation }) {
                 <View style={styles.produtoTopo}>
                   <View style={styles.produtoNomeLinha}>
                     {item.imagemUrl ? (
-                      <Image source={{ uri: item.imagemUrl }} style={styles.produtoFoto} />
+                      <Image
+                        source={{ uri: item.imagemUrl }}
+                        style={styles.produtoFoto}
+                      />
                     ) : null}
                     <Text style={styles.produtoNome} numberOfLines={1}>
                       {nomeExibicao}
@@ -524,6 +739,36 @@ export default function GerenciarProdutos({ navigation }) {
               value={editNome}
               onChangeText={setEditNome}
             />
+
+            <TouchableOpacity
+              style={[
+                styles.btnContorno,
+                {
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                  paddingVertical: 8,
+                  borderRadius: 10,
+                  marginBottom: 10,
+                },
+              ]}
+              onPress={handleBuscarFotoNaEdicao}
+              disabled={buscandoFotoEdit}
+              activeOpacity={0.85}
+            >
+              {buscandoFotoEdit ? (
+                <ActivityIndicator size="small" color={cores.primaria} />
+              ) : (
+                <>
+                  <Ionicons name="cloud-download-outline" size={16} color={cores.primaria} />
+                  <Text style={styles.btnContornoTexto}>
+                    Buscar foto pelo nome (Open Food Facts)
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+
             <TextInput
               style={styles.input}
               placeholder="Preço (R$)"

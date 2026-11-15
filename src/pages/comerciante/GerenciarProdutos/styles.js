@@ -235,6 +235,16 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: cores.primaria,
   },
+
+  produtoFoto: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    marginRight: 10,
+    backgroundColor: '#FFFFFF',
+    resizeMode: 'contain',
+  },
+  
   tagInativo: {
     backgroundColor: cores.fundoVerMais,
     borderWidth: 1,
