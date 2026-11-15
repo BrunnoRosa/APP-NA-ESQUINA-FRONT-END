@@ -42,14 +42,28 @@ mapa.fitBounds(circulo.getBounds(),{padding:[10,10]});
 </script></body></html>`;
 }
 
-export default function MapaMercados({ mercadinhos = [], navigation }) {
+export default function MapaMercados({ mercadinhos = [], navigation, aoAtualizar }) {
   const {
-    origem, endereco, carregando, aviso,
+    origem, endereco, manual, carregando, aviso,
     usarMinhaLocalizacao, definirEndereco,
   } = useLocalizacao();
   const [texto, setTexto] = useState('');
   const [pontos, setPontos] = useState({}); // id -> {lat,lng}
   const versao = useRef(0);
+  const [atualizandoMapa, setAtualizandoMapa] = useState(false);
+  const [chaveMapa, setChaveMapa] = useState(0);
+
+  // Botão discreto do mapa: refaz a localização (se for GPS), recarrega os mercados e redesenha o mapa
+  async function atualizarMapa() {
+    if (atualizandoMapa) return;
+    setAtualizandoMapa(true);
+    try {
+      if (!manual) await usarMinhaLocalizacao();
+      if (aoAtualizar) await aoAtualizar();
+      setChaveMapa((k) => k + 1);
+    } catch (e) {}
+    setAtualizandoMapa(false);
+  }
 
   // Mantém o campo igual ao endereço atual (GPS ou digitado)
   useEffect(() => { setTexto(endereco || ''); }, [endereco]);
@@ -137,6 +151,7 @@ export default function MapaMercados({ mercadinhos = [], navigation }) {
   let mapa;
   if (Platform.OS === 'web') {
     mapa = React.createElement('iframe', {
+      key: chaveMapa,
       srcDoc: html,
       title: 'Mapa de mercados',
       style: { border: 0, width: '100%', height: '100%' },
@@ -145,6 +160,7 @@ export default function MapaMercados({ mercadinhos = [], navigation }) {
     const { WebView } = require('react-native-webview');
     mapa = (
       <WebView
+        key={chaveMapa}
         originWhitelist={['*']}
         source={{ html, baseUrl: 'https://localhost' }}
         onMessage={(e) => {
@@ -194,7 +210,21 @@ export default function MapaMercados({ mercadinhos = [], navigation }) {
         <Text style={styles.botaoLocalTexto}>Usar minha localização</Text>
       </TouchableOpacity>
 
-      <View style={styles.mapaCaixa}>{mapa}</View>
+      <View style={styles.mapaCaixa}>
+        {mapa}
+        <TouchableOpacity
+          style={styles.mapaBotao}
+          onPress={atualizarMapa}
+          activeOpacity={0.8}
+          accessibilityLabel="Atualizar mapa"
+        >
+          {atualizandoMapa ? (
+            <ActivityIndicator size="small" color="#555555" />
+          ) : (
+            <Ionicons name="refresh" size={17} color="#555555" />
+          )}
+        </TouchableOpacity>
+      </View>
 
       <Text style={styles.resumo}>
         {dentro.length === 0
