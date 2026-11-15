@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons"; // 🆕
 import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient"; // 🆕
-import { useCallback, useState } from "react"; // ✏️ sem useEffect
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -25,6 +25,35 @@ import {
 } from "../../../utils/validacoes";
 import { styles } from "./styles";
 
+// Botões de categoria (usado no cadastro avulso e na edição)
+function SeletorCategoria({ categorias, valor, onChange }) {
+  return (
+    <>
+      <Text style={styles.rotuloCampo}>Categoria</Text>
+      <View style={styles.chipsLinha}>
+        {categorias.map((cat) => {
+          const ativo = valor === cat.idCategoria;
+          return (
+            <TouchableOpacity
+              key={cat.idCategoria}
+              style={[styles.chip, ativo && styles.chipAtivo]}
+              onPress={() => onChange(cat.idCategoria)}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.chipTexto, ativo && styles.chipTextoAtivo]}>
+                {cat.nome}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+        {categorias.length === 0 && (
+          <Text style={styles.rotuloCampo}>Carregando categorias...</Text>
+        )}
+      </View>
+    </>
+  );
+}
+
 export default function GerenciarProdutos({ navigation }) {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 900;
@@ -38,6 +67,16 @@ export default function GerenciarProdutos({ navigation }) {
   const [nome, setNome] = useState("");
   const [preco, setPreco] = useState("");
   const [foto, setFoto] = useState(""); // foto nova do cadastro avulso (data URI)
+  const [categorias, setCategorias] = useState([]); // vindas de GET /api/categorias
+  const [categoriaId, setCategoriaId] = useState(null); // categoria escolhida no cadastro avulso
+
+  // Carrega as categorias (Hortifruti, Laticínios, Bebidas...) uma vez
+  useEffect(() => {
+    api
+      .get("/api/categorias")
+      .then((res) => setCategorias(Array.isArray(res.data) ? res.data : []))
+      .catch(() => setCategorias([]));
+  }, []);
 
   // Estados do Modal de Edição
   const [modalEditVisivel, setModalEditVisivel] = useState(false);
@@ -45,6 +84,7 @@ export default function GerenciarProdutos({ navigation }) {
   const [editNome, setEditNome] = useState("");
   const [editPreco, setEditPreco] = useState("");
   const [editFoto, setEditFoto] = useState(""); // só preenchida se o comerciante trocar a foto
+  const [editCategoriaId, setEditCategoriaId] = useState(null);
 
   // Toast central (em vez do alert do navegador). Mesmo formato: exibirAlerta(titulo, mensagem)
   const { exibirAlerta, confirmar } = useToast();
@@ -138,6 +178,10 @@ export default function GerenciarProdutos({ navigation }) {
       exibirAlerta("Atenção", erroPreco, "aviso");
       return;
     }
+    if (!categoriaId) {
+      exibirAlerta("Atenção", "Escolha a categoria do produto.", "aviso");
+      return;
+    }
     const precoNumerico = parseFloat(preco.replace(",", "."));
 
     const idMercadinho = await obterIdMercadinho();
@@ -153,7 +197,7 @@ export default function GerenciarProdutos({ navigation }) {
         nome: nome.trim(),
         preco: precoNumerico,
         idMercadinho: Number(idMercadinho),
-        categoria: "OUTROS",
+        idCategoria: categoriaId,
         descricao: "",
         imagemUrl: foto || "",
       };
@@ -163,6 +207,7 @@ export default function GerenciarProdutos({ navigation }) {
       setNome("");
       setPreco("");
       setFoto("");
+      setCategoriaId(null);
       await carregarProdutos();
     } catch (error) {
       console.error("❌ Erro ao cadastrar produto:", error);
@@ -183,6 +228,7 @@ export default function GerenciarProdutos({ navigation }) {
     setEditNome(nomeExibicao);
     setEditPreco(String(produto.preco));
     setEditFoto("");
+    setEditCategoriaId(produto.categoria?.idCategoria ?? null);
     setModalEditVisivel(true);
   };
 
@@ -207,6 +253,7 @@ export default function GerenciarProdutos({ navigation }) {
         nome: editNome.trim(),
         preco: precoEditado,
         ...(editFoto ? { imagemUrl: editFoto } : {}),
+        ...(editCategoriaId ? { idCategoria: editCategoriaId } : {}),
       });
 
       exibirAlerta("Sucesso", "Produto atualizado com sucesso!");
@@ -293,6 +340,11 @@ export default function GerenciarProdutos({ navigation }) {
           keyboardType="numeric"
           value={preco}
           onChangeText={setPreco}
+        />
+        <SeletorCategoria
+          categorias={categorias}
+          valor={categoriaId}
+          onChange={setCategoriaId}
         />
         <FotoProduto valor={foto} onChange={setFoto} />
         <TouchableOpacity
@@ -475,6 +527,11 @@ export default function GerenciarProdutos({ navigation }) {
               keyboardType="numeric"
               value={editPreco}
               onChangeText={setEditPreco}
+            />
+            <SeletorCategoria
+              categorias={categorias}
+              valor={editCategoriaId}
+              onChange={setEditCategoriaId}
             />
             <FotoProduto
               valor={editFoto}
