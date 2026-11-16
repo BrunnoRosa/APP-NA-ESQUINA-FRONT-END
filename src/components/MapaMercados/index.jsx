@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 
+import SeletorRota from '../SeletorRota'; // 🆕 escolher o app para abrir a rota
 import { useLocalizacao } from '../../context/LocalizacaoContext';
 import { cores } from '../../theme';
 import { geocodificar } from '../../utils/geocodificacao';
@@ -23,7 +24,7 @@ function montarHtml(origem, lojas) {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<style>html,body,#mapa{height:100%;margin:0}.btn{margin-top:6px;padding:6px 10px;border:0;border-radius:14px;background:#FF3131;color:#fff;font-weight:bold}</style>
+<style>html,body,#mapa{height:100%;margin:0}.acoes{display:flex;gap:6px;margin-top:6px}.btn{padding:6px 10px;border:0;border-radius:14px;background:#FF3131;color:#fff;font-weight:bold}.btn.rota{background:#fff;color:#FF3131;border:1px solid #FF3131}</style>
 </head><body><div id="mapa"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -36,7 +37,7 @@ L.circleMarker([D.origem.lat,D.origem.lng],{radius:8,color:'#fff',weight:3,fillC
 function esc(t){var e=document.createElement('div');e.textContent=t||'';return e.innerHTML;}
 D.lojas.forEach(function(l){
   var m=L.circleMarker([l.lat,l.lng],{radius:10,color:'#fff',weight:2,fillColor:D.cor,fillOpacity:1}).addTo(mapa);
-  m.bindPopup('<b>'+esc(l.nome)+'</b><br>'+esc(l.endereco)+'<br>'+l.km.toFixed(1).replace('.',',')+' km<br><button class="btn" onclick="enviar({idMercadinho:'+l.id+'})">Ver loja</button>');
+  m.bindPopup('<b>'+esc(l.nome)+'</b><br>'+esc(l.endereco)+'<br>'+l.km.toFixed(1).replace('.',',')+' km<div class="acoes"><button class="btn" onclick="enviar({idMercadinho:'+l.id+'})">Ver loja</button><button class="btn rota" onclick="enviar({rotaMercadinho:'+l.id+'})">Como chegar</button></div>');
 });
 mapa.fitBounds(circulo.getBounds(),{padding:[10,10]});
 </script></body></html>`;
@@ -52,6 +53,7 @@ export default function MapaMercados({ mercadinhos = [], navigation, aoAtualizar
   const versao = useRef(0);
   const [atualizandoMapa, setAtualizandoMapa] = useState(false);
   const [chaveMapa, setChaveMapa] = useState(0);
+  const [lojaRota, setLojaRota] = useState(null); // 🆕 loja escolhida no balão para traçar rota
 
   // Botão discreto do mapa: refaz a localização (se for GPS), recarrega os mercados e redesenha o mapa
   async function atualizarMapa() {
@@ -135,13 +137,27 @@ export default function MapaMercados({ mercadinhos = [], navigation, aoAtualizar
     if (m) navigation.navigate('DetalhesMercadinho', { idMercadinho: id, mercadinho: m });
   }
 
+  // 🆕 Abre a escolha de aplicativo (Google Maps, Waze...) com o ponto já localizado no mapa
+  function abrirRotaDaLoja(id) {
+    const l = lojas.find((x) => x.id === id);
+    if (l) {
+      setLojaRota({ nomeFantasia: l.nome, endereco: l.endereco, latitude: l.lat, longitude: l.lng });
+    }
+  }
+
+  // 🆕 Trata as mensagens do balão do mapa (iframe na web, WebView no celular)
+  function tratarMensagem(dados) {
+    if (!dados) return;
+    if (dados.idMercadinho) abrirLoja(dados.idMercadinho);
+    if (dados.rotaMercadinho) abrirRotaDaLoja(dados.rotaMercadinho);
+  }
+
   // Web: o iframe avisa a página; Nativo: o WebView avisa via onMessage
   useEffect(() => {
     if (Platform.OS !== 'web') return undefined;
     const ouvir = (ev) => {
       try {
-        const dados = JSON.parse(ev.data);
-        if (dados && dados.idMercadinho) abrirLoja(dados.idMercadinho);
+        tratarMensagem(JSON.parse(ev.data));
       } catch (e) {}
     };
     window.addEventListener('message', ouvir);
@@ -165,8 +181,7 @@ export default function MapaMercados({ mercadinhos = [], navigation, aoAtualizar
         source={{ html, baseUrl: 'https://localhost' }}
         onMessage={(e) => {
           try {
-            const dados = JSON.parse(e.nativeEvent.data);
-            if (dados.idMercadinho) abrirLoja(dados.idMercadinho);
+            tratarMensagem(JSON.parse(e.nativeEvent.data));
           } catch (err) {}
         }}
         javaScriptEnabled
@@ -233,6 +248,13 @@ export default function MapaMercados({ mercadinhos = [], navigation, aoAtualizar
         {faltando > 0 ? ` Localizando mais ${faltando}...` : ''}
       </Text>
       {aviso ? <Text style={styles.aviso}>{aviso}</Text> : null}
+
+      {/* 🆕 Escolha do aplicativo de rota (aberta pelo botão "Como chegar" do balão) */}
+      <SeletorRota
+        visivel={lojaRota !== null}
+        mercado={lojaRota}
+        onFechar={() => setLojaRota(null)}
+      />
     </View>
   );
 }
