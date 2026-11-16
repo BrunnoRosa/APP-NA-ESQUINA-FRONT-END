@@ -32,10 +32,10 @@ export const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: cores.fundoCirculo || '#F5F5F5',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    overflow: 'hidden', // evita que a imagem vaze das bordas arredondadas
+    overflow: 'hidden',
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -43,9 +43,9 @@ export const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   atalhoImagem: {
-    width: 40,
-    height: 40,
-    resizeMode: 'contain',
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
 
   atalhoNome: {
