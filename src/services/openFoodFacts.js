@@ -10,6 +10,13 @@ const HEADERS = {
 const CAMPOS =
   "code,product_name,product_name_pt,brands,quantity,categories_tags,image_front_url,image_front_small_url";
 
+const DOMINIO_FOOD = "https://world.openfoodfacts.org";
+const DOMINIO_FOOD_BR = "https://br.openfoodfacts.org";
+const DOMINIOS_SECUNDARIOS = [
+  "https://world.openbeautyfacts.org",
+  "https://world.openproductsfacts.org",
+];
+
 function formatarProdutoOff(p) {
   const nomeBase = (p.product_name_pt || p.product_name || "").trim();
   if (!nomeBase) return null;
@@ -39,9 +46,33 @@ function formatarProdutoOff(p) {
   };
 }
 
+async function consultarEanEmDominio(dominio, ean) {
+  const url = `${dominio}/api/v2/product/${ean}.json?fields=${CAMPOS}`;
+  const response = await fetch(url, { headers: HEADERS });
+  if (!response.ok) return null;
+
+  const data = await response.json();
+  if (data?.status === 1 && data?.product) {
+    return formatarProdutoOff(data.product);
+  }
+  return null;
+}
+
+async function consultarTextoEmDominio(dominio, termo, pageSize = 8) {
+  const url = `${dominio}/cgi/search.pl?search_terms=${encodeURIComponent(
+    termo,
+  )}&search_simple=1&action=process&json=1&page_size=${pageSize}&fields=${CAMPOS}`;
+
+  const response = await fetch(url, { headers: HEADERS });
+  if (!response.ok) return [];
+
+  const data = await response.json();
+  return (data?.products || []).map(formatarProdutoOff).filter(Boolean);
+}
+
 /**
- * Busca no Open Food Facts por código de barras (apenas números, 8 a 14 dígitos)
- * ou por nome do produto (mínimo 3 caracteres).
+ * Busca unificada nas bases Open Food Facts, Open Beauty Facts e Open Products Facts
+ * por código de barras (8 a 14 dígitos) ou por nome do produto.
  */
 export async function buscarNoOpenFoodFacts(termo) {
   const limpo = String(termo || "").trim();
@@ -49,46 +80,75 @@ export async function buscarNoOpenFoodFacts(termo) {
 
   const apenasNumeros = limpo.replace(/\D/g, "");
   const isCodigoBarras =
-    apenasNumeros === limpo && apenasNumeros.length >= 8 && apenasNumeros.length <= 14;
+    apenasNumeros === limpo &&
+    apenasNumeros.length >= 8 &&
+    apenasNumeros.length <= 14;
 
   try {
+    // 1. Busca exata por código de barras
     if (isCodigoBarras) {
-      const url = `https://world.openfoodfacts.org/api/v2/product/${apenasNumeros}.json?fields=${CAMPOS}`;
-      const response = await fetch(url, { headers: HEADERS });
-      const data = await response.json();
+      const noFood = await consultarEanEmDominio(DOMINIO_FOOD, apenasNumeros);
+      if (noFood) return [noFood];
 
-      if (data?.status === 1 && data?.product) {
-        const formatado = formatarProdutoOff(data.product);
-        return formatado ? [formatado] : [];
+      // Fallback em paralelo para Higiene/Cosméticos e Limpeza/Utilidades
+      const resultadosSecundarios = await Promise.allSettled(
+        DOMINIOS_SECUNDARIOS.map((dom) =>
+          consultarEanEmDominio(dom, apenasNumeros),
+        ),
+      );
+
+      for (const res of resultadosSecundarios) {
+        if (res.status === "fulfilled" && res.value) {
+          return [res.value];
+        }
       }
       return [];
     }
 
+    // 2. Busca por nome (mínimo 3 letras)
     if (limpo.length < 3) return [];
 
-    const url = `https://br.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(
-      limpo,
-    )}&search_simple=1&action=process&json=1&page_size=8&fields=${CAMPOS}`;
+    let combinados = await consultarTextoEmDominio(DOMINIO_FOOD_BR, limpo, 8);
 
-    const response = await fetch(url, { headers: HEADERS });
-    const data = await response.json();
+    // Se encontrou poucos itens na base de alimentos, complementa com Beauty e Products
+    const comFotoNoFood = combinados.filter((item) => Boolean(item.imagemUrl));
+    if (comFotoNoFood.length < 2) {
+      const extras = await Promise.allSettled(
+        DOMINIOS_SECUNDARIOS.map((dom) =>
+          consultarTextoEmDominio(dom, limpo, 5),
+        ),
+      );
 
-    const lista = (data?.products || [])
-      .map(formatarProdutoOff)
-      .filter(Boolean);
+      for (const res of extras) {
+        if (res.status === "fulfilled" && Array.isArray(res.value)) {
+          combinados = combinados.concat(res.value);
+        }
+      }
+    }
 
-    // Prioriza produtos que já têm foto cadastrada
-    lista.sort((a, b) => Number(Boolean(b.imagemUrl)) - Number(Boolean(a.imagemUrl)));
+    // Remove eventuais duplicados pelo código de barras
+    const vistos = new Set();
+    const unicos = combinados.filter((item) => {
+      const chave = item.codigoBarra || item.nome.toLowerCase();
+      if (vistos.has(chave)) return false;
+      vistos.add(chave);
+      return true;
+    });
 
-    return lista.slice(0, 6);
+    // Prioriza produtos que possuem foto oficial
+    unicos.sort(
+      (a, b) => Number(Boolean(b.imagemUrl)) - Number(Boolean(a.imagemUrl)),
+    );
+
+    return unicos.slice(0, 6);
   } catch (error) {
-    console.error("Erro ao consultar Open Food Facts:", error);
+    console.error("Erro ao consultar bases Open Facts:", error);
     return [];
   }
 }
 
 /**
- * Tenta sugerir automaticamente o idCategoria do banco com base no nome/tags do produto.
+ * Sugere automaticamente o idCategoria do banco com base no nome/tags do produto.
  */
 export function sugerirCategoriaId(itemOff, categorias = []) {
   if (!itemOff || !Array.isArray(categorias) || categorias.length === 0) {
@@ -101,7 +161,7 @@ export function sugerirCategoriaId(itemOff, categorias = []) {
     { palavras: ["refrigerante", "suco", "água", "agua", "cerveja", "vinho", "energético", "chá", "beverage", "drink"], cat: "bebida" },
     { palavras: ["leite", "queijo", "iogurte", "manteiga", "margarina", "requeijão", "creme de leite", "dairy", "milk", "cheese"], cat: "latic" },
     { palavras: ["detergente", "sabão", "amaciante", "desinfetante", "água sanitária", "limpa", "cleaning"], cat: "limpeza" },
-    { palavras: ["shampoo", "sabonete", "creme dental", "desodorante", "absorvente", "papel higiênico", "hygiene"], cat: "higiene" },
+    { palavras: ["shampoo", "sabonete", "creme dental", "desodorante", "absorvente", "papel higiênico", "hygiene", "beauty"], cat: "higiene" },
     { palavras: ["pão", "torrada", "bisnaguinha", "bolo", "bread", "bakery"], cat: "padaria" },
     { palavras: ["banana", "maçã", "tomate", "cebola", "batata", "fruta", "verdura", "fruit", "vegetable"], cat: "hortifruti" },
     { palavras: ["biscoito", "bolacha", "chocolate", "bala", "salgadinho", "wafer", "cookie", "candy", "snack"], cat: "doce" },
