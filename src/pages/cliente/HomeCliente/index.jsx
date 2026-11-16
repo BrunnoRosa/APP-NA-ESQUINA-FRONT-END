@@ -1,5 +1,5 @@
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -16,10 +16,10 @@ import MercadoCarrossel from '../../../components/MercadoCarrossel';
 import OfertaCard from '../../../components/OfertaCard';
 import { useCarrinho } from '../../../context/CarrinhoContext';
 import { useLocalizacao } from '../../../context/LocalizacaoContext';
+import { usePuxarParaAtualizar } from '../../../hooks/usePuxarParaAtualizar';
 import api from '../../../services/api';
 import { cores } from '../../../theme';
 import { calcularDistanciaKm, ordenarAbertasPrimeiro } from '../../../utils/mercado';
-import { usePuxarParaAtualizar } from '../../../hooks/usePuxarParaAtualizar';
 import { styles } from './styles';
 
 const ATALHOS = [
@@ -31,7 +31,7 @@ const ATALHOS = [
   {
     chave: 'produtos',
     nome: 'Produtos',
-    imagem: require('../../../../assets/images/icone-produtos.png'),
+    imagem: require('../../../../assets/images/icone-Produtos.png'),
   },
   {
     chave: 'mercados',
