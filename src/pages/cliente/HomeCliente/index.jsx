@@ -1,8 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -23,9 +23,21 @@ import { usePuxarParaAtualizar } from '../../../hooks/usePuxarParaAtualizar';
 import { styles } from './styles';
 
 const ATALHOS = [
-  { chave: 'promocoes', nome: 'Promoções', icone: 'pricetag' },
-  { chave: 'produtos', nome: 'Produtos', icone: 'cube' },
-  { chave: 'mercados', nome: 'Mercados', icone: 'storefront' },
+  {
+    chave: 'promocoes',
+    nome: 'Promoções',
+    imagem: require('../../../../assets/images/icone-promocoes.png'),
+  },
+  {
+    chave: 'produtos',
+    nome: 'Produtos',
+    imagem: require('../../../../assets/images/icone-produtos.png'),
+  },
+  {
+    chave: 'mercados',
+    nome: 'Mercados',
+    imagem: require('../../../../assets/images/icone-mercados.png'),
+  },
 ];
 
 export default function HomeCliente({ navigation }) {
@@ -266,7 +278,7 @@ export default function HomeCliente({ navigation }) {
                 onPress={() => handleNavegar(atalho.chave)}
               >
                 <View style={styles.atalhoCirculo}>
-                  <Ionicons name={atalho.icone} size={28} color={cores.primaria} />
+                  <Image source={atalho.imagem} style={styles.atalhoImagem} />
                 </View>
                 <Text style={styles.atalhoNome}>{atalho.nome}</Text>
               </TouchableOpacity>

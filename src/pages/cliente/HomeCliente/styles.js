@@ -35,12 +35,19 @@ export const styles = StyleSheet.create({
     backgroundColor: cores.fundoCirculo || '#F5F5F5',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden', // evita que a imagem vaze das bordas arredondadas
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
   },
+  atalhoImagem: {
+    width: 40,
+    height: 40,
+    resizeMode: 'contain',
+  },
+
   atalhoNome: {
     fontSize: 13,
     fontWeight: '600',
