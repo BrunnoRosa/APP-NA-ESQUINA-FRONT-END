@@ -12,13 +12,14 @@ import api from "./src/services/api";
 // Contextos
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import { CarrinhoProvider } from "./src/context/CarrinhoContext";
+import { ListaComprasProvider } from "./src/context/ListaComprasContext";
 import { LocalizacaoProvider } from "./src/context/LocalizacaoContext";
 import { NotificacoesClienteProvider } from "./src/context/NotificacoesClienteContext";
 import { PedidosPendentesProvider } from "./src/context/PedidosPendentesContext";
 import { ToastProvider } from "./src/context/ToastContext";
 
 // Função de Notificações
-import { registrarParaNotificacoesPushAsync } from "./src/services/notifications"; // <-- NOVO IMPORT ADICIONADO
+import { registrarParaNotificacoesPushAsync } from "./src/services/notifications";
 
 // Componente Customizado do TabBar
 import TabNavigator from "./src/components/Layout/TabNavigator";
@@ -39,6 +40,7 @@ import Conta from "./src/pages/cliente/Conta";
 import DetalhesMercadinho from "./src/pages/cliente/DetalhesMercadinho";
 import Favoritos from "./src/pages/cliente/Favoritos";
 import HomeCliente from "./src/pages/cliente/HomeCliente";
+import ListaCompras from "./src/pages/cliente/ListaCompras";
 import MeusPedidos from "./src/pages/cliente/MeusPedidos";
 import Notificacoes from "./src/pages/cliente/Notificacoes";
 
@@ -182,6 +184,7 @@ function Routes() {
             <Stack.Screen name="Carrinho" component={Carrinho} />
             <Stack.Screen name="Notificacoes" component={Notificacoes} />
             <Stack.Screen name="EditarPerfil" component={EditarPerfil} />
+            <Stack.Screen name="ListaCompras" component={ListaCompras} />
           </>
         )}
       </Stack.Navigator>
@@ -197,7 +200,9 @@ export default function App() {
           <NotificacoesClienteProvider>
             <LocalizacaoProvider>
               <CarrinhoProvider>
+                <ListaComprasProvider>
                 <Routes />
+                </ListaComprasProvider>
               </CarrinhoProvider>
             </LocalizacaoProvider>
           </NotificacoesClienteProvider>

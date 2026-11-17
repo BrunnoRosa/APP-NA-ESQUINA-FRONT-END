@@ -118,6 +118,29 @@ export const styles = StyleSheet.create({
   categoryTextActive: {
     color: '#FFFFFF',
   },
+  promoChip: {
+    backgroundColor: '#F0FDF4',
+    borderWidth: 1,
+    borderColor: '#168A00',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 20,
+    marginRight: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  promoChipActive: {
+    backgroundColor: '#168A00',
+  },
+  promoChipText: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#168A00',
+  },
+  promoChipTextActive: {
+    color: '#FFFFFF',
+  },
   sortRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

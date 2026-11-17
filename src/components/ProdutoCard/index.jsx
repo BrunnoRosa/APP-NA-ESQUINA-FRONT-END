@@ -1,14 +1,28 @@
-import { Ionicons } from '@expo/vector-icons';                  // 🆕
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
-import { cores } from '../../theme';                            // 🆕
+import { cores } from '../../theme';
 import { styles } from './styles';
 
-export default function ProdutoCard({ produto, onAdicionar, onPress }) {
-  const precoFormatado = Number(produto?.preco || 0).toLocaleString('pt-BR', {
+const formatarMoeda = (valor) =>
+  Number(valor || 0).toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',
   });
+
+export default function ProdutoCard({ produto, onAdicionar, onPress }) {
+  const precoNormal = Number(produto?.preco || 0);
+  const precoPromo = Number(produto?.precoPromocional);
+
+  const temPromocao =
+    produto?.emPromocao === true &&
+    Number.isFinite(precoPromo) &&
+    precoPromo > 0 &&
+    precoPromo < precoNormal;
+
+  const percentualDesconto = temPromocao
+    ? Math.round(((precoNormal - precoPromo) / precoNormal) * 100)
+    : 0;
 
   // Extrai o ID do mercadinho tratando todas as estruturas possíveis vindas da API/DTO
   const idMercadinho =
@@ -17,7 +31,7 @@ export default function ProdutoCard({ produto, onAdicionar, onPress }) {
     produto?.mercadinho?.idMercadinho ||
     produto?.mercadinho?.id;
 
-  // Extrai o nome do mercadinho (suporta objetos aninhados ou propriedades diretas do DTO)
+  // Extrai o nome do mercadinho
   const nomeMercadinho =
     produto?.nomeMercadinho ||
     produto?.mercadinho?.nome ||
@@ -37,17 +51,18 @@ export default function ProdutoCard({ produto, onAdicionar, onPress }) {
 
   const handleAdicionar = () => {
     if (onAdicionar) {
-      // Injeta o idMercadinho garantido dentro do objeto do produto enviado ao carrinho
-      onAdicionar({
-        ...produto,
-        idMercadinho,
-      }, idMercadinho);
+      onAdicionar(
+        {
+          ...produto,
+          idMercadinho,
+        },
+        idMercadinho
+      );
     }
   };
 
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.8} onPress={onPress}>
-      {/* ✏️ Foto */}
       <View style={styles.imageContainer}>
         {produto?.imagemUrl ? (
           <Image
@@ -61,20 +76,26 @@ export default function ProdutoCard({ produto, onAdicionar, onPress }) {
       </View>
 
       <View style={styles.infoContainer}>
-        {/* ✏️ Nome + etiqueta de destaque na mesma linha */}
+        {/* Nome + etiqueta de Oferta ou Destaque */}
         <View style={styles.nomeLinha}>
           <Text style={styles.nome} numberOfLines={2}>
             {produto?.nome || 'Produto'}
           </Text>
-          {produto?.emDestaque && (
+
+          {temPromocao ? (
+            <View style={styles.promoTag}>
+              <Ionicons name="pricetag" size={10} color="#168A00" />
+              <Text style={styles.promoTagText}>Oferta</Text>
+            </View>
+          ) : produto?.emDestaque ? (
             <View style={styles.destaqueTag}>
               <Ionicons name="star" size={10} color={cores.primaria} />
               <Text style={styles.destaqueText}>Destaque</Text>
             </View>
-          )}
+          ) : null}
         </View>
 
-        {/* ✏️ Mercadinho e distância com ícones */}
+        {/* Mercadinho e distância */}
         {(nomeMercadinho || distanciaFormatada) && (
           <View style={styles.storeInfoRow}>
             {nomeMercadinho && (
@@ -95,8 +116,21 @@ export default function ProdutoCard({ produto, onAdicionar, onPress }) {
           </View>
         )}
 
+        {/* Rodapé com preço normal ou De / Por / -% */}
         <View style={styles.footerRow}>
-          <Text style={styles.preco}>{precoFormatado}</Text>
+          {temPromocao ? (
+            <View style={styles.precoPromoBloco}>
+              <Text style={styles.precoAntigo}>{formatarMoeda(precoNormal)}</Text>
+              <View style={styles.precoPromoLinha}>
+                <Text style={styles.precoPromocional}>{formatarMoeda(precoPromo)}</Text>
+                <View style={styles.descontoBadge}>
+                  <Text style={styles.descontoTexto}>-{percentualDesconto}%</Text>
+                </View>
+              </View>
+            </View>
+          ) : (
+            <Text style={styles.preco}>{formatarMoeda(precoNormal)}</Text>
+          )}
 
           {onAdicionar && (
             <TouchableOpacity

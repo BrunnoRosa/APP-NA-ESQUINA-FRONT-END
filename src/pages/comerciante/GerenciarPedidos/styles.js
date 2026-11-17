@@ -1,13 +1,11 @@
-import { StyleSheet } from 'react-native';
-import { cores } from '../../../theme';
+import { StyleSheet } from "react-native";
+import { cores } from "../../../theme";
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: cores.degradeInicioBase,
   },
-
-  // Topo
   topo: {
     paddingTop: 48,
     paddingHorizontal: 20,
@@ -15,7 +13,7 @@ export const styles = StyleSheet.create({
   },
   titulo: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: cores.textoTitulo,
   },
   subtitulo: {
@@ -23,44 +21,42 @@ export const styles = StyleSheet.create({
     color: cores.textoSecundario,
     marginTop: 2,
   },
-
-  // Folha branca
   folha: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     marginTop: -28,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   lista: {
     padding: 20,
-    paddingBottom: 30,
+    paddingBottom: 40,
     gap: 14,
   },
   centro: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: 32,
-    gap: 10,
   },
-
-  // Cartão do pedido
+  vazioTexto: {
+    fontSize: 15,
+    color: cores.textoSecundario,
+  },
   pedidoCard: {
     backgroundColor: cores.fundoCartao,
     borderRadius: 20,
     padding: 16,
   },
   pedidoHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 8,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   pedidoNumero: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: cores.textoTitulo,
   },
   statusBadge: {
@@ -70,29 +66,26 @@ export const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 11,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   clienteLinha: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
     marginTop: 8,
   },
   clienteNome: {
-    flex: 1,
     fontSize: 13,
     color: cores.textoSecundario,
   },
   divider: {
     height: 1,
-    backgroundColor: '#DCDCDC',
+    backgroundColor: "#DCDCDC",
     marginVertical: 12,
   },
   itemRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 6,
   },
   itemNome: {
@@ -105,13 +98,13 @@ export const styles = StyleSheet.create({
     color: cores.textoSecundario,
   },
   pedidoFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginTop: 10,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#DCDCDC',
+    borderTopColor: "#DCDCDC",
   },
   totalLabel: {
     fontSize: 14,
@@ -119,11 +112,76 @@ export const styles = StyleSheet.create({
   },
   totalValor: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: cores.primaria,
   },
-
-  // Motivo do cancelamento
+  avisoAguardandoBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 12,
+    backgroundColor: "#FEF9E7",
+    borderWidth: 1,
+    borderColor: "#F5B041",
+    borderRadius: 12,
+    padding: 10,
+  },
+  avisoAguardandoTexto: {
+    flex: 1,
+    fontSize: 12,
+    color: "#9C640C",
+  },
+  btnPrimario: {
+    marginTop: 14,
+    backgroundColor: cores.primaria,
+    borderRadius: 24,
+    paddingVertical: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  btnSucesso: {
+    backgroundColor: "#168A00",
+  },
+  btnPrimarioTexto: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  btnEditar: {
+    marginTop: 10,
+    borderWidth: 1.5,
+    borderColor: "#D97706",
+    backgroundColor: "#FFFBEB",
+    borderRadius: 24,
+    paddingVertical: 11,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  btnEditarTexto: {
+    color: "#B45309",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  btnCancelar: {
+    marginTop: 10,
+    borderWidth: 1.5,
+    borderColor: cores.primaria,
+    borderRadius: 24,
+    paddingVertical: 11,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  btnCancelarTexto: {
+    color: cores.primaria,
+    fontSize: 14,
+    fontWeight: "bold",
+  },
   motivoContainer: {
     marginTop: 12,
     backgroundColor: cores.fundoVerMais,
@@ -134,7 +192,7 @@ export const styles = StyleSheet.create({
   },
   motivoTitle: {
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: cores.primaria,
     marginBottom: 2,
   },
@@ -143,104 +201,130 @@ export const styles = StyleSheet.create({
     color: cores.textoTitulo,
   },
 
-  // Botões de ação
-  acoes: {
-    marginTop: 14,
-    gap: 8,
-  },
-  btnAcao: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    borderRadius: 24,
-    paddingVertical: 12,
-  },
-  btnPrimario: {
-    backgroundColor: cores.primaria,
-  },
-  btnSucesso: {
-    backgroundColor: cores.sucesso,
-  },
-  btnContorno: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: cores.primaria,
-  },
-  btnTexto: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-
-  // Estado vazio
-  vazioCirculo: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: cores.fundoCirculo,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: cores.textoTitulo,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: cores.textoSecundario,
-    textAlign: 'center',
-  },
-  
-  // Modal de cancelamento
-  modalFundo: {
+  // Modais
+  modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  modalCaixa: {
-    width: '100%',
-    maxWidth: 420,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
-    gap: 12,
+  },
+  modalCard: {
+    width: "100%",
+    maxWidth: 440,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    padding: 20,
   },
   modalTitulo: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: cores.textoTitulo,
   },
-  modalTexto: {
+  modalSubtitulo: {
     fontSize: 13,
     color: cores.textoSecundario,
-  },
-  modalCampo: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: cores.bordaCampo,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: cores.textoCampo,
-    minHeight: 80,
-    textAlignVertical: 'top',
-  },
-  modalAcoes: {
-    flexDirection: 'row',
-    gap: 10,
     marginTop: 4,
+    marginBottom: 14,
   },
-  // Os dois botões dividem a largura do modal por igual
-  modalBotao: {
+  modalInput: {
+    borderWidth: 1.5,
+    borderColor: "#212529",
+    borderRadius: 14,
+    padding: 12,
+    minHeight: 84,
+    fontSize: 14,
+    color: cores.textoTitulo,
+    marginBottom: 16,
+  },
+  modalBotoes: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  modalBtnVoltar: {
     flex: 1,
-    height: 48,
-    paddingVertical: 0,
+    borderWidth: 1.5,
+    borderColor: cores.primaria,
+    borderRadius: 24,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  modalBtnVoltarTexto: {
+    color: cores.primaria,
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  modalBtnConfirmar: {
+    flex: 1,
+    backgroundColor: cores.primaria,
+    borderRadius: 24,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  modalBtnConfirmarTexto: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+
+  // Itens no modal de edição
+  editItemRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8F9FA",
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 8,
+    gap: 8,
+  },
+  editItemNome: {
+    fontSize: 13,
+    fontWeight: "bold",
+    color: cores.textoTitulo,
+  },
+  editItemSub: {
+    fontSize: 11,
+    color: cores.textoSecundario,
+    marginTop: 2,
+  },
+  editQtdBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#DEE2E6",
+  },
+  editQtdBtn: {
     paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  editQtdValor: {
+    fontSize: 13,
+    fontWeight: "bold",
+    paddingHorizontal: 6,
+  },
+  editTrashBtn: {
+    padding: 6,
+  },
+  editNovoTotalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 10,
+    marginTop: 4,
+    marginBottom: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#E9ECEF",
+  },
+  editNovoTotalLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: cores.textoSecundario,
+  },
+  editNovoTotalValor: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#2E7D32",
   },
 });
