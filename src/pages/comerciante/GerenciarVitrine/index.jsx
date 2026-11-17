@@ -97,7 +97,8 @@ export default function GerenciarVitrine({ navigation }) {
     if (!produto.emPromocao && totalPromocoes >= LIMITE_PROMOCOES) {
       exibirAlerta(
         'Limite de promoções atingido',
-        `Cada mercadinho pode manter até ${LIMITE_PROMOCOES} produtos em promoção por vez. Encerre uma promoção ativa para liberar vaga.`
+        `Cada mercadinho pode manter até ${LIMITE_PROMOCOES} produtos em promoção por vez. Encerre uma promoção ativa para liberar vaga.`,
+        'erro'
       );
       return;
     }

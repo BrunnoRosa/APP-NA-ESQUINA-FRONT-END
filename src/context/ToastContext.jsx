@@ -51,7 +51,7 @@ export function descobrirTipo(titulo) {
   const t = String(titulo || "").toLowerCase();
   if (/(aten[cç][aã]o|confira|corrija|\bmas\b)/.test(t)) return "aviso";
   if (
-    /(erro|falha|inv[aá]lid|negado|sem conex|indispon|n[aã]o encontrad|permiss|j[aá] cadastrad|demorou|servidor)/.test(
+    /(erro|falha|inv[aá]lid|negado|sem conex|indispon|n[aã]o encontrad|permiss|j[aá] cadastrad|demorou|servidor|limite|atingid)/.test(
       t,
     )
   )
