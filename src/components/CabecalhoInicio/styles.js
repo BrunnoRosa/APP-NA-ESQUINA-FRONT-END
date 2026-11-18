@@ -22,7 +22,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 12,
   },
   saudacao: {
     fontSize: 22,
@@ -30,13 +30,14 @@ export const styles = StyleSheet.create({
     color: cores.textoSaudacao,
   },
   logo: {
-    width: 36,
-    height: 43,
+    width: 58,
+    height: 70,
+    marginVertical: -6,
   },
   linhaBusca: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 14,
+    marginTop: 12,
     gap: 8,
   },
   campoBusca: {
