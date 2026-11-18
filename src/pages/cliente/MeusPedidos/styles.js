@@ -7,7 +7,6 @@ export const styles = StyleSheet.create({
     backgroundColor: cores.degradeInicioBase,
   },
 
-  // Topo
   topo: {
     paddingTop: 48,
     paddingHorizontal: 20,
@@ -37,7 +36,6 @@ export const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  // Folha branca
   folha: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -59,7 +57,6 @@ export const styles = StyleSheet.create({
     gap: 10,
   },
 
-  // Cartão do pedido
   pedidoCard: {
     backgroundColor: cores.fundoCartao,
     borderRadius: 20,
@@ -136,9 +133,26 @@ export const styles = StyleSheet.create({
     color: cores.primaria,
   },
 
-  // Botão "Já retirei"
+  rotaButton: {
+    marginTop: 12,
+    backgroundColor: '#EBF3FF',
+    borderWidth: 1,
+    borderColor: '#1F4E8C',
+    borderRadius: 24,
+    paddingVertical: 11,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  rotaButtonText: {
+    color: '#1F4E8C',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+
   confirmButton: {
-    marginTop: 14,
+    marginTop: 10,
     backgroundColor: '#168A00',
     borderRadius: 24,
     paddingVertical: 12,
@@ -153,7 +167,6 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
-  // Botão "Cancelar pedido" (contorno vermelho, menos chamativo que o "Já retirei")
   cancelButton: {
     marginTop: 10,
     borderWidth: 1.5,
@@ -171,7 +184,6 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
-  // Motivo do cancelamento
   motivoContainer: {
     marginTop: 12,
     backgroundColor: cores.fundoVerMais,
@@ -191,7 +203,6 @@ export const styles = StyleSheet.create({
     color: cores.textoTitulo,
   },
 
-  // Estado vazio
   vazioCirculo: {
     width: 96,
     height: 96,
@@ -223,7 +234,6 @@ export const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold',
   },
-  // Banner de alteração pelo mercadinho
   alteracaoBanner: {
     marginTop: 10,
     backgroundColor: '#FEF9E7',
@@ -249,7 +259,6 @@ export const styles = StyleSheet.create({
     color: '#7E5109',
     lineHeight: 17,
   },
-  // Modal de justificativa de cancelamento
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.45)',

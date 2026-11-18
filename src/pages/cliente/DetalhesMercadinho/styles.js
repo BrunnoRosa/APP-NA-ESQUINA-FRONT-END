@@ -36,6 +36,22 @@ export const styles = StyleSheet.create({
     fontSize: 13,
     color: cores.textoEndereco,
   },
+  botaoComoChegar: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: 12,
+  },
+  botaoComoChegarTexto: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: cores.primaria,
+  },
   folha: {
     flex: 1,
     backgroundColor: '#FFFFFF',

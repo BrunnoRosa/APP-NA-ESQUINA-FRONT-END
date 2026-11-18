@@ -12,6 +12,7 @@ import {
 import BotaoCarrinho from '../../../components/BotaoCarrinho';
 import OfertaCard from '../../../components/OfertaCard';
 import ProdutoCard from '../../../components/ProdutoCard';
+import SeletorRota from '../../../components/SeletorRota';
 import { useCarrinho } from '../../../context/CarrinhoContext';
 import api from '../../../services/api';
 import { cores } from '../../../theme';
@@ -24,6 +25,7 @@ export default function DetalhesMercadinho({ route, navigation }) {
   const [mercadinho, setMercadinho] = useState(mercadinhoParam || null);
   const [produtos, setProdutos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [mostrarRota, setMostrarRota] = useState(false);
 
   const { adicionarAoCarrinho } = useCarrinho();
 
@@ -105,6 +107,17 @@ export default function DetalhesMercadinho({ route, navigation }) {
             {mercadinho?.endereco || 'Endereço não informado'}
           </Text>
         </View>
+
+        {mercadinho && (
+          <TouchableOpacity
+            style={styles.botaoComoChegar}
+            onPress={() => setMostrarRota(true)}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="navigate-outline" size={16} color={cores.primaria} />
+            <Text style={styles.botaoComoChegarTexto}>Como chegar</Text>
+          </TouchableOpacity>
+        )}
       </LinearGradient>
 
       <View style={styles.folha}>
@@ -112,7 +125,6 @@ export default function DetalhesMercadinho({ route, navigation }) {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {/* Selo Aberto/Fechado + horários detalhados */}
           <View style={styles.statusCard}>
             <View style={styles.statusTopo}>
               <View
@@ -199,6 +211,12 @@ export default function DetalhesMercadinho({ route, navigation }) {
       </View>
 
       <BotaoCarrinho navigation={navigation} bottom={30} />
+
+      <SeletorRota
+        visivel={mostrarRota}
+        mercado={mercadinho}
+        onFechar={() => setMostrarRota(false)}
+      />
     </View>
   );
 }
