@@ -6,6 +6,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -40,7 +41,6 @@ import {
 } from "../../../utils/validacoes";
 import { styles } from "./styles";
 
-// Campo reutilizável: rótulo + input + mensagem de erro
 function Campo({
   rotulo,
   valor,
@@ -71,8 +71,6 @@ function Campo({
   );
 }
 
-// Descobre a posição no mapa, mas nunca deixa o "Salvar" travado:
-// se o serviço de mapas não responder em 15 segundos, desiste e devolve null.
 function descobrirPosicao(dados) {
   const limite = new Promise((resolve) =>
     setTimeout(() => resolve(null), 15000),
@@ -83,7 +81,6 @@ function descobrirPosicao(dados) {
   ]);
 }
 
-// Normaliza o endereço para comparar "o que estava salvo" com "o que está na tela"
 function normalizarLocal({ cep, rua, numero, bairro, cidade, uf }) {
   return {
     cep: somenteDigitos(cep),
@@ -97,19 +94,17 @@ function normalizarLocal({ cep, rua, numero, bairro, cidade, uf }) {
 
 export default function EditarPerfil({ navigation }) {
   const { user, atualizarUsuario } = useAuth();
-  const { exibirAlerta } = useToast(); // avisos (sucesso / erro / atenção) aparecem como toast no topo
+  const { exibirAlerta } = useToast();
   const ehComerciante = user?.perfil === "COMERCIANTE";
 
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [buscandoCep, setBuscandoCep] = useState(false);
 
-  // Dados pessoais
   const [nome, setNome] = useState(user?.nome || "");
   const [telefone, setTelefone] = useState("");
   const email = user?.email || "";
 
-  // Dados do mercado (só comerciante)
   const [nomeFantasia, setNomeFantasia] = useState("");
   const [cep, setCep] = useState("");
   const [rua, setRua] = useState("");
@@ -118,26 +113,31 @@ export default function EditarPerfil({ navigation }) {
   const [complemento, setComplemento] = useState("");
   const [cidade, setCidade] = useState("");
   const [uf, setUf] = useState("");
-  // Texto único do endereço (contas antigas, criadas antes dos campos separados)
   const [enderecoAntigo, setEnderecoAntigo] = useState("");
-  // Latitude/longitude NÃO aparecem mais na tela: ficam guardadas aqui só para reenviar
-  // quando o endereço não mudou, e são recalculadas automaticamente quando ele muda.
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
-  const [abertura, setAbertura] = useState("");
-  const [fechamento, setFechamento] = useState("");
   const [cnpj, setCnpj] = useState("");
 
-  // Local como veio do servidor: serve para saber se o usuário mudou o endereço (e refazer o mapa)
+  // Horários detalhados
+  const [abreSegSex, setAbreSegSex] = useState(true);
+  const [aberturaSegSex, setAberturaSegSex] = useState("");
+  const [fechamentoSegSex, setFechamentoSegSex] = useState("");
+
+  const [abreSabado, setAbreSabado] = useState(true);
+  const [aberturaSabado, setAberturaSabado] = useState("");
+  const [fechamentoSabado, setFechamentoSabado] = useState("");
+
+  const [abreDomingo, setAbreDomingo] = useState(false);
+  const [aberturaDomingo, setAberturaDomingo] = useState("");
+  const [fechamentoDomingo, setFechamentoDomingo] = useState("");
+
   const original = useRef(
     normalizarLocal({ cep: "", rua: "", numero: "", bairro: "", cidade: "", uf: "" }),
   );
   const numeroRef = useRef(null);
   const ruaRef = useRef(null);
-  // Último CEP já consultado: evita repetir a busca e ignora respostas atrasadas
   const ultimoCep = useRef("");
 
-  // Senha (opcional)
   const [trocarSenha, setTrocarSenha] = useState(false);
   const [senhaAtual, setSenhaAtual] = useState("");
   const [novaSenha, setNovaSenha] = useState("");
@@ -146,16 +146,12 @@ export default function EditarPerfil({ navigation }) {
 
   useEffect(() => {
     async function carregar() {
-      // 1) Dados do usuário
       try {
         const res = await api.get("/api/usuarios/me");
         if (res.data?.nome) setNome(res.data.nome);
         if (res.data?.telefone) setTelefone(mascaraTelefone(res.data.telefone));
-      } catch (e) {
-        // Fallback: mantém dados do AuthContext
-      }
+      } catch (e) {}
 
-      // 2) Dados do mercado (comerciante)
       if (ehComerciante && (user?.idMercadinho || user?.mercadinhoId)) {
         const idM = user.idMercadinho || user.mercadinhoId;
         try {
@@ -185,11 +181,41 @@ export default function EditarPerfil({ navigation }) {
             setUf(meu.uf || "");
             setLatitude(meu.latitude != null ? String(meu.latitude) : "");
             setLongitude(meu.longitude != null ? String(meu.longitude) : "");
-            setAbertura(String(meu.horarioAbertura || "").slice(0, 5));
-            setFechamento(String(meu.horarioFechamento || "").slice(0, 5));
             setCnpj(meu.cnpj || "");
+
+            const legadoAb = String(meu.horarioAbertura || "").slice(0, 5);
+            const legadoFe = String(meu.horarioFechamento || "").slice(0, 5);
+            const temDetalhado =
+              meu.abreSegSex !== undefined && meu.abreSegSex !== null;
+
+            if (temDetalhado) {
+              setAbreSegSex(Boolean(meu.abreSegSex));
+              setAberturaSegSex(String(meu.horarioAberturaSegSex || "").slice(0, 5));
+              setFechamentoSegSex(String(meu.horarioFechamentoSegSex || "").slice(0, 5));
+
+              setAbreSabado(Boolean(meu.abreSabado));
+              setAberturaSabado(String(meu.horarioAberturaSabado || "").slice(0, 5));
+              setFechamentoSabado(String(meu.horarioFechamentoSabado || "").slice(0, 5));
+
+              setAbreDomingo(Boolean(meu.abreDomingo));
+              setAberturaDomingo(String(meu.horarioAberturaDomingo || "").slice(0, 5));
+              setFechamentoDomingo(String(meu.horarioFechamentoDomingo || "").slice(0, 5));
+            } else {
+              setAbreSegSex(true);
+              setAberturaSegSex(legadoAb);
+              setFechamentoSegSex(legadoFe);
+
+              setAbreSabado(true);
+              setAberturaSabado(legadoAb);
+              setFechamentoSabado(legadoFe);
+
+              setAbreDomingo(true);
+              setAberturaDomingo(legadoAb);
+              setFechamentoDomingo(legadoFe);
+            }
+
             original.current = normalizarLocal(meu);
-            ultimoCep.current = somenteDigitos(meu.cep || ""); // não busca de novo o CEP que já estava salvo
+            ultimoCep.current = somenteDigitos(meu.cep || "");
           }
         } catch (e) {
           exibirAlerta(
@@ -204,36 +230,29 @@ export default function EditarPerfil({ navigation }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ehComerciante, user]);
 
-  // O usuário preencheu algum campo do endereço em partes?
   function temEnderecoEmPartes() {
     return [rua, numero, bairro, cidade, uf].some(
       (campo) => limparEspacos(campo) !== "",
     );
   }
 
-  // Conta antiga: só tem o texto único salvo, sem os campos separados
   const contaAntiga = !original.current.rua && !!limparEspacos(enderecoAntigo);
 
-  // O usuário mudou o local da loja? (o complemento não muda a posição no mapa)
   function mudouLocal() {
     const atual = normalizarLocal({ cep, rua, numero, bairro, cidade, uf });
     return Object.keys(atual).some((k) => atual[k] !== original.current[k]);
   }
 
-  // ---------------------------- busca de CEP ----------------------------
   async function buscarEnderecoPorCep(digitos) {
     setBuscandoCep(true);
     try {
       const d = await buscarCep(digitos);
-      if (ultimoCep.current !== digitos) return; // o usuário já digitou outro CEP
+      if (ultimoCep.current !== digitos) return;
 
       setErros((a) => ({ ...a, cep: "" }));
-
-      // Preenche os campos (continuam editáveis)
       if (d.cidade) setCidade(d.cidade);
       if (d.uf) setUf(d.uf);
 
-      // CEP "geral" da cidade (sem rua): só orienta
       if (!d.rua) {
         exibirAlerta(
           "CEP encontrado",
@@ -269,7 +288,6 @@ export default function EditarPerfil({ navigation }) {
           "aviso",
         );
       } else {
-        // Sem internet / serviço fora do ar: libera para tentar de novo com o mesmo CEP
         ultimoCep.current = "";
         exibirAlerta(
           "Sem conexão com o serviço de CEP",
@@ -282,7 +300,6 @@ export default function EditarPerfil({ navigation }) {
     }
   }
 
-  // Chamado a cada letra digitada no CEP: aplica a máscara e, com 8 números, busca sozinho
   function aoMudarCep(valor) {
     const mascarado = mascaraCep(valor);
     setCep(mascarado);
@@ -293,12 +310,35 @@ export default function EditarPerfil({ navigation }) {
       ultimoCep.current = "";
       return;
     }
-    if (digitos === ultimoCep.current) return; // mesmo CEP: não busca de novo
+    if (digitos === ultimoCep.current) return;
     ultimoCep.current = digitos;
     buscarEnderecoPorCep(digitos);
   }
 
-  // ------------------------------ validação ------------------------------
+  function copiarSegSexParaSabado() {
+    setAbreSabado(true);
+    setAberturaSabado(aberturaSegSex);
+    setFechamentoSabado(fechamentoSegSex);
+    setErros((a) => ({
+      ...a,
+      horarios: "",
+      aberturaSabado: "",
+      fechamentoSabado: "",
+    }));
+  }
+
+  function validarPeriodo(ativo, abertura, fechamento, chaveAb, chaveFe, e) {
+    if (!ativo) return;
+    const eAb = validarHorario(abertura, "horário de abertura");
+    if (eAb) e[chaveAb] = eAb;
+    const eFe = validarHorario(fechamento, "horário de fechamento");
+    if (eFe) e[chaveFe] = eFe;
+    if (!eAb && !eFe) {
+      const eOrd = validarOrdemHorarios(abertura, fechamento);
+      if (eOrd) e[chaveFe] = eOrd;
+    }
+  }
+
   function validar() {
     const e = {};
     const eNome = validarNome(nome);
@@ -314,7 +354,6 @@ export default function EditarPerfil({ navigation }) {
       if (eNf) e.nomeFantasia = eNf;
 
       if (temEnderecoEmPartes()) {
-        // Endereço em campos separados: confere todos (o complemento é opcional)
         const eCep = validarCep(cep);
         if (eCep) e.cep = eCep;
         const eRua = validarRua(rua);
@@ -330,23 +369,18 @@ export default function EditarPerfil({ navigation }) {
         const eUf = validarUf(uf);
         if (eUf) e.uf = eUf;
       } else {
-        // Nenhum campo preenchido: só é aceito em conta antiga, que mantém o texto único
         const eEnd = validarEndereco(enderecoAntigo);
         if (eEnd || !contaAntiga) e.rua = "Informe o endereço do mercadinho.";
-        // CEP continua opcional nesse caso, mas se foi digitado precisa estar completo
         const eCep = validarCep(cep, false);
         if (eCep) e.cep = eCep;
       }
 
-      const eAb = validarHorario(abertura, "horário de abertura");
-      if (eAb) e.abertura = eAb;
-
-      const eFe = validarHorario(fechamento, "horário de fechamento");
-      if (eFe) e.fechamento = eFe;
-
-      if (!eAb && !eFe) {
-        const eOrd = validarOrdemHorarios(abertura, fechamento);
-        if (eOrd) e.fechamento = eOrd;
+      if (!abreSegSex && !abreSabado && !abreDomingo) {
+        e.horarios = "Ative pelo menos um período de funcionamento.";
+      } else {
+        validarPeriodo(abreSegSex, aberturaSegSex, fechamentoSegSex, "aberturaSegSex", "fechamentoSegSex", e);
+        validarPeriodo(abreSabado, aberturaSabado, fechamentoSabado, "aberturaSabado", "fechamentoSabado", e);
+        validarPeriodo(abreDomingo, aberturaDomingo, fechamentoDomingo, "aberturaDomingo", "fechamentoDomingo", e);
       }
     }
 
@@ -389,7 +423,6 @@ export default function EditarPerfil({ navigation }) {
       let posicaoNaoAtualizada = false;
       let avisoPosicaoAproximada = false;
 
-      // Atualiza usuário
       resultados.push(
         await tentar(() =>
           api.put("/api/usuarios/me", {
@@ -399,14 +432,11 @@ export default function EditarPerfil({ navigation }) {
         ),
       );
 
-      // Atualiza mercadinho
       const idM = user?.idMercadinho || user?.mercadinhoId;
       if (ehComerciante && idM) {
-        // Posição no mapa: começa com a que já estava salva...
         let lat = latitude ? parseFloat(latitude.replace(",", ".")) : null;
         let lng = longitude ? parseFloat(longitude.replace(",", ".")) : null;
 
-        // ...e só é recalculada se o endereço/CEP mudou
         let posicaoAproximada = false;
         if (temEnderecoEmPartes() && mudouLocal()) {
           const ponto = await descobrirPosicao({
@@ -423,12 +453,10 @@ export default function EditarPerfil({ navigation }) {
             setLongitude(String(lng));
             posicaoAproximada = ponto.precisao !== "endereco";
           } else {
-            posicaoNaoAtualizada = true; // salva o endereço, mas avisa que o mapa ficou como estava
+            posicaoNaoAtualizada = true;
           }
         }
 
-        // Endereço em partes (o back monta o texto completo) ou, em conta antiga
-        // sem alteração, o texto único de antes
         const enderecoPayload = temEnderecoEmPartes()
           ? {
               rua: limparEspacos(rua),
@@ -440,21 +468,40 @@ export default function EditarPerfil({ navigation }) {
             }
           : { endereco: limparEspacos(enderecoAntigo) };
 
+        const aberturaFallback = abreSegSex
+          ? `${aberturaSegSex}:00`
+          : abreSabado
+            ? `${aberturaSabado}:00`
+            : `${aberturaDomingo}:00`;
+        const fechamentoFallback = abreSegSex
+          ? `${fechamentoSegSex}:00`
+          : abreSabado
+            ? `${fechamentoSabado}:00`
+            : `${fechamentoDomingo}:00`;
+
         resultados.push(
           await tentar(() =>
             api.put(`/api/mercadinhos/${idM}`, {
               nomeFantasia: limparEspacos(nomeFantasia),
               ...enderecoPayload,
               cep: somenteDigitos(cep) || undefined,
-              horarioAbertura: abertura ? `${abertura}:00` : undefined,
-              horarioFechamento: fechamento ? `${fechamento}:00` : undefined,
+              horarioAbertura: aberturaFallback,
+              horarioFechamento: fechamentoFallback,
+              abreSegSex,
+              horarioAberturaSegSex: abreSegSex ? `${aberturaSegSex}:00` : null,
+              horarioFechamentoSegSex: abreSegSex ? `${fechamentoSegSex}:00` : null,
+              abreSabado,
+              horarioAberturaSabado: abreSabado ? `${aberturaSabado}:00` : null,
+              horarioFechamentoSabado: abreSabado ? `${fechamentoSabado}:00` : null,
+              abreDomingo,
+              horarioAberturaDomingo: abreDomingo ? `${aberturaDomingo}:00` : null,
+              horarioFechamentoDomingo: abreDomingo ? `${fechamentoDomingo}:00` : null,
               latitude: lat,
               longitude: lng,
             }),
           ),
         );
 
-        // Passou a ser o "novo normal"; se a posição falhou, deixa para tentar de novo no próximo salvar
         if (!posicaoNaoAtualizada) {
           original.current = normalizarLocal({
             cep,
@@ -470,7 +517,6 @@ export default function EditarPerfil({ navigation }) {
         }
       }
 
-      // Alteração de senha
       if (trocarSenha) {
         resultados.push(
           await tentar(() =>
@@ -519,7 +565,6 @@ export default function EditarPerfil({ navigation }) {
     } catch (error) {
       const t = traduzirErro(error);
       const camposDoServidor = { ...t.campos };
-      // "Senha atual incorreta" vem como mensagem geral: marca o campo certo
       if (trocarSenha && /senha atual/i.test(t.mensagem || "")) {
         camposDoServidor.senhaAtual = t.mensagem;
       }
@@ -706,28 +751,202 @@ export default function EditarPerfil({ navigation }) {
                     </View>
                   </View>
 
-                  <View style={styles.linha}>
-                    <View style={{ flex: 1 }}>
-                      <Campo
-                        rotulo="Abre às"
-                        valor={abertura}
-                        aoMudar={(v) => setAbertura(mascaraHorario(v))}
-                        erro={erros.abertura}
-                        keyboardType="number-pad"
-                        placeholder="08:00"
-                      />
+                  <Text style={styles.subsecaoHorario}>Horário de funcionamento</Text>
+                  {!!erros.horarios && (
+                    <Text style={styles.textoErro}>{erros.horarios}</Text>
+                  )}
+
+                  {/* Segunda a Sexta */}
+                  <View style={styles.blocoHorario}>
+                    <View style={styles.blocoHorarioTopo}>
+                      <Text style={styles.blocoHorarioTitulo}>Segunda a Sexta</Text>
+                      <View style={styles.blocoToggle}>
+                        <Text
+                          style={[
+                            styles.blocoStatusTexto,
+                            { color: abreSegSex ? cores.sucesso : cores.textoRotulo },
+                          ]}
+                        >
+                          {abreSegSex ? "Aberto" : "Fechado"}
+                        </Text>
+                        <Switch
+                          value={abreSegSex}
+                          onValueChange={(v) => {
+                            setAbreSegSex(v);
+                            setErros((a) => ({ ...a, horarios: "" }));
+                          }}
+                          trackColor={{ false: "#D1D5DB", true: cores.sucesso }}
+                          thumbColor="#FFFFFF"
+                        />
+                      </View>
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <Campo
-                        rotulo="Fecha às"
-                        valor={fechamento}
-                        aoMudar={(v) => setFechamento(mascaraHorario(v))}
-                        erro={erros.fechamento}
-                        keyboardType="number-pad"
-                        placeholder="20:00"
-                      />
-                    </View>
+
+                    {abreSegSex && (
+                      <>
+                        <View style={styles.linha}>
+                          <View style={{ flex: 1 }}>
+                            <Campo
+                              rotulo="Abre às"
+                              valor={aberturaSegSex}
+                              aoMudar={(v) => {
+                                setAberturaSegSex(mascaraHorario(v));
+                                setErros((a) => ({ ...a, aberturaSegSex: "" }));
+                              }}
+                              erro={erros.aberturaSegSex}
+                              keyboardType="number-pad"
+                              placeholder="07:00"
+                              maxLength={5}
+                            />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Campo
+                              rotulo="Fecha às"
+                              valor={fechamentoSegSex}
+                              aoMudar={(v) => {
+                                setFechamentoSegSex(mascaraHorario(v));
+                                setErros((a) => ({ ...a, fechamentoSegSex: "" }));
+                              }}
+                              erro={erros.fechamentoSegSex}
+                              keyboardType="number-pad"
+                              placeholder="20:30"
+                              maxLength={5}
+                            />
+                          </View>
+                        </View>
+
+                        {aberturaSegSex.length === 5 && fechamentoSegSex.length === 5 && (
+                          <TouchableOpacity
+                            style={styles.botaoCopiarHorario}
+                            onPress={copiarSegSexParaSabado}
+                          >
+                            <Ionicons name="copy-outline" size={14} color={cores.primaria} />
+                            <Text style={styles.textoCopiarHorario}>
+                              Copiar horário para Sábado
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                      </>
+                    )}
                   </View>
+
+                  {/* Sábado */}
+                  <View style={styles.blocoHorario}>
+                    <View style={styles.blocoHorarioTopo}>
+                      <Text style={styles.blocoHorarioTitulo}>Sábado</Text>
+                      <View style={styles.blocoToggle}>
+                        <Text
+                          style={[
+                            styles.blocoStatusTexto,
+                            { color: abreSabado ? cores.sucesso : cores.textoRotulo },
+                          ]}
+                        >
+                          {abreSabado ? "Aberto" : "Fechado"}
+                        </Text>
+                        <Switch
+                          value={abreSabado}
+                          onValueChange={(v) => {
+                            setAbreSabado(v);
+                            setErros((a) => ({ ...a, horarios: "" }));
+                          }}
+                          trackColor={{ false: "#D1D5DB", true: cores.sucesso }}
+                          thumbColor="#FFFFFF"
+                        />
+                      </View>
+                    </View>
+
+                    {abreSabado && (
+                      <View style={styles.linha}>
+                        <View style={{ flex: 1 }}>
+                          <Campo
+                            rotulo="Abre às"
+                            valor={aberturaSabado}
+                            aoMudar={(v) => {
+                              setAberturaSabado(mascaraHorario(v));
+                              setErros((a) => ({ ...a, aberturaSabado: "" }));
+                            }}
+                            erro={erros.aberturaSabado}
+                            keyboardType="number-pad"
+                            placeholder="07:00"
+                            maxLength={5}
+                          />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Campo
+                            rotulo="Fecha às"
+                            valor={fechamentoSabado}
+                            aoMudar={(v) => {
+                              setFechamentoSabado(mascaraHorario(v));
+                              setErros((a) => ({ ...a, fechamentoSabado: "" }));
+                            }}
+                            erro={erros.fechamentoSabado}
+                            keyboardType="number-pad"
+                            placeholder="20:30"
+                            maxLength={5}
+                          />
+                        </View>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Domingo */}
+                  <View style={styles.blocoHorario}>
+                    <View style={styles.blocoHorarioTopo}>
+                      <Text style={styles.blocoHorarioTitulo}>Domingo</Text>
+                      <View style={styles.blocoToggle}>
+                        <Text
+                          style={[
+                            styles.blocoStatusTexto,
+                            { color: abreDomingo ? cores.sucesso : cores.textoRotulo },
+                          ]}
+                        >
+                          {abreDomingo ? "Aberto" : "Fechado"}
+                        </Text>
+                        <Switch
+                          value={abreDomingo}
+                          onValueChange={(v) => {
+                            setAbreDomingo(v);
+                            setErros((a) => ({ ...a, horarios: "" }));
+                          }}
+                          trackColor={{ false: "#D1D5DB", true: cores.sucesso }}
+                          thumbColor="#FFFFFF"
+                        />
+                      </View>
+                    </View>
+
+                    {abreDomingo && (
+                      <View style={styles.linha}>
+                        <View style={{ flex: 1 }}>
+                          <Campo
+                            rotulo="Abre às"
+                            valor={aberturaDomingo}
+                            aoMudar={(v) => {
+                              setAberturaDomingo(mascaraHorario(v));
+                              setErros((a) => ({ ...a, aberturaDomingo: "" }));
+                            }}
+                            erro={erros.aberturaDomingo}
+                            keyboardType="number-pad"
+                            placeholder="07:00"
+                            maxLength={5}
+                          />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Campo
+                            rotulo="Fecha às"
+                            valor={fechamentoDomingo}
+                            aoMudar={(v) => {
+                              setFechamentoDomingo(mascaraHorario(v));
+                              setErros((a) => ({ ...a, fechamentoDomingo: "" }));
+                            }}
+                            erro={erros.fechamentoDomingo}
+                            keyboardType="number-pad"
+                            placeholder="13:00"
+                            maxLength={5}
+                          />
+                        </View>
+                      </View>
+                    )}
+                  </View>
+
                   {!!cnpj && (
                     <Campo
                       rotulo="CNPJ (não pode ser alterado)"
