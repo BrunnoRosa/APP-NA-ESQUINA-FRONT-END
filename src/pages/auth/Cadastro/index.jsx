@@ -298,23 +298,14 @@ export default function Cadastro({ navigation }) {
         });
       }
 
-      if (
-        perfil === "COMERCIANTE" &&
-        (!coordenadas || coordenadas.precisao !== "endereco")
-      ) {
-        // Cadastrou, mas a posição no mapa é aproximada
-        exibirAlerta(
-          "Conta criada com sucesso",
-          "Não achamos o número exato no mapa, então a posição do mercadinho é aproximada. Faça login para continuar.",
-          "sucesso",
-        );
-      } else {
-        exibirAlerta(
-          "Sucesso!",
-          "Conta criada com sucesso. Faça login para continuar.",
-        );
-      }
-      navigation.navigate("Login");
+      // A conta só é liberada depois de clicar no link enviado por e-mail.
+      // A tela VerifiqueEmail explica isso e permite reenviar o link.
+      navigation.navigate("VerifiqueEmail", {
+        email: email.trim().toLowerCase(),
+        posicaoAproximada:
+          perfil === "COMERCIANTE" &&
+          (!coordenadas || coordenadas.precisao !== "endereco"),
+      });
     } catch (error) {
       console.log("Erro no cadastro:", error);
       const erro = traduzirErro(error);
