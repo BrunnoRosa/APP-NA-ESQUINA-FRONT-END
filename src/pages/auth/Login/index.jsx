@@ -63,6 +63,16 @@ export default function Login({ navigation }) {
 
       if (
         error.response &&
+        error.response.status === 403 &&
+        error.response.data?.error === "E-mail não confirmado"
+      ) {
+        // Senha certa, mas a conta ainda não foi ativada pelo link do e-mail
+        navigation.navigate("VerifiqueEmail", {
+          email: email.trim().toLowerCase(),
+          veioDoLogin: true,
+        });
+      } else if (
+        error.response &&
         error.response.status === 400 &&
         Object.keys(erro.campos).length > 0
       ) {
