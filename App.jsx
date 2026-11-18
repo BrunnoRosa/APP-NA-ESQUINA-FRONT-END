@@ -32,6 +32,7 @@ import Abertura from "./src/pages/auth/Abertura";
 import Cadastro from "./src/pages/auth/Cadastro";
 import Login from "./src/pages/auth/Login";
 import RecuperarSenha from "./src/pages/auth/RecuperarSenha";
+import PainelAdmin from "./src/pages/admin/PainelAdmin";
 
 // Telas do Cliente
 import BuscarProdutos from "./src/pages/cliente/BuscarProdutos";
@@ -163,6 +164,11 @@ function Routes() {
             <Stack.Screen name="Login" component={Login} />
             <Stack.Screen name="Cadastro" component={Cadastro} />
             <Stack.Screen name="RecuperarSenha" component={RecuperarSenha} />
+          </>
+        ) : user?.perfil === "ADMIN" ? (
+          <>
+            <Stack.Screen name="PainelAdmin" component={PainelAdmin} />
+            <Stack.Screen name="EditarPerfil" component={EditarPerfil} />
           </>
         ) : user?.perfil === "COMERCIANTE" ? (
           <>
