@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import SeletorRota from "../../../components/SeletorRota";
 import { useAuth } from "../../../context/AuthContext";
 import { useToast } from "../../../context/ToastContext";
 import { usePuxarParaAtualizar } from "../../../hooks/usePuxarParaAtualizar";
@@ -40,10 +41,11 @@ export default function MeusPedidos({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [atualizandoId, setAtualizandoId] = useState(null);
 
-  // Estado do modal de cancelamento com justificativa
   const [pedidoParaCancelar, setPedidoParaCancelar] = useState(null);
   const [motivoCancelamento, setMotivoCancelamento] = useState("");
   const [modoRecusaAlteracao, setModoRecusaAlteracao] = useState(false);
+
+  const [mercadoRota, setMercadoRota] = useState(null);
 
   const { exibirAlerta, confirmar } = useToast();
 
@@ -257,6 +259,8 @@ export default function MeusPedidos({ navigation }) {
   function renderPedido({ item }) {
     const statusInfo = getStatusInfo(item.status);
     const isBusy = atualizandoId === item.idPedido;
+    const pedidoAtivo =
+      item.status !== "CANCELADO" && item.status !== "RETIRADA_CONCLUIDO";
 
     return (
       <View style={styles.pedidoCard}>
@@ -282,7 +286,6 @@ export default function MeusPedidos({ navigation }) {
           </Text>
         </View>
 
-        {/* Aviso de alteração feita pelo comerciante */}
         {item.status === "AGUARDANDO_APROVACAO_CLIENTE" && (
           <View style={styles.alteracaoBanner}>
             <View style={styles.alteracaoTopo}>
@@ -322,7 +325,18 @@ export default function MeusPedidos({ navigation }) {
           </Text>
         </View>
 
-        {/* Ações quando o pedido aguarda aprovação do cliente */}
+        {/* Botão fixo "Como chegar" enquanto o pedido estiver ativo */}
+        {pedidoAtivo && item.mercadinho && (
+          <TouchableOpacity
+            style={styles.rotaButton}
+            onPress={() => setMercadoRota(item.mercadinho)}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="navigate-outline" size={17} color="#1F4E8C" />
+            <Text style={styles.rotaButtonText}>Como chegar</Text>
+          </TouchableOpacity>
+        )}
+
         {item.status === "AGUARDANDO_APROVACAO_CLIENTE" &&
           (isBusy ? (
             <ActivityIndicator
@@ -362,7 +376,6 @@ export default function MeusPedidos({ navigation }) {
             </>
           ))}
 
-        {/* Ações normais (Retirar / Cancelar) */}
         {podeCancelar(item.status) &&
           (isBusy ? (
             <ActivityIndicator
@@ -477,7 +490,12 @@ export default function MeusPedidos({ navigation }) {
         )}
       </View>
 
-      {/* Modal de Cancelamento com Justificativa */}
+      <SeletorRota
+        visivel={mercadoRota !== null}
+        mercado={mercadoRota}
+        onFechar={() => setMercadoRota(null)}
+      />
+
       <Modal
         visible={pedidoParaCancelar !== null}
         transparent
