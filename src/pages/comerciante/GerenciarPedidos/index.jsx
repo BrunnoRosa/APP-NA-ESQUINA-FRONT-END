@@ -1,26 +1,25 @@
-import { Ionicons } from "@expo/vector-icons"; // 🆕
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
-import { LinearGradient } from "expo-linear-gradient"; // 🆕
-import { useCallback, useState } from "react";
+import { LinearGradient } from "expo-linear-gradient";
+import * as Notifications from "expo-notifications";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
   Modal,
   Text,
-  TextInput, // novidade
+  TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { useAuth } from "../../../context/AuthContext";
-import { usePedidosPendentes } from '../../../context/PedidosPendentesContext';
-import { useToast } from '../../../context/ToastContext';
-import api from "../../../services/api";
-import { cores } from "../../../theme"; // 🆕
-import { traduzirErro } from "../../../utils/validacoes";
+import { useToast } from "../../../context/ToastContext";
 import { usePuxarParaAtualizar } from "../../../hooks/usePuxarParaAtualizar";
+import api from "../../../services/api";
+import { cores } from "../../../theme";
+import { traduzirErro } from "../../../utils/validacoes";
 import { styles } from "./styles";
 
-// 🆕 Formata número como moeda brasileira
 function formatarMoeda(valor) {
   return Number(valor || 0).toLocaleString("pt-BR", {
     style: "currency",
@@ -28,45 +27,59 @@ function formatarMoeda(valor) {
   });
 }
 
-export default function GerenciarPedidos({ navigation }) {
+export default function GerenciarPedidos() {
   const { user } = useAuth();
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [atualizandoId, setAtualizandoId] = useState(null);
-  const [pedidoCancelando, setPedidoCancelando] = useState(null); // id do pedido no modal
-  const [motivo, setMotivo] = useState("");
 
-    // Toast central (em vez do alert do navegador). Mesmo formato: exibirAlerta(titulo, mensagem)
+  // Modal de cancelamento
+  const [pedidoCancelando, setPedidoCancelando] = useState(null);
+  const [motivoCancelamento, setMotivoCancelamento] = useState("");
+
+  // Modal de edição de itens (item em falta)
+  const [pedidoEditando, setPedidoEditando] = useState(null);
+  const [itensEditados, setItensEditados] = useState([]);
+  const [motivoAjuste, setMotivoAjuste] = useState("");
+
   const { exibirAlerta } = useToast();
-  const { atualizar: atualizarPendentes } = usePedidosPendentes();   // atualiza o selo do menu
+
+  const obterIdMercadinho = useCallback(async () => {
+    const idDireto =
+      user?.idMercadinho ||
+      user?.mercadinho?.idMercadinho ||
+      user?.mercadinho?.id;
+    if (idDireto) return idDireto;
+
+    const idComerciante = user?.idUsuario || user?.id;
+    if (!idComerciante) return null;
+
+    try {
+      const res = await api.get(
+        `/api/mercadinhos/comerciante/${idComerciante}`,
+      );
+      return res.data?.idMercadinho || res.data?.id || null;
+    } catch {
+      return null;
+    }
+  }, [user]);
 
   const carregarPedidos = useCallback(
     async (isSilent = false) => {
-      // ✏️ Sem fallback para a loja 1: usa só o mercadinho real do comerciante
-      const idMercadinho = user?.idMercadinho;
-      if (!idMercadinho) {
-        setLoading(false);
-        return;
-      }
-
       try {
         if (!isSilent) setLoading(true);
-        const response = await api.get(
-          `/api/pedidos/mercadinho/${idMercadinho}`,
-        );
-        setPedidos(response.data);
+        const idMercadinho = await obterIdMercadinho();
+        if (!idMercadinho) return;
+
+        const res = await api.get(`/api/pedidos/mercadinho/${idMercadinho}`);
+        setPedidos(Array.isArray(res.data) ? res.data : []);
       } catch (error) {
-        // ✏️ mostra o motivo real no console (antes o erro ficava escondido)
-        console.error(
-          "Erro ao carregar pedidos do mercadinho:",
-          error?.response?.status,
-          error?.response?.data || error.message,
-        );
+        console.error("Erro ao carregar pedidos do mercadinho:", error);
       } finally {
         if (!isSilent) setLoading(false);
       }
     },
-    [user],
+    [obterIdMercadinho],
   );
 
   const pull = usePuxarParaAtualizar(() => carregarPedidos(true));
@@ -74,32 +87,29 @@ export default function GerenciarPedidos({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       carregarPedidos();
-
-      const intervalId = setInterval(() => {
-        carregarPedidos(true);
-      }, 5000);
-
+      const intervalId = setInterval(() => carregarPedidos(true), 5000);
       return () => clearInterval(intervalId);
     }, [carregarPedidos]),
   );
 
-  const alterarStatus = async (idPedido, novoStatus, motivo = "") => {
+  useEffect(() => {
+    const sub = Notifications.addNotificationReceivedListener(() => {
+      carregarPedidos(true);
+    });
+    return () => sub.remove();
+  }, [carregarPedidos]);
+
+  const alterarStatus = async (idPedido, novoStatus, motivo = null) => {
     setAtualizandoId(idPedido);
     try {
-      let url = `/api/pedidos/${idPedido}/status?status=${novoStatus}`;
-      if (motivo.trim() !== "") {
-        url += `&motivo=${encodeURIComponent(motivo.trim())}`;
-      }
-
-      await api.put(url);
-      exibirAlerta(
-        "Status Atualizado",
-        `Pedido #${idPedido} atualizado com sucesso!`,
-      );
+      await api.put(`/api/pedidos/${idPedido}/status`, null, {
+        params: {
+          status: novoStatus,
+          ...(motivo ? { motivo } : {}),
+        },
+      });
       carregarPedidos(true);
-      atualizarPendentes();
     } catch (error) {
-      console.error("Erro ao atualizar status:", error);
       const erro = traduzirErro(error);
       exibirAlerta(erro.titulo, erro.mensagem);
     } finally {
@@ -107,16 +117,105 @@ export default function GerenciarPedidos({ navigation }) {
     }
   };
 
-  // Abre o modal de cancelamento (funciona em web, Android e iOS)
-  const solicitarCancelamento = (idPedido) => {
-    setMotivo("");
-    setPedidoCancelando(idPedido);
+  // --- Fluxo de Cancelamento ---
+  const abrirModalCancelar = (pedido) => {
+    setPedidoCancelando(pedido);
+    setMotivoCancelamento("");
   };
 
-  const confirmarCancelamento = () => {
-    const id = pedidoCancelando;
+  const confirmarCancelamento = async () => {
+    if (!pedidoCancelando) return;
+    const motivo = motivoCancelamento.trim();
+    if (!motivo) {
+      exibirAlerta(
+        "Atenção",
+        "Informe o motivo do cancelamento para o cliente.",
+        "aviso",
+      );
+      return;
+    }
+    const idPedido = pedidoCancelando.idPedido;
     setPedidoCancelando(null);
-    alterarStatus(id, "CANCELADO", motivo);
+    await alterarStatus(idPedido, "CANCELADO", motivo);
+  };
+
+  // --- Fluxo de Edição de Itens ---
+  const abrirModalEditarItens = (pedido) => {
+    setPedidoEditando(pedido);
+    setItensEditados(
+      (pedido.itens || []).map((it) => ({
+        idItemPedido: it.idItemPedido,
+        nome: it.produto?.nome || "Produto",
+        precoUnitario: Number(it.precoUnitario || 0),
+        quantidade: Number(it.quantidade || 1),
+      })),
+    );
+    setMotivoAjuste("");
+  };
+
+  const alterarQuantidadeItemEdicao = (idItemPedido, delta) => {
+    setItensEditados((prev) =>
+      prev
+        .map((it) =>
+          it.idItemPedido === idItemPedido
+            ? { ...it, quantidade: it.quantidade + delta }
+            : it,
+        )
+        .filter((it) => it.quantidade > 0),
+    );
+  };
+
+  const removerItemEdicao = (idItemPedido) => {
+    setItensEditados((prev) =>
+      prev.filter((it) => it.idItemPedido !== idItemPedido),
+    );
+  };
+
+  const novoTotalEdicao = itensEditados.reduce(
+    (acc, it) => acc + it.precoUnitario * it.quantidade,
+    0,
+  );
+
+  const salvarEdicaoPedido = async () => {
+    if (!pedidoEditando) return;
+
+    if (itensEditados.length === 0) {
+      exibirAlerta(
+        "Nenhum item restante",
+        "Se todos os itens estão em falta, feche esta janela e use a opção Cancelar pedido.",
+        "aviso",
+      );
+      return;
+    }
+
+    const idPedido = pedidoEditando.idPedido;
+    const payload = {
+      motivoAjuste:
+        motivoAjuste.trim() ||
+        "Item(ns) indisponível(is) no estoque no momento.",
+      itens: itensEditados.map((it) => ({
+        idItemPedido: it.idItemPedido,
+        quantidade: it.quantidade,
+      })),
+    };
+
+    setPedidoEditando(null);
+    setAtualizandoId(idPedido);
+
+    try {
+      await api.put(`/api/pedidos/${idPedido}/editar-itens`, payload);
+      exibirAlerta(
+        "Alteração enviada!",
+        `O pedido #${idPedido} foi enviado para o cliente aprovar o novo valor.`,
+        "sucesso",
+      );
+      carregarPedidos(true);
+    } catch (error) {
+      const erro = traduzirErro(error);
+      exibirAlerta(erro.titulo, erro.mensagem);
+    } finally {
+      setAtualizandoId(null);
+    }
   };
 
   function getStatusInfo(status) {
@@ -127,8 +226,14 @@ export default function GerenciarPedidos({ navigation }) {
           bg: "#FFF3CD",
           text: "#856404",
         };
+      case "AGUARDANDO_APROVACAO_CLIENTE":
+        return {
+          label: "Aguardando cliente aprovar",
+          bg: "#FDEBD0",
+          text: "#B9770E",
+        };
       case "EM_SEPARACAO":
-        return { label: "Separando produtos", bg: "#DCEBFF", text: "#1F4E8C" };
+        return { label: "Em separação", bg: "#DCEBFF", text: "#1F4E8C" };
       case "AGUARDANDO_RETIRADA":
         return {
           label: "Pronto para retirada",
@@ -136,7 +241,7 @@ export default function GerenciarPedidos({ navigation }) {
           text: "#B25E00",
         };
       case "RETIRADA_CONCLUIDO":
-        return { label: "Concluído", bg: "#DDF5D9", text: "#168A00" };
+        return { label: "Retirado", bg: "#DDF5D9", text: "#168A00" };
       case "CANCELADO":
         return { label: "Cancelado", bg: "#FFE0E0", text: "#C41F1F" };
       default:
@@ -144,12 +249,18 @@ export default function GerenciarPedidos({ navigation }) {
     }
   }
 
-  // 🆕 Quantos pedidos novos esperam resposta
-  const pendentes = pedidos.filter((p) => p.status === "PENDENTE").length;
+  const novosCount = pedidos.filter((p) => p.status === "PENDENTE").length;
 
   function renderPedido({ item }) {
     const statusInfo = getStatusInfo(item.status);
     const isBusy = atualizandoId === item.idPedido;
+    const podeEditar =
+      item.status === "PENDENTE" || item.status === "EM_SEPARACAO";
+    const podeCancelar =
+      item.status === "PENDENTE" ||
+      item.status === "EM_SEPARACAO" ||
+      item.status === "AGUARDANDO_APROVACAO_CLIENTE" ||
+      item.status === "AGUARDANDO_RETIRADA";
 
     return (
       <View style={styles.pedidoCard}>
@@ -164,15 +275,14 @@ export default function GerenciarPedidos({ navigation }) {
           </View>
         </View>
 
-        {/* ✏️ ícone no lugar do emoji */}
         <View style={styles.clienteLinha}>
           <Ionicons
             name="person-outline"
             size={15}
             color={cores.textoSecundario}
           />
-          <Text style={styles.clienteNome} numberOfLines={1}>
-            {item.cliente?.nome || item.cliente?.email || "Cliente"}
+          <Text style={styles.clienteNome}>
+            {item.cliente?.nome || "Cliente"}
           </Text>
         </View>
 
@@ -180,7 +290,7 @@ export default function GerenciarPedidos({ navigation }) {
 
         {item.itens?.map((it) => (
           <View key={String(it.idItemPedido)} style={styles.itemRow}>
-            <Text style={styles.itemNome} numberOfLines={2}>
+            <Text style={styles.itemNome}>
               {it.quantidade}x {it.produto?.nome}
             </Text>
             <Text style={styles.itemPreco}>
@@ -196,77 +306,100 @@ export default function GerenciarPedidos({ navigation }) {
           </Text>
         </View>
 
-        {item.status === "CANCELADO" && item.motivoCancelamento && (
-          <View style={styles.motivoContainer}>
-            <Text style={styles.motivoTitle}>Motivo do cancelamento</Text>
-            <Text style={styles.motivoText}>{item.motivoCancelamento}</Text>
+        {item.status === "AGUARDANDO_APROVACAO_CLIENTE" && (
+          <View style={styles.avisoAguardandoBox}>
+            <Ionicons name="time-outline" size={16} color="#B9770E" />
+            <Text style={styles.avisoAguardandoTexto}>
+              Aguardando o cliente aprovar ou recusar a remoção de itens.
+            </Text>
           </View>
         )}
 
         {isBusy ? (
           <ActivityIndicator
-            style={{ marginTop: 12 }}
+            style={{ marginTop: 14 }}
             size="small"
             color={cores.primaria}
           />
         ) : (
-          <View style={styles.acoes}>
+          <>
             {item.status === "PENDENTE" && (
-              <>
-                <TouchableOpacity
-                  style={[styles.btnAcao, styles.btnPrimario]}
-                  onPress={() => alterarStatus(item.idPedido, "EM_SEPARACAO")}
-                  activeOpacity={0.85}
-                >
-                  <Ionicons name="cube-outline" size={17} color="#FFFFFF" />
-                  <Text style={styles.btnTexto}>Iniciar separação</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.btnAcao, styles.btnContorno]}
-                  onPress={() => solicitarCancelamento(item.idPedido)}
-                  activeOpacity={0.85}
-                >
-                  <Ionicons
-                    name="close-circle-outline"
-                    size={17}
-                    color={cores.primaria}
-                  />
-                  <Text style={[styles.btnTexto, { color: cores.primaria }]}>
-                    Cancelar
-                  </Text>
-                </TouchableOpacity>
-              </>
+              <TouchableOpacity
+                style={styles.btnPrimario}
+                onPress={() => alterarStatus(item.idPedido, "EM_SEPARACAO")}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="cube-outline" size={18} color="#FFFFFF" />
+                <Text style={styles.btnPrimarioTexto}>Iniciar separação</Text>
+              </TouchableOpacity>
             )}
 
             {item.status === "EM_SEPARACAO" && (
               <TouchableOpacity
-                style={[styles.btnAcao, styles.btnPrimario]}
+                style={styles.btnPrimario}
                 onPress={() =>
                   alterarStatus(item.idPedido, "AGUARDANDO_RETIRADA")
                 }
                 activeOpacity={0.85}
               >
-                <Ionicons name="storefront-outline" size={17} color="#FFFFFF" />
-                <Text style={styles.btnTexto}>Disponível para retirada</Text>
+                <Ionicons
+                  name="checkmark-done-outline"
+                  size={18}
+                  color="#FFFFFF"
+                />
+                <Text style={styles.btnPrimarioTexto}>
+                  Pronto para retirada
+                </Text>
               </TouchableOpacity>
             )}
 
             {item.status === "AGUARDANDO_RETIRADA" && (
               <TouchableOpacity
-                style={[styles.btnAcao, styles.btnSucesso]}
+                style={[styles.btnPrimario, styles.btnSucesso]}
                 onPress={() =>
                   alterarStatus(item.idPedido, "RETIRADA_CONCLUIDO")
                 }
                 activeOpacity={0.85}
               >
-                <Ionicons
-                  name="checkmark-circle-outline"
-                  size={17}
-                  color="#FFFFFF"
-                />
-                <Text style={styles.btnTexto}>Entregue ao cliente</Text>
+                <Ionicons name="bag-check-outline" size={18} color="#FFFFFF" />
+                <Text style={styles.btnPrimarioTexto}>Confirmar retirada</Text>
               </TouchableOpacity>
             )}
+
+            {podeEditar && (
+              <TouchableOpacity
+                style={styles.btnEditar}
+                onPress={() => abrirModalEditarItens(item)}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="create-outline" size={18} color="#D97706" />
+                <Text style={styles.btnEditarTexto}>
+                  Editar itens (falta no estoque)
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {podeCancelar && (
+              <TouchableOpacity
+                style={styles.btnCancelar}
+                onPress={() => abrirModalCancelar(item)}
+                activeOpacity={0.85}
+              >
+                <Ionicons
+                  name="close-circle-outline"
+                  size={18}
+                  color={cores.primaria}
+                />
+                <Text style={styles.btnCancelarTexto}>Cancelar</Text>
+              </TouchableOpacity>
+            )}
+          </>
+        )}
+
+        {item.status === "CANCELADO" && item.motivoCancelamento && (
+          <View style={styles.motivoContainer}>
+            <Text style={styles.motivoTitle}>Motivo do cancelamento</Text>
+            <Text style={styles.motivoText}>{item.motivoCancelamento}</Text>
           </View>
         )}
       </View>
@@ -276,23 +409,21 @@ export default function GerenciarPedidos({ navigation }) {
   return (
     <View style={styles.container}>
       {pull.indicador}
-      {/* 🆕 Topo com degradê (aba: sem botão voltar) */}
       <LinearGradient
         colors={[cores.degradeInicioTopo, cores.degradeInicioBase]}
         style={styles.topo}
       >
         <Text style={styles.titulo}>Pedidos recebidos</Text>
-        {!loading && pedidos.length > 0 && (
+        {!loading && (
           <Text style={styles.subtitulo}>
             {pedidos.length} {pedidos.length === 1 ? "pedido" : "pedidos"}
-            {pendentes > 0
-              ? ` • ${pendentes} ${pendentes === 1 ? "novo" : "novos"}`
+            {novosCount > 0
+              ? ` • ${novosCount} ${novosCount === 1 ? "novo" : "novos"}`
               : ""}
           </Text>
         )}
       </LinearGradient>
 
-      {/* 🆕 Folha branca arredondada */}
       <View style={styles.folha}>
         {loading ? (
           <View style={styles.centro}>
@@ -300,20 +431,11 @@ export default function GerenciarPedidos({ navigation }) {
           </View>
         ) : pedidos.length === 0 ? (
           <View style={styles.centro}>
-            <View style={styles.vazioCirculo}>
-              <Ionicons
-                name="receipt-outline"
-                size={44}
-                color={cores.primaria}
-              />
-            </View>
-            <Text style={styles.emptyTitle}>Nenhum pedido recebido</Text>
-            <Text style={styles.emptySubtitle}>
-              Os pedidos dos clientes aparecerão aqui.
-            </Text>
+            <Text style={styles.vazioTexto}>Nenhum pedido recebido ainda.</Text>
           </View>
         ) : (
-          <FlatList {...pull.props}
+          <FlatList
+            {...pull.props}
             data={pedidos}
             keyExtractor={(item) => String(item.idPedido)}
             renderItem={renderPedido}
@@ -323,50 +445,142 @@ export default function GerenciarPedidos({ navigation }) {
         )}
       </View>
 
-      {/* 🆕 Modal de cancelamento */}
+      {/* Modal 1: Cancelar Pedido */}
       <Modal
         visible={pedidoCancelando !== null}
         transparent
         animationType="fade"
         onRequestClose={() => setPedidoCancelando(null)}
       >
-        <View style={styles.modalFundo}>
-          <View style={styles.modalCaixa}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
             <Text style={styles.modalTitulo}>
-              Cancelar pedido #{pedidoCancelando}
+              Cancelar pedido #{pedidoCancelando?.idPedido}
             </Text>
-            <Text style={styles.modalTexto}>
+            <Text style={styles.modalSubtitulo}>
               Informe o motivo. O cliente poderá ver essa mensagem.
             </Text>
+
             <TextInput
-              style={styles.modalCampo}
-              value={motivo}
-              onChangeText={setMotivo}
+              style={styles.modalInput}
               placeholder="Ex.: produto indisponível no estoque"
-              placeholderTextColor="#A0A4A8"
+              placeholderTextColor="#999999"
+              value={motivoCancelamento}
+              onChangeText={setMotivoCancelamento}
               multiline
-              maxLength={200}
+              numberOfLines={3}
+              textAlignVertical="top"
             />
-            <View style={styles.modalAcoes}>
+
+            <View style={styles.modalBotoes}>
               <TouchableOpacity
-                style={[styles.btnAcao, styles.btnContorno, styles.modalBotao]}
+                style={styles.modalBtnVoltar}
                 onPress={() => setPedidoCancelando(null)}
-                activeOpacity={0.85}
               >
-                <Text
-                  style={[styles.btnTexto, { color: cores.primaria }]}
-                  numberOfLines={1}
-                >
-                  Voltar
-                </Text>
+                <Text style={styles.modalBtnVoltarTexto}>Voltar</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.btnAcao, styles.btnPrimario, styles.modalBotao]}
+                style={styles.modalBtnConfirmar}
                 onPress={confirmarCancelamento}
-                activeOpacity={0.85}
               >
-                <Text style={styles.btnTexto} numberOfLines={1}>
-                  Confirmar
+                <Text style={styles.modalBtnConfirmarTexto}>Confirmar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal 2: Editar Itens do Pedido (Item em Falta) */}
+      <Modal
+        visible={pedidoEditando !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPedidoEditando(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitulo}>
+              Editar itens — Pedido #{pedidoEditando?.idPedido}
+            </Text>
+            <Text style={styles.modalSubtitulo}>
+              Remova ou ajuste os itens em falta. O cliente receberá o pedido
+              atualizado para aprovar ou recusar.
+            </Text>
+
+            {itensEditados.map((it) => (
+              <View key={String(it.idItemPedido)} style={styles.editItemRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.editItemNome} numberOfLines={2}>
+                    {it.nome}
+                  </Text>
+                  <Text style={styles.editItemSub}>
+                    {formatarMoeda(it.precoUnitario)} un. • Subtotal:{" "}
+                    {formatarMoeda(it.precoUnitario * it.quantidade)}
+                  </Text>
+                </View>
+
+                <View style={styles.editQtdBox}>
+                  <TouchableOpacity
+                    style={styles.editQtdBtn}
+                    onPress={() =>
+                      alterarQuantidadeItemEdicao(it.idItemPedido, -1)
+                    }
+                  >
+                    <Ionicons name="remove" size={16} color="#212529" />
+                  </TouchableOpacity>
+                  <Text style={styles.editQtdValor}>{it.quantidade}</Text>
+                  <TouchableOpacity
+                    style={styles.editQtdBtn}
+                    onPress={() =>
+                      alterarQuantidadeItemEdicao(it.idItemPedido, 1)
+                    }
+                  >
+                    <Ionicons name="add" size={16} color="#212529" />
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.editTrashBtn}
+                  onPress={() => removerItemEdicao(it.idItemPedido)}
+                >
+                  <Ionicons
+                    name="trash-outline"
+                    size={18}
+                    color={cores.primaria}
+                  />
+                </TouchableOpacity>
+              </View>
+            ))}
+
+            <View style={styles.editNovoTotalRow}>
+              <Text style={styles.editNovoTotalLabel}>Novo total:</Text>
+              <Text style={styles.editNovoTotalValor}>
+                {formatarMoeda(novoTotalEdicao)}
+              </Text>
+            </View>
+
+            <TextInput
+              style={[styles.modalInput, { minHeight: 68 }]}
+              placeholder="Mensagem para o cliente (ex.: Feijão carioca em falta hoje)"
+              placeholderTextColor="#999999"
+              value={motivoAjuste}
+              onChangeText={setMotivoAjuste}
+              multiline
+            />
+
+            <View style={styles.modalBotoes}>
+              <TouchableOpacity
+                style={styles.modalBtnVoltar}
+                onPress={() => setPedidoEditando(null)}
+              >
+                <Text style={styles.modalBtnVoltarTexto}>Voltar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalBtnConfirmar}
+                onPress={salvarEdicaoPedido}
+              >
+                <Text style={styles.modalBtnConfirmarTexto}>
+                  Enviar ao cliente
                 </Text>
               </TouchableOpacity>
             </View>

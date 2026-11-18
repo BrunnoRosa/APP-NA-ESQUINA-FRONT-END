@@ -6,7 +6,9 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Modal,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -18,7 +20,13 @@ import { cores } from "../../../theme";
 import { traduzirErro } from "../../../utils/validacoes";
 import { styles } from "./styles";
 
-// Formata número como moeda brasileira
+const MOTIVOS_RAPIDOS_CLIENTE = [
+  "Fiz o pedido por engano",
+  "Não poderei ir retirar hoje",
+  "Demora na aprovação",
+  "Esqueci de adicionar itens",
+];
+
 function formatarMoeda(valor) {
   return Number(valor || 0).toLocaleString("pt-BR", {
     style: "currency",
@@ -32,7 +40,11 @@ export default function MeusPedidos({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [atualizandoId, setAtualizandoId] = useState(null);
 
-  // Toast central: exibirAlerta = avisos | confirmar = perguntas com botões (Sim / Não)
+  // Estado do modal de cancelamento com justificativa
+  const [pedidoParaCancelar, setPedidoParaCancelar] = useState(null);
+  const [motivoCancelamento, setMotivoCancelamento] = useState("");
+  const [modoRecusaAlteracao, setModoRecusaAlteracao] = useState(false);
+
   const { exibirAlerta, confirmar } = useToast();
 
   const carregarPedidos = useCallback(
@@ -67,7 +79,6 @@ export default function MeusPedidos({ navigation }) {
     }, [carregarPedidos]),
   );
 
-  // 🔔 Atualização instantânea ao receber notificação push do Expo
   useEffect(() => {
     const inscricaoNotificacao = Notifications.addNotificationReceivedListener(
       () => {
@@ -80,14 +91,12 @@ export default function MeusPedidos({ navigation }) {
     };
   }, [carregarPedidos]);
 
-  // Botão de voltar: volta para a tela de onde o cliente veio (Início ou Conta)
   function voltar() {
     if (navigation.canGoBack()) navigation.goBack();
     else navigation.navigate("HomeCliente");
   }
 
   const confirmarRecebimento = async (idPedido) => {
-    // Concluir é definitivo (não dá para reabrir o pedido), então pergunta antes
     const sim = await confirmar({
       titulo: "Confirmar retirada",
       mensagem: `Você já retirou os produtos do pedido #${idPedido}?`,
@@ -116,7 +125,6 @@ export default function MeusPedidos({ navigation }) {
     }
   };
 
-  // O cliente pode cancelar enquanto o pedido NÃO foi concluído nem cancelado
   function podeCancelar(status) {
     return (
       status === "PENDENTE" ||
@@ -125,19 +133,48 @@ export default function MeusPedidos({ navigation }) {
     );
   }
 
-  const cancelarPedido = async (idPedido) => {
-    const sim = await confirmar({
-      titulo: "Cancelar pedido",
-      mensagem: `Deseja realmente cancelar o pedido #${idPedido}? Essa ação não pode ser desfeita.`,
-      textoConfirmar: "Sim, cancelar",
-      textoCancelar: "Não, manter",
-      tipo: "perigo",
-    });
-    if (!sim) return;
+  const abrirModalCancelar = (idPedido, recusaAlteracao = false) => {
+    setPedidoParaCancelar(idPedido);
+    setMotivoCancelamento(
+      recusaAlteracao ? "Não aceito o pedido sem os itens removidos." : "",
+    );
+    setModoRecusaAlteracao(recusaAlteracao);
+  };
 
+  const fecharModalCancelar = () => {
+    setPedidoParaCancelar(null);
+    setMotivoCancelamento("");
+    setModoRecusaAlteracao(false);
+  };
+
+  const confirmarCancelamentoComMotivo = async () => {
+    if (!pedidoParaCancelar) return;
+    const idPedido = pedidoParaCancelar;
+    const motivoFinal = motivoCancelamento.trim();
+
+    if (!motivoFinal) {
+      exibirAlerta(
+        "Informe o motivo",
+        "Por favor, escreva ou selecione o motivo do cancelamento.",
+        "aviso",
+      );
+      return;
+    }
+
+    fecharModalCancelar();
     setAtualizandoId(idPedido);
+
     try {
-      await api.put(`/api/pedidos/${idPedido}/cancelar`);
+      if (modoRecusaAlteracao) {
+        await api.put(`/api/pedidos/${idPedido}/responder-alteracao`, null, {
+          params: { aprovado: false, motivo: motivoFinal },
+        });
+      } else {
+        await api.put(`/api/pedidos/${idPedido}/cancelar`, null, {
+          params: { motivo: motivoFinal },
+        });
+      }
+
       exibirAlerta(
         "Pedido cancelado",
         `O pedido #${idPedido} foi cancelado.`,
@@ -148,8 +185,39 @@ export default function MeusPedidos({ navigation }) {
       console.error("Erro ao cancelar o pedido:", error);
       const erro = traduzirErro(error);
       exibirAlerta(erro.titulo, erro.mensagem);
-      // Se a loja concluiu/cancelou no mesmo instante, atualiza a lista com o status real
       carregarPedidos(true);
+    } finally {
+      setAtualizandoId(null);
+    }
+  };
+
+  const aprovarAlteracaoPedido = async (item) => {
+    const sim = await confirmar({
+      titulo: "Aprovar pedido ajustado",
+      mensagem: `Deseja confirmar o pedido #${item.idPedido} com os itens disponíveis pelo novo valor de ${formatarMoeda(item.valorTotal)}?`,
+      textoConfirmar: "Sim, aprovar",
+      textoCancelar: "Voltar",
+      tipo: "sucesso",
+    });
+    if (!sim) return;
+
+    setAtualizandoId(item.idPedido);
+    try {
+      await api.put(
+        `/api/pedidos/${item.idPedido}/responder-alteracao`,
+        null,
+        { params: { aprovado: true } },
+      );
+      exibirAlerta(
+        "Alteração aprovada!",
+        `O mercadinho já vai continuar a separação do pedido #${item.idPedido}.`,
+        "sucesso",
+      );
+      carregarPedidos(true);
+    } catch (error) {
+      console.error("Erro ao aprovar alteração:", error);
+      const erro = traduzirErro(error);
+      exibirAlerta(erro.titulo, erro.mensagem);
     } finally {
       setAtualizandoId(null);
     }
@@ -162,6 +230,12 @@ export default function MeusPedidos({ navigation }) {
           label: "Aguardando aprovação",
           bg: "#FFF3CD",
           text: "#856404",
+        };
+      case "AGUARDANDO_APROVACAO_CLIENTE":
+        return {
+          label: "Revisar alteração",
+          bg: "#FDEBD0",
+          text: "#B9770E",
         };
       case "EM_SEPARACAO":
         return { label: "Em separação", bg: "#DCEBFF", text: "#1F4E8C" };
@@ -208,6 +282,22 @@ export default function MeusPedidos({ navigation }) {
           </Text>
         </View>
 
+        {/* Aviso de alteração feita pelo comerciante */}
+        {item.status === "AGUARDANDO_APROVACAO_CLIENTE" && (
+          <View style={styles.alteracaoBanner}>
+            <View style={styles.alteracaoTopo}>
+              <Ionicons name="alert-circle" size={18} color="#B9770E" />
+              <Text style={styles.alteracaoTitulo}>
+                O mercadinho ajustou os itens do seu pedido
+              </Text>
+            </View>
+            <Text style={styles.alteracaoTexto}>
+              {item.motivoAjuste ||
+                "Alguns itens estavam indisponíveis no estoque e foram removidos. Confira o novo valor abaixo:"}
+            </Text>
+          </View>
+        )}
+
         <View style={styles.divider} />
 
         {item.itens?.map((it) => (
@@ -222,12 +312,57 @@ export default function MeusPedidos({ navigation }) {
         ))}
 
         <View style={styles.pedidoFooter}>
-          <Text style={styles.totalLabel}>Total</Text>
+          <Text style={styles.totalLabel}>
+            {item.status === "AGUARDANDO_APROVACAO_CLIENTE"
+              ? "Novo total"
+              : "Total"}
+          </Text>
           <Text style={styles.totalValor}>
             {formatarMoeda(item.valorTotal)}
           </Text>
         </View>
 
+        {/* Ações quando o pedido aguarda aprovação do cliente */}
+        {item.status === "AGUARDANDO_APROVACAO_CLIENTE" &&
+          (isBusy ? (
+            <ActivityIndicator
+              style={{ marginTop: 12 }}
+              size="small"
+              color={cores.primaria}
+            />
+          ) : (
+            <>
+              <TouchableOpacity
+                style={styles.confirmButton}
+                onPress={() => aprovarAlteracaoPedido(item)}
+                activeOpacity={0.85}
+              >
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={18}
+                  color="#FFFFFF"
+                />
+                <Text style={styles.confirmButtonText}>
+                  Aprovar pedido ajustado
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => abrirModalCancelar(item.idPedido, true)}
+                activeOpacity={0.85}
+              >
+                <Ionicons
+                  name="close-circle-outline"
+                  size={18}
+                  color={cores.primaria}
+                />
+                <Text style={styles.cancelButtonText}>Recusar e cancelar</Text>
+              </TouchableOpacity>
+            </>
+          ))}
+
+        {/* Ações normais (Retirar / Cancelar) */}
         {podeCancelar(item.status) &&
           (isBusy ? (
             <ActivityIndicator
@@ -252,7 +387,7 @@ export default function MeusPedidos({ navigation }) {
 
               <TouchableOpacity
                 style={styles.cancelButton}
-                onPress={() => cancelarPedido(item.idPedido)}
+                onPress={() => abrirModalCancelar(item.idPedido, false)}
                 activeOpacity={0.85}
               >
                 <Ionicons
@@ -331,7 +466,8 @@ export default function MeusPedidos({ navigation }) {
             </TouchableOpacity>
           </View>
         ) : (
-          <FlatList {...pull.props}
+          <FlatList
+            {...pull.props}
             data={pedidos}
             keyExtractor={(item) => String(item.idPedido)}
             renderItem={renderPedido}
@@ -340,6 +476,79 @@ export default function MeusPedidos({ navigation }) {
           />
         )}
       </View>
+
+      {/* Modal de Cancelamento com Justificativa */}
+      <Modal
+        visible={pedidoParaCancelar !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={fecharModalCancelar}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitulo}>
+              Cancelar pedido #{pedidoParaCancelar}
+            </Text>
+            <Text style={styles.modalSubtitulo}>
+              Informe o motivo. O mercadinho poderá ver essa mensagem.
+            </Text>
+
+            <View style={styles.chipsMotivos}>
+              {MOTIVOS_RAPIDOS_CLIENTE.map((sug) => {
+                const selecionado = motivoCancelamento === sug;
+                return (
+                  <TouchableOpacity
+                    key={sug}
+                    style={[
+                      styles.chipMotivo,
+                      selecionado && styles.chipMotivoAtivo,
+                    ]}
+                    onPress={() => setMotivoCancelamento(sug)}
+                  >
+                    <Text
+                      style={[
+                        styles.chipMotivoTexto,
+                        selecionado && styles.chipMotivoTextoAtivo,
+                      ]}
+                    >
+                      {sug}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Ex.: fiz o pedido errado ou não poderei retirar"
+              placeholderTextColor="#999999"
+              value={motivoCancelamento}
+              onChangeText={setMotivoCancelamento}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
+
+            <View style={styles.modalBotoes}>
+              <TouchableOpacity
+                style={styles.modalBtnVoltar}
+                onPress={fecharModalCancelar}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.modalBtnVoltarTexto}>Voltar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalBtnConfirmar}
+                onPress={confirmarCancelamentoComMotivo}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.modalBtnConfirmarTexto}>Confirmar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

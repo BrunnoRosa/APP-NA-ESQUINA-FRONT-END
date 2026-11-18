@@ -6,8 +6,6 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: cores.degradeInicioBase,
   },
-
-  // Topo com degradê
   topo: {
     paddingTop: 48,
     paddingHorizontal: 20,
@@ -38,8 +36,6 @@ export const styles = StyleSheet.create({
     fontSize: 13,
     color: cores.textoEndereco,
   },
-
-  // Folha branca
   folha: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -50,15 +46,20 @@ export const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
-    paddingBottom: 110, // espaço para o botão do carrinho não cobrir o último item
+    paddingBottom: 110,
   },
-
-  // Selo e funcionamento
-  statusLinha: {
+  statusCard: {
+    backgroundColor: cores.fundoCartao,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 20,
+    gap: 10,
+  },
+  statusTopo: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 10,
-    marginBottom: 20,
   },
   seloStatus: {
     paddingHorizontal: 14,
@@ -70,12 +71,42 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
-  funcionamento: {
+  horarioTituloLinha: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  horarioTitulo: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: cores.textoSecundario,
+  },
+  horariosLista: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#EAEAEA',
+    paddingTop: 10,
+  },
+  horarioItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  horarioPeriodo: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: cores.textoTitulo,
+  },
+  horarioValor: {
     fontSize: 13,
     color: cores.textoSecundario,
   },
-
-  // Seções
+  horarioFechado: {
+    color: '#9E9E9E',
+    fontStyle: 'italic',
+  },
   secaoTitulo: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -84,7 +115,7 @@ export const styles = StyleSheet.create({
   },
   carrossel: {
     marginBottom: 22,
-    marginHorizontal: -20,        // deixa o carrossel encostar nas bordas da tela
+    marginHorizontal: -20,
     paddingHorizontal: 20,
   },
   emptyText: {

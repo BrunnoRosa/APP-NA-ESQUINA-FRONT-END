@@ -139,7 +139,7 @@ export const styles = StyleSheet.create({
   // Botão "Já retirei"
   confirmButton: {
     marginTop: 14,
-    backgroundColor: cores.primaria,
+    backgroundColor: '#168A00',
     borderRadius: 24,
     paddingVertical: 12,
     flexDirection: 'row',
@@ -221,6 +221,123 @@ export const styles = StyleSheet.create({
   botaoPrimarioTexto: {
     color: '#FFFFFF',
     fontSize: 15,
+    fontWeight: 'bold',
+  },
+  // Banner de alteração pelo mercadinho
+  alteracaoBanner: {
+    marginTop: 10,
+    backgroundColor: '#FEF9E7',
+    borderWidth: 1,
+    borderColor: '#F5B041',
+    borderRadius: 12,
+    padding: 10,
+  },
+  alteracaoTopo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  alteracaoTitulo: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#9C640C',
+    flex: 1,
+  },
+  alteracaoTexto: {
+    fontSize: 12,
+    color: '#7E5109',
+    lineHeight: 17,
+  },
+  // Modal de justificativa de cancelamento
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 20,
+  },
+  modalTitulo: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: cores.textoTitulo,
+  },
+  modalSubtitulo: {
+    fontSize: 13,
+    color: cores.textoSecundario,
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  chipsMotivos: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 12,
+  },
+  chipMotivo: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+    backgroundColor: '#F1F3F5',
+    borderWidth: 1,
+    borderColor: '#DEE2E6',
+  },
+  chipMotivoAtivo: {
+    backgroundColor: '#FFE0E0',
+    borderColor: cores.primaria,
+  },
+  chipMotivoTexto: {
+    fontSize: 12,
+    color: '#495057',
+  },
+  chipMotivoTextoAtivo: {
+    color: cores.primaria,
+    fontWeight: 'bold',
+  },
+  modalInput: {
+    borderWidth: 1.5,
+    borderColor: '#212529',
+    borderRadius: 14,
+    padding: 12,
+    minHeight: 84,
+    fontSize: 14,
+    color: cores.textoTitulo,
+    marginBottom: 16,
+  },
+  modalBotoes: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  modalBtnVoltar: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: cores.primaria,
+    borderRadius: 24,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  modalBtnVoltarTexto: {
+    color: cores.primaria,
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  modalBtnConfirmar: {
+    flex: 1,
+    backgroundColor: cores.primaria,
+    borderRadius: 24,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  modalBtnConfirmarTexto: {
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: 'bold',
   },
 });

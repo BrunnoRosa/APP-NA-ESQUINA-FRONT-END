@@ -1,7 +1,7 @@
 import React from 'react';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { estaAberto, formatarHora } from '../../utils/mercado';
+import { estaAberto, obterTextoStatusHoje } from '../../utils/mercado';
 import { cores } from '../../theme';
 import { styles } from './styles';
 
@@ -14,11 +14,8 @@ export default function MercadoCarrossel({
 }) {
   const nome = mercadinho?.nomeFantasia || mercadinho?.nome || 'Mercadinho';
   const endereco = mercadinho?.endereco || 'Endereço não informado';
-  const aberto = Boolean(estaAberto(mercadinho?.horarioAbertura, mercadinho?.horarioFechamento));
-  const fecha = formatarHora(mercadinho?.horarioFechamento);
-
-  // Garante que o selo exiba texto simples sem causar nós de texto inválidos
-  const textoSelo = aberto ? (fecha ? `Aberto até às ${fecha}` : 'Aberto') : 'Fechado';
+  const aberto = Boolean(estaAberto(mercadinho));
+  const textoSelo = obterTextoStatusHoje(mercadinho);
 
   const valorDistancia =
     distanciaKm ??
@@ -36,7 +33,6 @@ export default function MercadoCarrossel({
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.8} onPress={onPress}>
       <View style={styles.foto}>
-        {/* Botão de Favoritar */}
         {Boolean(onToggleFavorito) && (
           <TouchableOpacity
             style={styles.botaoFavorito}
@@ -62,7 +58,6 @@ export default function MercadoCarrossel({
           <Ionicons name="storefront" size={34} color={cores.primaria || '#E52421'} />
         )}
 
-        {/* Selo de Status Blindado */}
         <View style={[styles.selo, !aberto && styles.seloFechado]}>
           <Text style={styles.seloTexto}>{String(textoSelo)}</Text>
         </View>

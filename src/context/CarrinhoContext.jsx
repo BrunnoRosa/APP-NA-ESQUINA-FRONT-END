@@ -15,17 +15,52 @@ export function extrairIdMercadinho(produto) {
   );
 }
 
+export function getPrecoVigente(produto) {
+  if (!produto) return 0;
+  const precoNormal = Number(produto.precoOriginal ?? produto.preco) || 0;
+  const precoPromo = Number(produto.precoPromocional);
+
+  if (
+    produto.emPromocao === true &&
+    Number.isFinite(precoPromo) &&
+    precoPromo > 0 &&
+    precoPromo < precoNormal
+  ) {
+    return precoPromo;
+  }
+  return precoNormal;
+}
+
 export function CarrinhoProvider({ children }) {
   const { confirmar } = useToast();
   const [itens, setItens] = useState([]);
   const [idMercadinho, setIdMercadinho] = useState(null);
 
+  const formatarProdutoCarrinho = (produto, idMercadoGarantido) => {
+    const precoOriginal = Number(produto.precoOriginal ?? produto.preco) || 0;
+    const precoVigente = getPrecoVigente(produto);
+
+    return {
+      ...produto,
+      precoOriginal,
+      preco: precoVigente,
+      idMercadinho: idMercadoGarantido,
+      mercadinhoId: idMercadoGarantido,
+      mercadinho:
+        typeof produto.mercadinho === "object" && produto.mercadinho !== null
+          ? {
+              ...produto.mercadinho,
+              idMercadinho: idMercadoGarantido,
+              id: idMercadoGarantido,
+            }
+          : { idMercadinho: idMercadoGarantido, id: idMercadoGarantido },
+    };
+  };
+
   const executarAdicao = (produto, idNovoMercado) => {
-    // Tenta obter o ID do novo produto, se nulo mantém o ID global que já estava no carrinho
     const idMercadoExtraido = idNovoMercado || extrairIdMercadinho(produto);
     const idMercadoGarantido = idMercadoExtraido || idMercadinho;
 
-    // Atualiza o idMercadinho global apenas se houver um ID válido
     if (idMercadoGarantido) {
       setIdMercadinho(idMercadoGarantido);
     }
@@ -36,19 +71,7 @@ export function CarrinhoProvider({ children }) {
         (item) => (item.idProduto || item.id) === idProd,
       );
 
-      const produtoFormatado = {
-        ...produto,
-        idMercadinho: idMercadoGarantido,
-        mercadinhoId: idMercadoGarantido,
-        mercadinho:
-          typeof produto.mercadinho === "object" && produto.mercadinho !== null
-            ? {
-                ...produto.mercadinho,
-                idMercadinho: idMercadoGarantido,
-                id: idMercadoGarantido,
-              }
-            : { idMercadinho: idMercadoGarantido, id: idMercadoGarantido },
-      };
+      const produtoFormatado = formatarProdutoCarrinho(produto, idMercadoGarantido);
 
       if (itemExistente) {
         return itensAtuais.map((item) =>
@@ -66,7 +89,6 @@ export function CarrinhoProvider({ children }) {
         );
       }
 
-      // Garante que itens anteriores também recebam o idMercadinho caso estivessem sem ele
       const itensAtualizados = itensAtuais.map((item) => ({
         ...item,
         idMercadinho: item.idMercadinho || idMercadoGarantido,
@@ -101,12 +123,7 @@ export function CarrinhoProvider({ children }) {
   };
 
   const executarLimpezaEAdicao = (produto, idNovoMercado) => {
-    const produtoFormatado = {
-      ...produto,
-      idMercadinho: idNovoMercado,
-      mercadinhoId: idNovoMercado,
-      mercadinho: { idMercadinho: idNovoMercado, id: idNovoMercado },
-    };
+    const produtoFormatado = formatarProdutoCarrinho(produto, idNovoMercado);
     setItens([{ ...produtoFormatado, quantidade: 1 }]);
     setIdMercadinho(idNovoMercado);
   };
@@ -150,7 +167,7 @@ export function CarrinhoProvider({ children }) {
   const totalItens = itens.reduce((acc, item) => acc + item.quantidade, 0);
 
   const valorTotal = itens.reduce(
-    (acc, item) => acc + (Number(item.preco) || 0) * item.quantidade,
+    (acc, item) => acc + getPrecoVigente(item) * item.quantidade,
     0,
   );
 

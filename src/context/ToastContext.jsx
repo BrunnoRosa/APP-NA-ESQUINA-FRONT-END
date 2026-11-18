@@ -19,33 +19,13 @@ import {
 } from "react-native";
 import { cores } from "../theme";
 
-// ---------------------------------------------------------------------------
-// Toast centralizado do Na Esquina.
-//
-// Substitui os alert() / Alert.alert() de AVISO (erro, sucesso, validação).
-// Perguntas com botões (ex.: "Deseja sair?") usam o confirmar() deste mesmo arquivo.
-//
-// Como usar em qualquer tela:
-//   const { exibirAlerta } = useToast();
-//   exibirAlerta('Erro', 'Não foi possível salvar.');            // tipo descoberto pelo título
-//   exibirAlerta('Atenção', 'Preencha o nome.', 'aviso');         // ou informe o tipo
-//
-// Pergunta Sim/Não (quadro no centro da tela):
-//   const { confirmar } = useToast();
-//   const sim = await confirmar({
-//     titulo: 'Sair da conta',
-//     mensagem: 'Deseja realmente sair da sua conta?',
-//     textoConfirmar: 'Sim, sair',
-//     tipo: 'perigo',            // 'perigo' (vermelho) | 'padrao' | 'sucesso' (verde)
-//   });
-//   if (sim) signOut();
-// ---------------------------------------------------------------------------
-
 const ToastContext = createContext(null);
+
+const VERDE_CONFIRMACAO = "#168A00";
 
 // Cada tipo tem uma cor e um ícone
 const TIPOS = {
-  sucesso: { cor: cores.sucesso, icone: "checkmark-circle" },
+  sucesso: { cor: VERDE_CONFIRMACAO, icone: "checkmark-circle" },
   erro: { cor: cores.erro, icone: "close-circle" },
   aviso: { cor: cores.laranjaDistancia, icone: "alert-circle" },
   info: { cor: cores.textoLogin, icone: "information-circle" },
@@ -55,30 +35,29 @@ const TIPOS = {
 const TIPOS_CONFIRMACAO = {
   perigo: { cor: cores.erro, icone: "warning", botao: cores.erro },
   padrao: {
-    cor: cores.textoLogin,
+    cor: VERDE_CONFIRMACAO,
     icone: "help-circle",
-    botao: cores.primaria,
+    botao: VERDE_CONFIRMACAO,
   },
   sucesso: {
-    cor: cores.sucesso,
+    cor: VERDE_CONFIRMACAO,
     icone: "checkmark-circle",
-    botao: cores.sucesso,
+    botao: VERDE_CONFIRMACAO,
   },
 };
 
 // Descobre o tipo pelo título, para as telas antigas não precisarem informar nada.
-// A ordem importa: "Conta criada, mas o mercadinho não foi salvo" é aviso, não sucesso.
 export function descobrirTipo(titulo) {
   const t = String(titulo || "").toLowerCase();
   if (/(aten[cç][aã]o|confira|corrija|\bmas\b)/.test(t)) return "aviso";
   if (
-    /(erro|falha|inv[aá]lid|negado|sem conex|indispon|n[aã]o encontrad|permiss|j[aá] cadastrad|demorou|servidor)/.test(
+    /(erro|falha|inv[aá]lid|negado|sem conex|indispon|n[aã]o encontrad|permiss|j[aá] cadastrad|demorou|servidor|limite|atingid)/.test(
       t,
     )
   )
     return "erro";
   if (
-    /(sucesso|realizado|atualizad|retirad|criad|salv|cadastrad|conclu[ií]d)/.test(
+    /(sucesso|realizado|atualizad|retirad|criad|salv|cadastrad|conclu[ií]d|ativad|encerrad|confirmad)/.test(
       t,
     )
   )
@@ -94,13 +73,12 @@ function calcularDuracao(tipo, mensagem) {
 }
 
 export function ToastProvider({ children }) {
-  const [toast, setToast] = useState(null); // { id, tipo, titulo, mensagem }
+  const [toast, setToast] = useState(null);
   const opacidade = useRef(new Animated.Value(0)).current;
   const escala = useRef(new Animated.Value(0.9)).current;
   const timer = useRef(null);
   const contador = useRef(0);
 
-  // No celular a animação roda no "driver nativo"; na web isso não existe
   const usarNativo = Platform.OS !== "web";
 
   const esconder = useCallback(() => {
@@ -153,12 +131,11 @@ export function ToastProvider({ children }) {
   );
 
   // ----------------------------- quadro de confirmação -----------------------------
-  const [dialogo, setDialogo] = useState(null); // opções da pergunta aberta
+  const [dialogo, setDialogo] = useState(null);
   const opacidadeDlg = useRef(new Animated.Value(0)).current;
   const escalaDlg = useRef(new Animated.Value(0.92)).current;
-  const resolverDlg = useRef(null); // função que entrega a resposta (true/false) a quem perguntou
+  const resolverDlg = useRef(null);
 
-  // Fecha o quadro e entrega a resposta. Só responde UMA vez (evita toque duplo).
   const responder = useCallback(
     (resposta) => {
       const resolver = resolverDlg.current;
@@ -182,12 +159,9 @@ export function ToastProvider({ children }) {
     [opacidadeDlg, escalaDlg, usarNativo],
   );
 
-  // confirmar({...}) devolve uma Promise: true = "Sim", false = cancelou / tocou fora / voltou.
-  // Também aceita onConfirmar / onCancelar, se preferir callbacks.
   const confirmar = useCallback(
     (opcoes) =>
       new Promise((resolve) => {
-        // Se já havia uma pergunta aberta, ela é respondida como "não"
         if (resolverDlg.current) resolverDlg.current(false);
 
         resolverDlg.current = (resposta) => {
@@ -222,15 +196,13 @@ export function ToastProvider({ children }) {
     [opacidadeDlg, escalaDlg, usarNativo],
   );
 
-  // Enquanto o quadro está aberto: botão "voltar" do Android e tecla Esc (web) = cancelar
   useEffect(() => {
     if (!dialogo) return undefined;
 
     const aoVoltar = () => {
       responder(false);
-      return true; // true = "eu tratei", o app não volta de tela
+      return true;
     };
-    // BackHandler só existe no celular; na web ele avisa no console, então nem registramos
     const assinatura =
       Platform.OS === "web"
         ? null
@@ -250,10 +222,8 @@ export function ToastProvider({ children }) {
     };
   }, [dialogo, responder]);
 
-  // Limpa o temporizador se o app for fechado
   useEffect(() => () => timer.current && clearTimeout(timer.current), []);
 
-  // Mesmo formato dos antigos exibirAlerta(titulo, mensagem): só trocar a origem da função
   const exibirAlerta = useCallback(
     (titulo, mensagem, tipo) => mostrar({ titulo, mensagem, tipo }),
     [mostrar],
@@ -275,7 +245,6 @@ export function ToastProvider({ children }) {
         {children}
 
         {toast && (
-          // box-none: a área vazia NÃO bloqueia os toques; só o cartão do toast reage
           <View style={styles.camada} pointerEvents="box-none">
             <Animated.View
               style={{ opacity: opacidade, transform: [{ scale: escala }] }}
@@ -299,9 +268,7 @@ export function ToastProvider({ children }) {
         )}
 
         {dialogo && (
-          // Fica POR CIMA do toast. O fundo escuro bloqueia os toques na tela de trás.
           <Animated.View style={[styles.fundoDlg, { opacity: opacidadeDlg }]}>
-            {/* Tocar fora do cartão = cancelar */}
             <Pressable
               style={StyleSheet.absoluteFill}
               onPress={() => responder(false)}
@@ -376,10 +343,10 @@ export function useToast() {
 const styles = StyleSheet.create({
   raiz: { flex: 1 },
   camada: {
-    ...StyleSheet.absoluteFillObject, // cobre a tela inteira...
-    alignItems: "center", // centraliza o cartão na horizontal
-    justifyContent: "flex-start", // encosta o cartão no TOPO
-    paddingTop: 48, // espaço para a barra de status / notch do celular
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    paddingTop: 48,
     paddingHorizontal: 24,
     zIndex: 9999,
     elevation: 9999,
@@ -392,7 +359,7 @@ const styles = StyleSheet.create({
     gap: 6,
     backgroundColor: cores.fundoCartaoLogin,
     borderRadius: 16,
-    borderTopWidth: 5, // a faixa colorida do topo indica o tipo
+    borderTopWidth: 5,
     paddingVertical: 20,
     paddingHorizontal: 22,
     shadowColor: "#000",
@@ -414,15 +381,13 @@ const styles = StyleSheet.create({
     color: cores.textoSecundario,
     textAlign: "center",
   },
-
-  // ----- quadro de confirmação -----
   fundoDlg: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(35, 36, 71, 0.5)", // azul-escuro da marca com transparência
+    backgroundColor: "rgba(35, 36, 71, 0.5)",
     alignItems: "center",
-    justifyContent: "center", // confirmações ficam no CENTRO
+    justifyContent: "center",
     paddingHorizontal: 24,
-    zIndex: 10000, // acima do toast (9999)
+    zIndex: 10000,
     elevation: 10000,
   },
   cartaoDlg: {
@@ -430,7 +395,7 @@ const styles = StyleSheet.create({
     maxWidth: 340,
     alignItems: "center",
     gap: 6,
-    backgroundColor: cores.fundoCartaoLogin, // mesmo cartão do toast
+    backgroundColor: cores.fundoCartaoLogin,
     borderRadius: 16,
     borderTopWidth: 5,
     paddingTop: 22,

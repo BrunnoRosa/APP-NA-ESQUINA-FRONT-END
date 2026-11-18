@@ -25,20 +25,25 @@ import { styles } from './styles';
 
 const CATEGORIAS = ['TODAS', 'ALIMENTOS', 'BEBIDAS', 'LIMPEZA', 'HIGIENE', 'HORTIFRUTI', 'PADARIA', 'OUTROS'];
 
+const isPromocaoAtiva = (p) =>
+  p?.emPromocao === true &&
+  p?.precoPromocional !== null &&
+  p?.precoPromocional !== undefined &&
+  Number(p.precoPromocional) > 0 &&
+  Number(p.precoPromocional) < Number(p.preco);
+
 export default function BuscarProdutos({ navigation, route }) {
   const [termo, setTermo] = useState('');
   const categorias = CATEGORIAS;
   const [categoriaAtiva, setCategoriaAtiva] = useState('TODAS');
-  const [ordenarPor, setOrdenarPor] = useState('preco'); // 'preco' ou 'distancia'
+  const [ordenarPor, setOrdenarPor] = useState('preco');
   const [produtos, setProdutos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
-  // Listas de lojas
   const [lojas, setLojas] = useState([]);
   const [lojasPerto, setLojasPerto] = useState([]);
 
-  // Estado para controlar o modo vindo da navegação (mercados | produtos | promocoes)
   const [modoAba, setModoAba] = useState(null);
   const [apenasPromocoes, setApenasPromocoes] = useState(false);
 
@@ -46,7 +51,6 @@ export default function BuscarProdutos({ navigation, route }) {
   const userCoords = origem;
   const { adicionarAoCarrinho } = useCarrinho();
 
-  // Reage aos parâmetros passados na navegação a partir da HomeCliente
   useEffect(() => {
     const params = route?.params;
     if (params) {
@@ -72,7 +76,6 @@ export default function BuscarProdutos({ navigation, route }) {
     }
   }, [route?.params?._ts, route?.params?.modo, route?.params?.aba]);
 
-  // Carrega as lojas sempre que a aba ganha foco ou a localização mudar
   useFocusEffect(
     useCallback(() => {
       async function carregarLojas() {
@@ -126,24 +129,17 @@ export default function BuscarProdutos({ navigation, route }) {
       mercadinho: m,
     });
 
-  // Determina se deve mostrar a lista de produtos ou as seções de lojas
   const modoBusca =
     modoAba === 'produtos' ||
     modoAba === 'promocoes' ||
+    apenasPromocoes ||
     termo.trim().length > 0 ||
     categoriaAtiva !== 'TODAS' ||
     mostrarFiltros;
 
-  // Filtra por promoções/destaques quando vindo do botão Promoções
+  // Filtra apenas produtos com promoção real quando o filtro de promoções estiver ativo
   const produtosExibidos = apenasPromocoes
-    ? produtos.filter(
-        (p) =>
-          p.emDestaque === true ||
-          p.destaque === true ||
-          p.oferta === true ||
-          p.emPromocao === true ||
-          String(p.emDestaque) === 'true'
-      )
+    ? produtos.filter(isPromocaoAtiva)
     : produtos;
 
   return (
@@ -156,12 +152,12 @@ export default function BuscarProdutos({ navigation, route }) {
           <View style={styles.campoBusca}>
             <TextInput
               style={styles.inputBusca}
-              placeholder="Pesquisar"
+              placeholder={apenasPromocoes ? 'Pesquisar nas promoções' : 'Pesquisar'}
               placeholderTextColor={cores.textoSecundario}
               value={termo}
               onChangeText={(txt) => {
                 setTermo(txt);
-                if (txt.trim().length > 0) setModoAba('produtos');
+                if (txt.trim().length > 0 && !apenasPromocoes) setModoAba('produtos');
               }}
             />
             {termo.length > 0 && (
@@ -195,6 +191,25 @@ export default function BuscarProdutos({ navigation, route }) {
               style={styles.categoriesScroll}
               contentContainerStyle={{ alignItems: 'center' }}
             >
+              <TouchableOpacity
+                style={[styles.promoChip, apenasPromocoes && styles.promoChipActive]}
+                onPress={() => setApenasPromocoes((v) => !v)}
+              >
+                <Ionicons
+                  name="pricetag"
+                  size={13}
+                  color={apenasPromocoes ? '#FFFFFF' : '#168A00'}
+                />
+                <Text
+                  style={[
+                    styles.promoChipText,
+                    apenasPromocoes && styles.promoChipTextActive,
+                  ]}
+                >
+                  Só Promoções
+                </Text>
+              </TouchableOpacity>
+
               {categorias.map((cat) => (
                 <TouchableOpacity
                   key={cat}
@@ -211,7 +226,9 @@ export default function BuscarProdutos({ navigation, route }) {
             </ScrollView>
 
             <View style={styles.sortRow}>
-              <Text style={styles.resultsCount}>{produtosExibidos.length} resultado(s)</Text>
+              <Text style={styles.resultsCount}>
+                {produtosExibidos.length} {apenasPromocoes ? 'promoção(ões)' : 'resultado(s)'}
+              </Text>
               <TouchableOpacity style={styles.sortBtn} onPress={alternarOrdenacao}>
                 <Text style={styles.sortBtnText}>
                   {ordenarPor === 'preco' ? '💰 Menor Preço' : '📍 Menor Distância'}
@@ -222,7 +239,6 @@ export default function BuscarProdutos({ navigation, route }) {
         )}
 
         {modoBusca ? (
-          /* Resultados de produtos */
           loading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={cores.primaria} />
@@ -269,14 +285,17 @@ export default function BuscarProdutos({ navigation, route }) {
                 );
               }}
               ListEmptyComponent={
-                <Text style={styles.emptyText}>Nenhum produto encontrado para esta busca.</Text>
+                <Text style={styles.emptyText}>
+                  {apenasPromocoes
+                    ? 'Nenhum produto em promoção no momento.'
+                    : 'Nenhum produto encontrado para esta busca.'}
+                </Text>
               }
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
             />
           )
         ) : (
-          /* Lojas em Destaque e Perto de você */
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
             <Text style={styles.tituloSecao}>Lojas em Destaque</Text>
             {lojas.length === 0 ? (

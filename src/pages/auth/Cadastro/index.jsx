@@ -6,6 +6,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -42,7 +43,6 @@ import {
 } from "../../../utils/validacoes";
 import { styles } from "./styles";
 
-// inputRef (opcional): permite à tela mandar o cursor para este campo (ex.: depois da busca de CEP)
 function Campo({ rotulo, estiloExterno, erro, inputRef, ...props }) {
   return (
     <View style={estiloExterno}>
@@ -80,18 +80,25 @@ export default function Cadastro({ navigation }) {
   const [cidade, setCidade] = useState("");
   const [uf, setUf] = useState("");
   const [buscandoCep, setBuscandoCep] = useState(false);
-  const [horarioAbertura, setHorarioAbertura] = useState("");
-  const [horarioFechamento, setHorarioFechamento] = useState("");
+
+  // Horários por período
+  const [abreSegSex, setAbreSegSex] = useState(true);
+  const [aberturaSegSex, setAberturaSegSex] = useState("");
+  const [fechamentoSegSex, setFechamentoSegSex] = useState("");
+
+  const [abreSabado, setAbreSabado] = useState(true);
+  const [aberturaSabado, setAberturaSabado] = useState("");
+  const [fechamentoSabado, setFechamentoSabado] = useState("");
+
+  const [abreDomingo, setAbreDomingo] = useState(false);
+  const [aberturaDomingo, setAberturaDomingo] = useState("");
+  const [fechamentoDomingo, setFechamentoDomingo] = useState("");
 
   const [erros, setErros] = useState({});
   const [avisoForm, setAvisoForm] = useState("");
 
   const { exibirAlerta } = useToast();
 
-  // --- Busca de CEP -------------------------------------------------------
-  // numeroRef / ruaRef: para levar o cursor ao campo certo depois de preencher.
-  // contadorBusca: identifica a busca mais recente (ignora respostas "velhas").
-  // ultimoCep: evita buscar duas vezes o mesmo CEP seguido.
   const numeroRef = useRef(null);
   const ruaRef = useRef(null);
   const contadorBusca = useRef(0);
@@ -111,7 +118,6 @@ export default function Cadastro({ navigation }) {
     if (valor) definirErro(campo, validar(valor));
   }
 
-  // Chamada a cada letra digitada no CEP. Com 8 números completos, busca o endereço.
   function aoMudarCep(texto) {
     const mascarado = mascaraCep(texto);
     aoDigitar("cep", setCep, mascarado);
@@ -120,7 +126,6 @@ export default function Cadastro({ navigation }) {
     if (digitos.length === 8) {
       buscarEnderecoPorCep(digitos);
     } else {
-      // CEP incompleto: cancela qualquer busca em andamento (a resposta será ignorada)
       contadorBusca.current += 1;
       ultimoCep.current = "";
       setBuscandoCep(false);
@@ -136,9 +141,8 @@ export default function Cadastro({ navigation }) {
 
     try {
       const e = await buscarCep(digitos);
-      if (minhaBusca !== contadorBusca.current) return; // a pessoa já mudou o CEP
+      if (minhaBusca !== contadorBusca.current) return;
 
-      // Preenche os campos (continuam editáveis) e limpa erros antigos deles
       setRua(e.rua);
       setBairro(e.bairro);
       setCidade(e.cidade);
@@ -160,7 +164,6 @@ export default function Cadastro({ navigation }) {
         );
         numeroRef.current?.focus();
       } else {
-        // CEP "geral" da cidade (cidades pequenas): não traz rua nem bairro
         exibirAlerta(
           "CEP encontrado",
           `Esse CEP é de ${e.cidade}/${e.uf} e não traz a rua. Preencha a rua e o bairro.`,
@@ -170,7 +173,7 @@ export default function Cadastro({ navigation }) {
       }
     } catch (erro) {
       if (minhaBusca !== contadorBusca.current) return;
-      ultimoCep.current = ""; // permite tentar de novo
+      ultimoCep.current = "";
       if (erro.codigo === "NAO_ENCONTRADO") {
         definirErro("cep", "CEP não encontrado.");
         exibirAlerta(
@@ -187,6 +190,30 @@ export default function Cadastro({ navigation }) {
       }
     } finally {
       if (minhaBusca === contadorBusca.current) setBuscandoCep(false);
+    }
+  }
+
+  function copiarSegSexParaSabado() {
+    setAbreSabado(true);
+    setAberturaSabado(aberturaSegSex);
+    setFechamentoSabado(fechamentoSegSex);
+    setErros((a) => ({
+      ...a,
+      horarios: "",
+      aberturaSabado: "",
+      fechamentoSabado: "",
+    }));
+  }
+
+  function validarPeriodo(ativo, abertura, fechamento, chaveAb, chaveFe, resultado) {
+    if (!ativo) return;
+    const eAb = validarHorario(abertura, "horário de abertura");
+    const eFe = validarHorario(fechamento, "horário de fechamento");
+    if (eAb) resultado[chaveAb] = eAb;
+    if (eFe) resultado[chaveFe] = eFe;
+    if (!eAb && !eFe) {
+      const eOrd = validarOrdemHorarios(abertura, fechamento);
+      if (eOrd) resultado[chaveFe] = eOrd;
     }
   }
 
@@ -212,20 +239,13 @@ export default function Cadastro({ navigation }) {
       resultado.complemento = validarComplemento(complemento);
       resultado.cidade = validarCidade(cidade);
       resultado.uf = validarUf(uf);
-      resultado.horarioAbertura = validarHorario(
-        horarioAbertura,
-        "horário de abertura",
-      );
-      resultado.horarioFechamento = validarHorario(
-        horarioFechamento,
-        "horário de fechamento",
-      );
 
-      if (!resultado.horarioAbertura && !resultado.horarioFechamento) {
-        resultado.horarioFechamento = validarOrdemHorarios(
-          horarioAbertura,
-          horarioFechamento,
-        );
+      if (!abreSegSex && !abreSabado && !abreDomingo) {
+        resultado.horarios = "Ative pelo menos um período de funcionamento.";
+      } else {
+        validarPeriodo(abreSegSex, aberturaSegSex, fechamentoSegSex, "aberturaSegSex", "fechamentoSegSex", resultado);
+        validarPeriodo(abreSabado, aberturaSabado, fechamentoSabado, "aberturaSabado", "fechamentoSabado", resultado);
+        validarPeriodo(abreDomingo, aberturaDomingo, fechamentoDomingo, "aberturaDomingo", "fechamentoDomingo", resultado);
       }
     }
 
@@ -253,7 +273,6 @@ export default function Cadastro({ navigation }) {
     let usuarioCriado = false;
 
     try {
-      // Descobre a localização no mapa a partir do endereço (o botão fica em "carregando")
       let coordenadas = null;
       if (perfil === "COMERCIANTE") {
         coordenadas = await coordenadasDoEndereco({
@@ -278,10 +297,20 @@ export default function Cadastro({ navigation }) {
       if (perfil === "COMERCIANTE") {
         const idComerciante = userResponse.data.id;
 
+        const aberturaFallback = abreSegSex
+          ? `${aberturaSegSex}:00`
+          : abreSabado
+            ? `${aberturaSabado}:00`
+            : `${aberturaDomingo}:00`;
+        const fechamentoFallback = abreSegSex
+          ? `${fechamentoSegSex}:00`
+          : abreSabado
+            ? `${fechamentoSabado}:00`
+            : `${fechamentoDomingo}:00`;
+
         await api.post("/api/mercadinhos", {
           nomeFantasia: limparEspacos(nomeFantasia),
           cnpj: somenteDigitos(cnpj),
-          // Endereço em campos separados: o back valida e monta o texto completo
           cep: somenteDigitos(cep),
           rua: limparEspacos(rua),
           numero: limparEspacos(numero),
@@ -289,11 +318,19 @@ export default function Cadastro({ navigation }) {
           complemento: limparEspacos(complemento),
           cidade: limparEspacos(cidade),
           uf,
-          // Se não achou o endereço no mapa, usa um ponto padrão de Salvador
           latitude: coordenadas ? coordenadas.lat : -12.9714,
           longitude: coordenadas ? coordenadas.lng : -38.5014,
-          horarioAbertura: horarioAbertura + ":00",
-          horarioFechamento: horarioFechamento + ":00",
+          horarioAbertura: aberturaFallback,
+          horarioFechamento: fechamentoFallback,
+          abreSegSex,
+          horarioAberturaSegSex: abreSegSex ? `${aberturaSegSex}:00` : null,
+          horarioFechamentoSegSex: abreSegSex ? `${fechamentoSegSex}:00` : null,
+          abreSabado,
+          horarioAberturaSabado: abreSabado ? `${aberturaSabado}:00` : null,
+          horarioFechamentoSabado: abreSabado ? `${fechamentoSabado}:00` : null,
+          abreDomingo,
+          horarioAberturaDomingo: abreDomingo ? `${aberturaDomingo}:00` : null,
+          horarioFechamentoDomingo: abreDomingo ? `${fechamentoDomingo}:00` : null,
           idComerciante: idComerciante,
         });
       }
@@ -629,49 +666,220 @@ export default function Cadastro({ navigation }) {
                   />
                 </View>
 
-                <View style={styles.linhaHorarios}>
-                  <Campo
-                    estiloExterno={{ flex: 1 }}
-                    rotulo="Abre às"
-                    placeholder="08:00"
-                    keyboardType="numeric"
-                    maxLength={5}
-                    value={horarioAbertura}
-                    onChangeText={(t) =>
-                      aoDigitar(
-                        "horarioAbertura",
-                        setHorarioAbertura,
-                        mascaraHorario(t),
-                      )
-                    }
-                    onBlur={() =>
-                      aoSair("horarioAbertura", horarioAbertura, (v) =>
-                        validarHorario(v, "horário de abertura"),
-                      )
-                    }
-                    erro={erros.horarioAbertura}
-                  />
-                  <Campo
-                    estiloExterno={{ flex: 1 }}
-                    rotulo="Fecha às"
-                    placeholder="20:00"
-                    keyboardType="numeric"
-                    maxLength={5}
-                    value={horarioFechamento}
-                    onChangeText={(t) =>
-                      aoDigitar(
-                        "horarioFechamento",
-                        setHorarioFechamento,
-                        mascaraHorario(t),
-                      )
-                    }
-                    onBlur={() =>
-                      aoSair("horarioFechamento", horarioFechamento, (v) =>
-                        validarHorario(v, "horário de fechamento"),
-                      )
-                    }
-                    erro={erros.horarioFechamento}
-                  />
+                <Text style={styles.subtitulo}>Horário de funcionamento</Text>
+                {erros.horarios ? (
+                  <Text style={[styles.textoErro, { marginTop: -4 }]}>
+                    {erros.horarios}
+                  </Text>
+                ) : null}
+
+                {/* Bloco 1: Segunda a Sexta */}
+                <View style={styles.blocoHorario}>
+                  <View style={styles.blocoHorarioTopo}>
+                    <Text style={styles.blocoHorarioTitulo}>Segunda a Sexta</Text>
+                    <View style={styles.blocoToggle}>
+                      <Text
+                        style={[
+                          styles.blocoStatusTexto,
+                          { color: abreSegSex ? cores.sucesso : cores.textoRotulo },
+                        ]}
+                      >
+                        {abreSegSex ? "Aberto" : "Fechado"}
+                      </Text>
+                      <Switch
+                        value={abreSegSex}
+                        onValueChange={(v) => {
+                          setAbreSegSex(v);
+                          definirErro("horarios", "");
+                        }}
+                        trackColor={{ false: "#D1D5DB", true: cores.sucesso }}
+                        thumbColor="#FFFFFF"
+                      />
+                    </View>
+                  </View>
+
+                  {abreSegSex && (
+                    <>
+                      <View style={styles.linhaHorarios}>
+                        <Campo
+                          estiloExterno={{ flex: 1 }}
+                          rotulo="Abre às"
+                          placeholder="07:00"
+                          keyboardType="numeric"
+                          maxLength={5}
+                          value={aberturaSegSex}
+                          onChangeText={(t) =>
+                            aoDigitar("aberturaSegSex", setAberturaSegSex, mascaraHorario(t))
+                          }
+                          onBlur={() =>
+                            aoSair("aberturaSegSex", aberturaSegSex, (v) =>
+                              validarHorario(v, "horário de abertura"),
+                            )
+                          }
+                          erro={erros.aberturaSegSex}
+                        />
+                        <Campo
+                          estiloExterno={{ flex: 1 }}
+                          rotulo="Fecha às"
+                          placeholder="20:30"
+                          keyboardType="numeric"
+                          maxLength={5}
+                          value={fechamentoSegSex}
+                          onChangeText={(t) =>
+                            aoDigitar("fechamentoSegSex", setFechamentoSegSex, mascaraHorario(t))
+                          }
+                          onBlur={() =>
+                            aoSair("fechamentoSegSex", fechamentoSegSex, (v) =>
+                              validarHorario(v, "horário de fechamento"),
+                            )
+                          }
+                          erro={erros.fechamentoSegSex}
+                        />
+                      </View>
+
+                      {aberturaSegSex.length === 5 && fechamentoSegSex.length === 5 && (
+                        <TouchableOpacity
+                          style={styles.botaoCopiarHorario}
+                          onPress={copiarSegSexParaSabado}
+                        >
+                          <Ionicons name="copy-outline" size={14} color={cores.primaria} />
+                          <Text style={styles.textoCopiarHorario}>
+                            Copiar horário para Sábado
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </>
+                  )}
+                </View>
+
+                {/* Bloco 2: Sábado */}
+                <View style={styles.blocoHorario}>
+                  <View style={styles.blocoHorarioTopo}>
+                    <Text style={styles.blocoHorarioTitulo}>Sábado</Text>
+                    <View style={styles.blocoToggle}>
+                      <Text
+                        style={[
+                          styles.blocoStatusTexto,
+                          { color: abreSabado ? cores.sucesso : cores.textoRotulo },
+                        ]}
+                      >
+                        {abreSabado ? "Aberto" : "Fechado"}
+                      </Text>
+                      <Switch
+                        value={abreSabado}
+                        onValueChange={(v) => {
+                          setAbreSabado(v);
+                          definirErro("horarios", "");
+                        }}
+                        trackColor={{ false: "#D1D5DB", true: cores.sucesso }}
+                        thumbColor="#FFFFFF"
+                      />
+                    </View>
+                  </View>
+
+                  {abreSabado && (
+                    <View style={styles.linhaHorarios}>
+                      <Campo
+                        estiloExterno={{ flex: 1 }}
+                        rotulo="Abre às"
+                        placeholder="07:00"
+                        keyboardType="numeric"
+                        maxLength={5}
+                        value={aberturaSabado}
+                        onChangeText={(t) =>
+                          aoDigitar("aberturaSabado", setAberturaSabado, mascaraHorario(t))
+                        }
+                        onBlur={() =>
+                          aoSair("aberturaSabado", aberturaSabado, (v) =>
+                            validarHorario(v, "horário de abertura"),
+                          )
+                        }
+                        erro={erros.aberturaSabado}
+                      />
+                      <Campo
+                        estiloExterno={{ flex: 1 }}
+                        rotulo="Fecha às"
+                        placeholder="20:30"
+                        keyboardType="numeric"
+                        maxLength={5}
+                        value={fechamentoSabado}
+                        onChangeText={(t) =>
+                          aoDigitar("fechamentoSabado", setFechamentoSabado, mascaraHorario(t))
+                        }
+                        onBlur={() =>
+                          aoSair("fechamentoSabado", fechamentoSabado, (v) =>
+                            validarHorario(v, "horário de fechamento"),
+                          )
+                        }
+                        erro={erros.fechamentoSabado}
+                      />
+                    </View>
+                  )}
+                </View>
+
+                {/* Bloco 3: Domingo */}
+                <View style={styles.blocoHorario}>
+                  <View style={styles.blocoHorarioTopo}>
+                    <Text style={styles.blocoHorarioTitulo}>Domingo</Text>
+                    <View style={styles.blocoToggle}>
+                      <Text
+                        style={[
+                          styles.blocoStatusTexto,
+                          { color: abreDomingo ? cores.sucesso : cores.textoRotulo },
+                        ]}
+                      >
+                        {abreDomingo ? "Aberto" : "Fechado"}
+                      </Text>
+                      <Switch
+                        value={abreDomingo}
+                        onValueChange={(v) => {
+                          setAbreDomingo(v);
+                          definirErro("horarios", "");
+                        }}
+                        trackColor={{ false: "#D1D5DB", true: cores.sucesso }}
+                        thumbColor="#FFFFFF"
+                      />
+                    </View>
+                  </View>
+
+                  {abreDomingo && (
+                    <View style={styles.linhaHorarios}>
+                      <Campo
+                        estiloExterno={{ flex: 1 }}
+                        rotulo="Abre às"
+                        placeholder="07:00"
+                        keyboardType="numeric"
+                        maxLength={5}
+                        value={aberturaDomingo}
+                        onChangeText={(t) =>
+                          aoDigitar("aberturaDomingo", setAberturaDomingo, mascaraHorario(t))
+                        }
+                        onBlur={() =>
+                          aoSair("aberturaDomingo", aberturaDomingo, (v) =>
+                            validarHorario(v, "horário de abertura"),
+                          )
+                        }
+                        erro={erros.aberturaDomingo}
+                      />
+                      <Campo
+                        estiloExterno={{ flex: 1 }}
+                        rotulo="Fecha às"
+                        placeholder="13:00"
+                        keyboardType="numeric"
+                        maxLength={5}
+                        value={fechamentoDomingo}
+                        onChangeText={(t) =>
+                          aoDigitar("fechamentoDomingo", setFechamentoDomingo, mascaraHorario(t))
+                        }
+                        onBlur={() =>
+                          aoSair("fechamentoDomingo", fechamentoDomingo, (v) =>
+                            validarHorario(v, "horário de fechamento"),
+                          )
+                        }
+                        erro={erros.fechamentoDomingo}
+                      />
+                    </View>
+                  )}
                 </View>
               </View>
             )}

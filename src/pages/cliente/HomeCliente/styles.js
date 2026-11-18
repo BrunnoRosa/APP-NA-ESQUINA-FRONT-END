@@ -32,15 +32,22 @@ export const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: cores.fundoCirculo || '#F5F5F5',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
   },
+  atalhoImagem: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+
   atalhoNome: {
     fontSize: 13,
     fontWeight: '600',

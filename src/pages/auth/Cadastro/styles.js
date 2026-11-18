@@ -6,6 +6,44 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: cores.degradeTopo,
   },
+  blocoHorario: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: cores.bordaCampo,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  },
+  blocoHorarioTopo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  blocoHorarioTitulo: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: cores.textoLogin,
+  },
+  blocoToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  blocoStatusTexto: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  botaoCopiarHorario: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: -6,
+  },
+  textoCopiarHorario: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: cores.primaria,
+  },
   fotoFundo: {
     ...StyleSheet.absoluteFillObject,
     width: '100%',
@@ -157,5 +195,43 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
     marginBottom: 10,
+  },
+  blocoHorario: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: cores.bordaCampo,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  },
+  blocoHorarioTopo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  blocoHorarioTitulo: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: cores.textoLogin,
+  },
+  blocoToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  blocoStatusTexto: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  botaoCopiarHorario: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: -6,
+  },
+  textoCopiarHorario: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: cores.primaria,
   },
 });

@@ -1,6 +1,6 @@
-import { Ionicons } from '@expo/vector-icons';                  // 🆕
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';          // 🆕
+import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
@@ -9,15 +9,14 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import BotaoCarrinho from '../../../components/BotaoCarrinho';  // 🆕
-import OfertaCard from '../../../components/OfertaCard';        // 🆕
+import BotaoCarrinho from '../../../components/BotaoCarrinho';
+import OfertaCard from '../../../components/OfertaCard';
 import ProdutoCard from '../../../components/ProdutoCard';
 import { useCarrinho } from '../../../context/CarrinhoContext';
 import api from '../../../services/api';
-import { cores } from '../../../theme';                         // 🆕
-import { estaAberto, formatarHora } from '../../../utils/mercado';
+import { cores } from '../../../theme';
+import { estaAberto, formatarHorariosDetalhados } from '../../../utils/mercado';
 import { styles } from './styles';
-// 🗑️ removido: import Header from '../../../components/Layout/Header';
 
 export default function DetalhesMercadinho({ route, navigation }) {
   const { idMercadinho, mercadinho: mercadinhoParam } = route.params || {};
@@ -28,7 +27,6 @@ export default function DetalhesMercadinho({ route, navigation }) {
 
   const { adicionarAoCarrinho } = useCarrinho();
 
-  // Consolida a identificação do ID do Mercadinho da página atual
   const idMercadinhoAtual =
     idMercadinho ||
     mercadinhoParam?.id ||
@@ -37,7 +35,6 @@ export default function DetalhesMercadinho({ route, navigation }) {
     mercadinho?.idMercadinho;
 
   const handleAdicionarProduto = (item) => {
-    // Garante a injeção explícita tanto no objeto quanto como parâmetro direto
     const produtoComMercadinho = {
       ...item,
       idMercadinho: idMercadinhoAtual || item?.idMercadinho || item?.mercadinhoId,
@@ -81,16 +78,11 @@ export default function DetalhesMercadinho({ route, navigation }) {
   const produtosAtivos = produtos.filter((p) => p.ativo !== false);
   const destaques = produtosAtivos.filter((p) => p.emDestaque);
 
-  const aberto = Boolean(
-    estaAberto(mercadinho?.horarioAbertura, mercadinho?.horarioFechamento)
-  );
-  const abre = formatarHora(mercadinho?.horarioAbertura);       // 🆕
-  const fecha = formatarHora(mercadinho?.horarioFechamento);
+  const aberto = Boolean(estaAberto(mercadinho));
+  const horariosDetalhados = formatarHorariosDetalhados(mercadinho);
 
-  // ✏️ Visual novo a partir daqui
   return (
     <View style={styles.wrapper}>
-      {/* 🆕 Topo com degradê, voltar e dados da loja */}
       <LinearGradient
         colors={[cores.degradeInicioTopo, cores.degradeInicioBase]}
         style={styles.topo}
@@ -115,29 +107,46 @@ export default function DetalhesMercadinho({ route, navigation }) {
         </View>
       </LinearGradient>
 
-      {/* 🆕 Folha branca com o conteúdo rolável */}
       <View style={styles.folha}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {/* Selo Aberto/Fechado + horário */}
-          <View style={styles.statusLinha}>
-            <View
-              style={[
-                styles.seloStatus,
-                { backgroundColor: aberto ? cores.sucesso : '#9E9E9E' },
-              ]}
-            >
-              <Text style={styles.seloTexto}>
-                {aberto ? 'Aberto' : 'Fechado'}
-              </Text>
+          {/* Selo Aberto/Fechado + horários detalhados */}
+          <View style={styles.statusCard}>
+            <View style={styles.statusTopo}>
+              <View
+                style={[
+                  styles.seloStatus,
+                  { backgroundColor: aberto ? cores.sucesso : '#9E9E9E' },
+                ]}
+              >
+                <Text style={styles.seloTexto}>
+                  {aberto ? 'Aberto' : 'Fechado'}
+                </Text>
+              </View>
+              <View style={styles.horarioTituloLinha}>
+                <Ionicons name="time-outline" size={15} color={cores.textoSecundario} />
+                <Text style={styles.horarioTitulo}>Horário de funcionamento</Text>
+              </View>
             </View>
 
-            {abre && fecha ? (
-              <Text style={styles.funcionamento}>
-                Funcionamento: {abre} às {fecha}
-              </Text>
+            {horariosDetalhados.length > 0 ? (
+              <View style={styles.horariosLista}>
+                {horariosDetalhados.map((item) => (
+                  <View key={item.periodo} style={styles.horarioItem}>
+                    <Text style={styles.horarioPeriodo}>{item.periodo}:</Text>
+                    <Text
+                      style={[
+                        styles.horarioValor,
+                        !item.aberto && styles.horarioFechado,
+                      ]}
+                    >
+                      {item.horario}
+                    </Text>
+                  </View>
+                ))}
+              </View>
             ) : null}
           </View>
 
@@ -189,7 +198,6 @@ export default function DetalhesMercadinho({ route, navigation }) {
         </ScrollView>
       </View>
 
-      {/* 🆕 Botão flutuante do carrinho */}
       <BotaoCarrinho navigation={navigation} bottom={30} />
     </View>
   );

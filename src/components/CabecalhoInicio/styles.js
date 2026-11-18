@@ -3,9 +3,15 @@ import { cores } from '../../theme';
 
 export const styles = StyleSheet.create({
   container: {
-    paddingTop: 48,
+    paddingTop: 28,
     paddingHorizontal: 16,
     paddingBottom: 40, // espaço para a folha branca "subir" por cima depois
+  },
+  logo: {
+    width: 100,
+    height: 120,
+    alignSelf: 'flex-end',
+    marginBottom: -40,
   },
   linhaEndereco: {
     flexDirection: 'row',
@@ -19,24 +25,17 @@ export const styles = StyleSheet.create({
     color: cores.textoEndereco,
   },
   linhaSaudacao: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 16,
+    marginTop: 14,
   },
   saudacao: {
     fontSize: 22,
     fontWeight: 'bold',
     color: cores.textoSaudacao,
   },
-  logo: {
-    width: 36,
-    height: 43,
-  },
   linhaBusca: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 14,
+    marginTop: 12,
     gap: 8,
   },
   campoBusca: {

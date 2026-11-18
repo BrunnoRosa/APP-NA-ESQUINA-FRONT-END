@@ -55,6 +55,22 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: cores.primaria,
   },
+  promoTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#F0FDF4',
+    borderColor: '#168A00',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  promoTagText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#168A00',
+  },
   storeInfoRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -81,13 +97,44 @@ export const styles = StyleSheet.create({
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     marginTop: 8,
   },
   preco: {
     fontSize: 16,
     fontWeight: 'bold',
     color: cores.primaria,
+  },
+  precoPromoBloco: {
+    flex: 1,
+    paddingRight: 8,
+  },
+  precoAntigo: {
+    fontSize: 12,
+    color: '#888888',
+    textDecorationLine: 'line-through',
+    marginBottom: 1,
+  },
+  precoPromoLinha: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  precoPromocional: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#168A00',
+  },
+  descontoBadge: {
+    backgroundColor: '#DDF5D9',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  descontoTexto: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#168A00',
   },
   btnAdd: {
     backgroundColor: cores.primaria,

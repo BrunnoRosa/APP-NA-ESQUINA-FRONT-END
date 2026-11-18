@@ -52,4 +52,48 @@ export const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', marginTop: 8,
   },
   botaoSalvarTexto: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
+
+subsecaoHorario: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: cores.textoTitulo,
+    marginTop: 4,
+  },
+  blocoHorario: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: cores.bordaCampo,
+    borderRadius: 12,
+    padding: 12,
+    gap: 10,
+  },
+  blocoHorarioTopo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  blocoHorarioTitulo: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: cores.textoTitulo,
+  },
+  blocoToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  blocoStatusTexto: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  botaoCopiarHorario: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  textoCopiarHorario: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: cores.primaria,
+  },
 });

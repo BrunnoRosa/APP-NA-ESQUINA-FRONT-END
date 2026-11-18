@@ -1,8 +1,9 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -16,16 +17,33 @@ import MercadoCarrossel from '../../../components/MercadoCarrossel';
 import OfertaCard from '../../../components/OfertaCard';
 import { useCarrinho } from '../../../context/CarrinhoContext';
 import { useLocalizacao } from '../../../context/LocalizacaoContext';
+import { usePuxarParaAtualizar } from '../../../hooks/usePuxarParaAtualizar';
 import api from '../../../services/api';
 import { cores } from '../../../theme';
 import { calcularDistanciaKm, ordenarAbertasPrimeiro } from '../../../utils/mercado';
-import { usePuxarParaAtualizar } from '../../../hooks/usePuxarParaAtualizar';
 import { styles } from './styles';
 
 const ATALHOS = [
-  { chave: 'promocoes', nome: 'Promoções', icone: 'pricetag' },
-  { chave: 'produtos', nome: 'Produtos', icone: 'cube' },
-  { chave: 'mercados', nome: 'Mercados', icone: 'storefront' },
+  {
+    chave: 'promocoes',
+    nome: 'Promoções',
+    imagem: require('../../../../assets/images/icone-promocoes.png'),
+  },
+  {
+    chave: 'produtos',
+    nome: 'Produtos',
+    imagem: require('../../../../assets/images/icone-Produtos.png'),
+  },
+  {
+    chave: 'mercados',
+    nome: 'Mercados',
+    imagem: require('../../../../assets/images/icone-mercados.png'),
+  },
+  {
+    chave: 'lista',
+    nome: 'Lista de Compras',
+    imagem: require('../../../../assets/images/icone-lista.png'),
+  },
 ];
 
 export default function HomeCliente({ navigation }) {
@@ -38,7 +56,6 @@ export default function HomeCliente({ navigation }) {
   const { adicionarAoCarrinho } = useCarrinho();
   const { origem } = useLocalizacao();
 
-  // Função para formatar URLs de imagens (Resolve o erro arroz.jpg / ERR_NAME_NOT_RESOLVED)
   const formatarUrlImagem = (url) => {
     if (!url) return null;
     if (typeof url === 'string') {
@@ -52,7 +69,6 @@ export default function HomeCliente({ navigation }) {
     return url;
   };
 
-  // Função auxiliar para montar o mapa idProduto -> idMercadinho
   const mapearLojasEProdutos = async (listaLojas, listaProdutos) => {
     const mapa = new Map();
 
@@ -194,17 +210,17 @@ export default function HomeCliente({ navigation }) {
 
   const idsMercadinhosProximos = mercadinhos.map((m) => Number(m.idMercadinho || m.id));
 
-  // Produtos destacados e pertencentes aos mercadinhos da região
+  // Apenas produtos marcados como destaque (sem misturar promoções)
   const produtosDestaque = todosProdutos.filter((p) => {
     if (p.ativo === false) return false;
 
     const idLojaProd = Number(
       p.idMercadinho ||
-      p.mercadinhoId ||
-      p.id_mercadinho ||
-      (typeof p.mercadinho === 'number' ? p.mercadinho : null) ||
-      p.mercadinho?.idMercadinho ||
-      p.mercadinho?.id
+        p.mercadinhoId ||
+        p.id_mercadinho ||
+        (typeof p.mercadinho === 'number' ? p.mercadinho : null) ||
+        p.mercadinho?.idMercadinho ||
+        p.mercadinho?.id
     );
 
     const pertenceAMercadoProximo =
@@ -214,22 +230,25 @@ export default function HomeCliente({ navigation }) {
       p.emDestaque === true ||
       p.destaque === true ||
       p.oferta === true ||
-      String(p.emDestaque) === 'true' ||
-      p.emPromocao === true;
+      String(p.emDestaque) === 'true';
 
     return pertenceAMercadoProximo && ehDestaque;
   });
 
-  // Exibe unicamente os produtos que estão em destaque
   const produtosExibidos = produtosDestaque;
 
   const handleNavegar = (chave) => {
+    if (chave === 'lista') {
+      navigation.navigate('ListaCompras');
+      return;
+    }
+
     const ts = Date.now();
     const params =
       chave === 'mercados'
         ? { modo: 'mercados', aba: 'mercados', _ts: ts }
         : chave === 'promocoes'
-        ? { modo: 'promocoes', aba: 'produtos', emPromocao: true, emDestaque: true, _ts: ts }
+        ? { modo: 'promocoes', aba: 'produtos', emPromocao: true, _ts: ts }
         : { modo: 'produtos', aba: 'produtos', _ts: ts };
 
     try {
@@ -266,7 +285,11 @@ export default function HomeCliente({ navigation }) {
                 onPress={() => handleNavegar(atalho.chave)}
               >
                 <View style={styles.atalhoCirculo}>
-                  <Ionicons name={atalho.icone} size={28} color={cores.primaria} />
+                  {atalho.imagem ? (
+                    <Image source={atalho.imagem} style={styles.atalhoImagem} />
+                  ) : (
+                    <Ionicons name={atalho.icone} size={32} color={cores.primaria || '#E52421'} />
+                  )}
                 </View>
                 <Text style={styles.atalhoNome}>{atalho.nome}</Text>
               </TouchableOpacity>
@@ -337,7 +360,7 @@ export default function HomeCliente({ navigation }) {
                   </View>
                   <TouchableOpacity
                     style={styles.verMaisBtn}
-                    onPress={() => handleNavegar('promocoes')}
+                    onPress={() => handleNavegar('produtos')}
                   >
                     <Text style={styles.verMais}>Ver mais</Text>
                   </TouchableOpacity>
