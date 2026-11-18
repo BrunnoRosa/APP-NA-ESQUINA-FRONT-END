@@ -28,6 +28,13 @@ export default function CabecalhoInicio({ navigation }) {
       colors={[cores.degradeInicioTopo, cores.degradeInicioBase]}
       style={styles.container}
     >
+      {/* Logo centralizada no topo */}
+      <Image
+        source={require('../../../assets/images/logo-na-esquina.png')}
+        style={styles.logo}
+        resizeMode="contain"
+      />
+
       {/* Endereço atual (GPS ou o que o cliente digitou) */}
       <View style={styles.linhaEndereco}>
         <Text style={styles.endereco} numberOfLines={1}>
@@ -36,14 +43,9 @@ export default function CabecalhoInicio({ navigation }) {
         <Ionicons name="chevron-down" size={14} color={cores.textoEndereco} />
       </View>
 
-      {/* Saudação + logo */}
+      {/* Saudação */}
       <View style={styles.linhaSaudacao}>
         <Text style={styles.saudacao}>Olá, {primeiroNome}</Text>
-        <Image
-          source={require('../../../assets/images/logo-na-esquina.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
       </View>
 
       {/* Busca + filtro */}
