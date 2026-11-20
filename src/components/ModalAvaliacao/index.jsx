@@ -1,19 +1,19 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Modal,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { useToast } from "../../context/ToastContext";
 import api from "../../services/api";
 import { cores } from "../../theme";
 import { traduzirErro } from "../../utils/validacoes";
+import { styles } from "./styles";
 
 const CRITERIOS = [
   {
@@ -194,9 +194,7 @@ export default function ModalAvaliacao({
               );
             })}
 
-            <Text style={styles.comentarioLabel}>
-              Comentário (opcional)
-            </Text>
+            <Text style={styles.comentarioLabel}>Comentário (opcional)</Text>
             <TextInput
               style={styles.input}
               placeholder="Conte como foi sua experiência com o mercadinho..."
