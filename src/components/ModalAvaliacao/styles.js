@@ -1,0 +1,137 @@
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 18,
+  },
+  card: {
+    width: "100%",
+    maxWidth: 440,
+    maxHeight: "88%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    padding: 20,
+  },
+  topo: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    marginBottom: 12,
+  },
+  titulo: {
+    fontSize: 19,
+    fontWeight: "bold",
+    color: cores.textoTitulo,
+  },
+  subtitulo: {
+    fontSize: 13,
+    color: cores.textoSecundario,
+    marginTop: 2,
+  },
+  mediaBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#FEF3C7",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  mediaTexto: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#B45309",
+  },
+  scroll: {
+    flexGrow: 0,
+  },
+  scrollContent: {
+    paddingBottom: 8,
+    gap: 10,
+  },
+  criterioBox: {
+    backgroundColor: cores.fundoCartao,
+    borderRadius: 16,
+    padding: 12,
+  },
+  criterioHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  criterioTitulo: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: cores.textoTitulo,
+  },
+  criterioDesc: {
+    fontSize: 12,
+    color: cores.textoSecundario,
+  },
+  estrelasLinha: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    marginTop: 8,
+  },
+  estrelaBtn: {
+    padding: 4,
+  },
+  comentarioLabel: {
+    fontSize: 13,
+    fontWeight: "bold",
+    color: cores.textoTitulo,
+    marginTop: 4,
+  },
+  input: {
+    borderWidth: 1.5,
+    borderColor: "#CBD5E1",
+    borderRadius: 14,
+    padding: 12,
+    minHeight: 76,
+    fontSize: 14,
+    color: cores.textoTitulo,
+  },
+  contador: {
+    fontSize: 11,
+    color: cores.textoSecundario,
+    textAlign: "right",
+    marginTop: -6,
+  },
+  botoes: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 14,
+  },
+  btnDepois: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: cores.primaria,
+    borderRadius: 24,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  btnDepoisTexto: {
+    color: cores.primaria,
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  btnEnviar: {
+    flex: 1.3,
+    backgroundColor: cores.primaria,
+    borderRadius: 24,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  btnEnviarDesabilitado: {
+    opacity: 0.55,
+  },
+  btnEnviarTexto: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+});

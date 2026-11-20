@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Notifications from "expo-notifications";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import ModalAvaliacao from "../../../components/ModalAvaliacao";
 import SeletorRota from "../../../components/SeletorRota";
 import { useAuth } from "../../../context/AuthContext";
 import { useToast } from "../../../context/ToastContext";
@@ -47,6 +48,11 @@ export default function MeusPedidos({ navigation }) {
 
   const [mercadoRota, setMercadoRota] = useState(null);
 
+  const [pedidosAvaliados, setPedidosAvaliados] = useState([]);
+  const [pedidoParaAvaliar, setPedidoParaAvaliar] = useState(null);
+  const pedidosDispensadosRef = useRef(new Set());
+  const statusAnterioresRef = useRef({});
+
   const { exibirAlerta, confirmar } = useToast();
 
   const carregarPedidos = useCallback(
@@ -56,8 +62,41 @@ export default function MeusPedidos({ navigation }) {
 
       try {
         if (!isSilent) setLoading(true);
-        const response = await api.get(`/api/pedidos/cliente/${idCliente}`);
-        setPedidos(response.data);
+        const [resPedidos, resAvaliados] = await Promise.all([
+          api.get(`/api/pedidos/cliente/${idCliente}`),
+          api
+            .get("/api/avaliacoes/meus-pedidos-avaliados")
+            .catch(() => ({ data: [] })),
+        ]);
+
+        const listaPedidos = resPedidos.data || [];
+        const idsAvaliados = resAvaliados.data || [];
+        const avaliadosSet = new Set(idsAvaliados);
+
+        // Detecta se algum pedido acabou de mudar para RETIRADA_CONCLUIDO e abre o pop-up
+        const recemConcluido = listaPedidos.find((p) => {
+          const statusAnterior = statusAnterioresRef.current[p.idPedido];
+          return (
+            statusAnterior &&
+            statusAnterior !== "RETIRADA_CONCLUIDO" &&
+            p.status === "RETIRADA_CONCLUIDO" &&
+            !avaliadosSet.has(p.idPedido) &&
+            !pedidosDispensadosRef.current.has(p.idPedido)
+          );
+        });
+
+        const mapaAtual = {};
+        listaPedidos.forEach((p) => {
+          mapaAtual[p.idPedido] = p.status;
+        });
+        statusAnterioresRef.current = mapaAtual;
+
+        setPedidos(listaPedidos);
+        setPedidosAvaliados(idsAvaliados);
+
+        if (recemConcluido) {
+          setPedidoParaAvaliar((atual) => atual || recemConcluido);
+        }
       } catch (error) {
         console.error("Erro ao carregar pedidos:", error);
       } finally {
@@ -98,7 +137,8 @@ export default function MeusPedidos({ navigation }) {
     else navigation.navigate("HomeCliente");
   }
 
-  const confirmarRecebimento = async (idPedido) => {
+  const confirmarRecebimento = async (pedido) => {
+    const idPedido = pedido.idPedido;
     const sim = await confirmar({
       titulo: "Confirmar retirada",
       mensagem: `Você já retirou os produtos do pedido #${idPedido}?`,
@@ -113,11 +153,16 @@ export default function MeusPedidos({ navigation }) {
       await api.put(
         `/api/pedidos/${idPedido}/status?status=RETIRADA_CONCLUIDO`,
       );
+      statusAnterioresRef.current[idPedido] = "RETIRADA_CONCLUIDO";
       exibirAlerta(
         "Pedido Retirado! 🎉",
         `Obrigado por comprar conosco, volte sempre! #${idPedido}.`,
       );
       carregarPedidos(true);
+
+      if (!pedidosAvaliados.includes(idPedido)) {
+        setPedidoParaAvaliar({ ...pedido, status: "RETIRADA_CONCLUIDO" });
+      }
     } catch (error) {
       console.error("Erro ao confirmar a retirada do pedido:", error);
       const erro = traduzirErro(error);
@@ -126,6 +171,20 @@ export default function MeusPedidos({ navigation }) {
       setAtualizandoId(null);
     }
   };
+
+  function fecharModalAvaliacao() {
+    if (pedidoParaAvaliar) {
+      pedidosDispensadosRef.current.add(pedidoParaAvaliar.idPedido);
+    }
+    setPedidoParaAvaliar(null);
+  }
+
+  function aoEnviarAvaliacao(idPedidoAvaliado) {
+    setPedidosAvaliados((prev) =>
+      prev.includes(idPedidoAvaliado) ? prev : [...prev, idPedidoAvaliado],
+    );
+    setPedidoParaAvaliar(null);
+  }
 
   function podeCancelar(status) {
     return (
@@ -261,6 +320,7 @@ export default function MeusPedidos({ navigation }) {
     const isBusy = atualizandoId === item.idPedido;
     const pedidoAtivo =
       item.status !== "CANCELADO" && item.status !== "RETIRADA_CONCLUIDO";
+    const jaAvaliado = pedidosAvaliados.includes(item.idPedido);
 
     return (
       <View style={styles.pedidoCard}>
@@ -388,7 +448,7 @@ export default function MeusPedidos({ navigation }) {
               {item.status === "AGUARDANDO_RETIRADA" && (
                 <TouchableOpacity
                   style={styles.confirmButton}
-                  onPress={() => confirmarRecebimento(item.idPedido)}
+                  onPress={() => confirmarRecebimento(item)}
                   activeOpacity={0.85}
                 >
                   <Ionicons name="bag-check-outline" size={18} color="#FFFFFF" />
@@ -411,6 +471,23 @@ export default function MeusPedidos({ navigation }) {
                 <Text style={styles.cancelButtonText}>Cancelar pedido</Text>
               </TouchableOpacity>
             </>
+          ))}
+
+        {item.status === "RETIRADA_CONCLUIDO" &&
+          (jaAvaliado ? (
+            <View style={styles.avaliadoBadge}>
+              <Ionicons name="star" size={15} color="#B45309" />
+              <Text style={styles.avaliadoBadgeText}>Pedido avaliado</Text>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.avaliarButton}
+              onPress={() => setPedidoParaAvaliar(item)}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="star-outline" size={17} color="#B45309" />
+              <Text style={styles.avaliarButtonText}>Avaliar mercadinho</Text>
+            </TouchableOpacity>
           ))}
 
         {item.status === "CANCELADO" && item.motivoCancelamento && (
@@ -494,6 +571,13 @@ export default function MeusPedidos({ navigation }) {
         visivel={mercadoRota !== null}
         mercado={mercadoRota}
         onFechar={() => setMercadoRota(null)}
+      />
+
+      <ModalAvaliacao
+        visivel={pedidoParaAvaliar !== null}
+        pedido={pedidoParaAvaliar}
+        onFechar={fecharModalAvaliacao}
+        onAvaliacaoEnviada={aoEnviarAvaliacao}
       />
 
       <Modal
