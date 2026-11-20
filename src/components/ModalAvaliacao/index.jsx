@@ -10,10 +10,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useToast } from "../context/ToastContext";
-import api from "../services/api";
-import { cores } from "../theme";
-import { traduzirErro } from "../utils/validacoes";
+import { useToast } from "../../context/ToastContext";
+import api from "../../services/api";
+import { cores } from "../../theme";
+import { traduzirErro } from "../../utils/validacoes";
 
 const CRITERIOS = [
   {
