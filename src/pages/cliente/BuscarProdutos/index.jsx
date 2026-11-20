@@ -43,6 +43,7 @@ export default function BuscarProdutos({ navigation, route }) {
 
   const [lojas, setLojas] = useState([]);
   const [lojasPerto, setLojasPerto] = useState([]);
+  const [mediasAvaliacoes, setMediasAvaliacoes] = useState({});
 
   const [modoAba, setModoAba] = useState(null);
   const [apenasPromocoes, setApenasPromocoes] = useState(false);
@@ -80,14 +81,16 @@ export default function BuscarProdutos({ navigation, route }) {
     useCallback(() => {
       async function carregarLojas() {
         try {
-          const [todas, proximas] = await Promise.all([
+          const [todas, proximas, resMedias] = await Promise.all([
             api.get('/api/mercadinhos'),
             api.get(
               `/api/mercadinhos/proximos?lat=${userCoords.lat}&lng=${userCoords.lng}&raioKm=1`
             ),
+            api.get('/api/avaliacoes/medias').catch(() => ({ data: {} })),
           ]);
           setLojas(todas.data || []);
           setLojasPerto(proximas.data || []);
+          setMediasAvaliacoes(resMedias.data || {});
         } catch (error) {
           console.error('Erro ao carregar lojas:', error);
         }
@@ -123,11 +126,13 @@ export default function BuscarProdutos({ navigation, route }) {
     setOrdenarPor((prev) => (prev === 'preco' ? 'distancia' : 'preco'));
   };
 
-  const abrirLoja = (m) =>
+  const abrirLoja = (m) => {
+    const idM = m.idMercadinho || m.id;
     navigation.navigate('DetalhesMercadinho', {
-      idMercadinho: m.idMercadinho || m.id,
-      mercadinho: m,
+      idMercadinho: idM,
+      mercadinho: { ...m, avaliacao: mediasAvaliacoes[String(idM)] || null },
     });
+  };
 
   const modoBusca =
     modoAba === 'produtos' ||
@@ -137,7 +142,6 @@ export default function BuscarProdutos({ navigation, route }) {
     categoriaAtiva !== 'TODAS' ||
     mostrarFiltros;
 
-  // Filtra apenas produtos com promoção real quando o filtro de promoções estiver ativo
   const produtosExibidos = apenasPromocoes
     ? produtos.filter(isPromocaoAtiva)
     : produtos;
@@ -306,14 +310,18 @@ export default function BuscarProdutos({ navigation, route }) {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.carrossel}
               >
-                {ordenarAbertasPrimeiro(lojas).map((m) => (
-                  <LojaCard
-                    key={String(m.idMercadinho || m.id)}
-                    mercadinho={m}
-                    tipo="destaque"
-                    onPress={() => abrirLoja(m)}
-                  />
-                ))}
+                {ordenarAbertasPrimeiro(lojas).map((m) => {
+                  const idM = m.idMercadinho || m.id;
+                  return (
+                    <LojaCard
+                      key={String(idM)}
+                      mercadinho={m}
+                      tipo="destaque"
+                      avaliacao={mediasAvaliacoes[String(idM)]}
+                      onPress={() => abrirLoja(m)}
+                    />
+                  );
+                })}
               </ScrollView>
             )}
 
@@ -329,20 +337,24 @@ export default function BuscarProdutos({ navigation, route }) {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.carrossel}
               >
-                {ordenarAbertasPrimeiro(lojasPerto).map((m) => (
-                  <LojaCard
-                    key={String(m.idMercadinho || m.id)}
-                    mercadinho={m}
-                    tipo="perto"
-                    distanciaKm={calcularDistanciaKm(
-                      userCoords.lat,
-                      userCoords.lng,
-                      m.latitude,
-                      m.longitude
-                    )}
-                    onPress={() => abrirLoja(m)}
-                  />
-                ))}
+                {ordenarAbertasPrimeiro(lojasPerto).map((m) => {
+                  const idM = m.idMercadinho || m.id;
+                  return (
+                    <LojaCard
+                      key={String(idM)}
+                      mercadinho={m}
+                      tipo="perto"
+                      distanciaKm={calcularDistanciaKm(
+                        userCoords.lat,
+                        userCoords.lng,
+                        m.latitude,
+                        m.longitude
+                      )}
+                      avaliacao={mediasAvaliacoes[String(idM)]}
+                      onPress={() => abrirLoja(m)}
+                    />
+                  );
+                })}
               </ScrollView>
             )}
           </ScrollView>

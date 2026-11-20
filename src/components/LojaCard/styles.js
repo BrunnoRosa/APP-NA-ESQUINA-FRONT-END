@@ -9,15 +9,40 @@ export const styles = StyleSheet.create({
     padding: 12,
     marginRight: 12,
   },
+  topo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  avaliacaoPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  avaliacaoPillNovo: {
+    backgroundColor: '#F1F5F9',
+  },
+  avaliacaoTexto: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#B45309',
+  },
+  avaliacaoTextoNovo: {
+    color: '#64748B',
+    fontWeight: '600',
+  },
   verMais: {
-    alignSelf: 'flex-end',
     backgroundColor: cores.fundoVerMais,
     borderWidth: 1,
     borderColor: cores.primaria,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 2,
-    marginBottom: 6,
   },
   verMaisTexto: {
     color: cores.primaria,

@@ -50,6 +50,7 @@ export default function HomeCliente({ navigation }) {
   const [mercadinhos, setMercadinhos] = useState([]);
   const [todosProdutos, setTodosProdutos] = useState([]);
   const [favoritosIds, setFavoritosIds] = useState([]);
+  const [mediasAvaliacoes, setMediasAvaliacoes] = useState({});
   const [categoriaAtiva, setCategoriaAtiva] = useState('TODOS');
   const [loading, setLoading] = useState(true);
 
@@ -129,10 +130,11 @@ export default function HomeCliente({ navigation }) {
 
   const carregarDados = useCallback(async () => {
     try {
-      const [resMercadinhos, resProdutos, resFavoritos] = await Promise.all([
+      const [resMercadinhos, resProdutos, resFavoritos, resMedias] = await Promise.all([
         api.get('/api/mercadinhos'),
         api.get('/api/produtos').catch(() => ({ data: [] })),
         api.get('/api/clientes/favoritos').catch(() => ({ data: [] })),
+        api.get('/api/avaliacoes/medias').catch(() => ({ data: {} })),
       ]);
 
       const lojas = resMercadinhos.data || [];
@@ -169,6 +171,7 @@ export default function HomeCliente({ navigation }) {
 
       setMercadinhos(lojas);
       setTodosProdutos(produtosCompletos);
+      setMediasAvaliacoes(resMedias.data || {});
 
       const ids = (resFavoritos.data || []).map((fav) => fav.idMercadinho || fav.id);
       setFavoritosIds(ids);
@@ -210,7 +213,6 @@ export default function HomeCliente({ navigation }) {
 
   const idsMercadinhosProximos = mercadinhos.map((m) => Number(m.idMercadinho || m.id));
 
-  // Apenas produtos marcados como destaque (sem misturar promoções)
   const produtosDestaque = todosProdutos.filter((p) => {
     if (p.ativo === false) return false;
 
@@ -331,18 +333,20 @@ export default function HomeCliente({ navigation }) {
                               m.longitude
                             )
                           : null;
+                        const avaliacao = mediasAvaliacoes[String(idM)] || null;
 
                         return (
                           <MercadoCarrossel
                             key={String(idM)}
-                            mercadinho={{ ...m, distanciaKm }}
+                            mercadinho={{ ...m, distanciaKm, avaliacao }}
                             distanciaKm={distanciaKm}
+                            avaliacao={avaliacao}
                             isFavorito={isFavorito}
                             onToggleFavorito={() => toggleFavorito(idM)}
                             onPress={() =>
                               navigation.navigate('DetalhesMercadinho', {
                                 idMercadinho: idM,
-                                mercadinho: { ...m, distanciaKm },
+                                mercadinho: { ...m, distanciaKm, avaliacao },
                               })
                             }
                           />

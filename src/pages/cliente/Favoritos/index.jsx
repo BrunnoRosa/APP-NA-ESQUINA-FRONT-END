@@ -1,32 +1,35 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';          // 🆕
-import React, { useCallback, useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Image,                                                         // 🆕
+  Image,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { usePuxarParaAtualizar } from '../../../hooks/usePuxarParaAtualizar';
 import api from '../../../services/api';
 import { cores } from '../../../theme';
-import { estaAberto, formatarHora } from '../../../utils/mercado'; // 🆕
-import { usePuxarParaAtualizar } from '../../../hooks/usePuxarParaAtualizar';
+import { estaAberto, formatarHora } from '../../../utils/mercado';
 import { styles } from './styles';
-// 🗑️ removido: import MercadoCarrossel (o cartão agora é desta tela)
 
 export default function Favoritos({ navigation }) {
   const [favoritos, setFavoritos] = useState([]);
+  const [mediasAvaliacoes, setMediasAvaliacoes] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // Carrega a lista de favoritos do backend ao focar na tela
   const carregarFavoritos = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await api.get('/api/clientes/favoritos');
-      setFavoritos(res.data || []);
+      const [resFav, resMedias] = await Promise.all([
+        api.get('/api/clientes/favoritos'),
+        api.get('/api/avaliacoes/medias').catch(() => ({ data: {} })),
+      ]);
+      setFavoritos(resFav.data || []);
+      setMediasAvaliacoes(resMedias.data || {});
     } catch (error) {
       console.error('Erro ao carregar favoritos:', error);
     } finally {
@@ -42,7 +45,6 @@ export default function Favoritos({ navigation }) {
     }, [carregarFavoritos])
   );
 
-  // Remove um mercadinho da lista com atualização otimista
   const removerFavorito = async (idMercadinho) => {
     setFavoritos((prev) =>
       prev.filter((m) => (m.idMercadinho || m.id) !== idMercadinho)
@@ -56,7 +58,6 @@ export default function Favoritos({ navigation }) {
     }
   };
 
-  // 🆕 Cartão de uma loja favorita (linha inteira)
   function renderFavorito({ item }) {
     const idM = item.idMercadinho || item.id;
     const nome = item.nomeFantasia || item.nome || 'Mercadinho';
@@ -65,6 +66,11 @@ export default function Favoritos({ navigation }) {
     const fecha = formatarHora(item.horarioFechamento);
     const textoSelo = aberto ? (fecha ? `Aberto até às ${fecha}` : 'Aberto') : 'Fechado';
 
+    const dadosAvaliacao = mediasAvaliacoes[String(idM)] || item.avaliacao;
+    const totalAvaliacoes = Number(dadosAvaliacao?.totalAvaliacoes || 0);
+    const mediaGeral = Number(dadosAvaliacao?.mediaGeral || 0);
+    const temAvaliacao = totalAvaliacoes > 0;
+
     return (
       <TouchableOpacity
         style={styles.card}
@@ -72,7 +78,7 @@ export default function Favoritos({ navigation }) {
         onPress={() =>
           navigation.navigate('DetalhesMercadinho', {
             idMercadinho: idM,
-            mercadinho: item,
+            mercadinho: { ...item, avaliacao: dadosAvaliacao || null },
           })
         }
       >
@@ -92,12 +98,40 @@ export default function Favoritos({ navigation }) {
             <Text style={styles.endereco} numberOfLines={1}>{String(endereco)}</Text>
           </View>
 
-          <View style={[styles.selo, { backgroundColor: aberto ? cores.sucesso : '#9E9E9E' }]}>
-            <Text style={styles.seloTexto}>{textoSelo}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <View style={[styles.selo, { backgroundColor: aberto ? cores.sucesso : '#9E9E9E' }]}>
+              <Text style={styles.seloTexto}>{textoSelo}</Text>
+            </View>
+
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 3,
+                backgroundColor: temAvaliacao ? '#FEF3C7' : '#F1F5F9',
+                paddingHorizontal: 8,
+                paddingVertical: 2,
+                borderRadius: 10,
+              }}
+            >
+              <Ionicons
+                name={temAvaliacao ? 'star' : 'star-outline'}
+                size={12}
+                color={temAvaliacao ? '#F59E0B' : '#94A3B8'}
+              />
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontWeight: temAvaliacao ? 'bold' : '600',
+                  color: temAvaliacao ? '#B45309' : '#64748B',
+                }}
+              >
+                {temAvaliacao ? `${mediaGeral.toFixed(1)} (${totalAvaliacoes})` : 'Novo'}
+              </Text>
+            </View>
           </View>
         </View>
 
-        {/* Coração: toque remove dos favoritos */}
         <TouchableOpacity
           style={styles.botaoCoracao}
           onPress={() => removerFavorito(idM)}
@@ -113,7 +147,6 @@ export default function Favoritos({ navigation }) {
   return (
     <View style={styles.container}>
       {pull.indicador}
-      {/* 🆕 Topo com degradê */}
       <LinearGradient
         colors={[cores.degradeInicioTopo, cores.degradeInicioBase]}
         style={styles.topo}
@@ -138,7 +171,6 @@ export default function Favoritos({ navigation }) {
         </View>
       </LinearGradient>
 
-      {/* 🆕 Folha branca arredondada */}
       <View style={styles.folha}>
         {loading ? (
           <View style={styles.centro}>
@@ -155,14 +187,15 @@ export default function Favoritos({ navigation }) {
             </Text>
             <TouchableOpacity
               style={styles.botaoPrimario}
-              onPress={() => navigation.navigate('ClienteTabs', { screen: 'HomeCliente' })}  // ✏️ rota corrigida
+              onPress={() => navigation.navigate('ClienteTabs', { screen: 'HomeCliente' })}
               activeOpacity={0.85}
             >
               <Text style={styles.botaoPrimarioTexto}>Explorar mercados</Text>
             </TouchableOpacity>
           </View>
         ) : (
-          <FlatList {...pull.props}
+          <FlatList
+            {...pull.props}
             data={favoritos}
             keyExtractor={(item) => String(item.idMercadinho || item.id)}
             renderItem={renderFavorito}

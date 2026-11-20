@@ -8,6 +8,7 @@ import { styles } from './styles';
 export default function MercadoCarrossel({
   mercadinho,
   distanciaKm,
+  avaliacao,
   onPress,
   isFavorito = false,
   onToggleFavorito,
@@ -29,6 +30,11 @@ export default function MercadoCarrossel({
       : NaN;
 
   const distancia = Number.isFinite(distanciaNumero) ? `${distanciaNumero.toFixed(1)} km` : null;
+
+  const dadosAvaliacao = avaliacao ?? mercadinho?.avaliacao;
+  const totalAvaliacoes = Number(dadosAvaliacao?.totalAvaliacoes || 0);
+  const mediaGeral = Number(dadosAvaliacao?.mediaGeral || 0);
+  const temAvaliacao = totalAvaliacoes > 0;
 
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.8} onPress={onPress}>
@@ -69,32 +75,36 @@ export default function MercadoCarrossel({
 
       <View style={styles.linhaInfo}>
         <Ionicons name="location-outline" size={13} color={cores.textoSecundario || '#666666'} />
-        <Text style={[styles.endereco, { flex: 1 }]} numberOfLines={1}>
+        <Text style={styles.endereco} numberOfLines={1}>
           {String(endereco)}
         </Text>
       </View>
 
-      {distancia ? (
-        <View style={[styles.linhaInfo, { marginTop: 2 }]}>
+      <View style={styles.rodapeInfo}>
+        {distancia ? (
+          <View style={styles.distanciaBox}>
+            <Ionicons
+              name="navigate-outline"
+              size={12}
+              color={cores.laranjaDistancia || '#F59E0B'}
+            />
+            <Text style={styles.distancia}>{String(distancia)}</Text>
+          </View>
+        ) : (
+          <View />
+        )}
+
+        <View style={[styles.avaliacaoPill, !temAvaliacao && styles.avaliacaoPillNovo]}>
           <Ionicons
-            name="location-outline"
-            size={13}
-            color={cores.laranjaDistancia || '#F59E0B'}
+            name={temAvaliacao ? 'star' : 'star-outline'}
+            size={12}
+            color={temAvaliacao ? '#F59E0B' : '#94A3B8'}
           />
-          <Text
-            style={[
-              styles.distancia,
-              {
-                color: cores.laranjaDistancia || '#F59E0B',
-                fontWeight: '700',
-                marginLeft: 2,
-              },
-            ]}
-          >
-            {String(distancia)}
+          <Text style={[styles.avaliacaoTexto, !temAvaliacao && styles.avaliacaoTextoNovo]}>
+            {temAvaliacao ? `${mediaGeral.toFixed(1)} (${totalAvaliacoes})` : 'Novo'}
           </Text>
         </View>
-      ) : null}
+      </View>
     </TouchableOpacity>
   );
 }

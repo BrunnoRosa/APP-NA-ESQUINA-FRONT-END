@@ -74,10 +74,41 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     color: cores.textoSecundario,
   },
+  rodapeInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 6,
+  },
+  distanciaBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
   distancia: {
     fontSize: 12,
+    fontWeight: '700',
+    color: cores.laranjaDistancia || '#F59E0B',
+  },
+  avaliacaoPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  avaliacaoPillNovo: {
+    backgroundColor: '#F1F5F9',
+  },
+  avaliacaoTexto: {
+    fontSize: 11,
     fontWeight: 'bold',
-    color: cores.primaria,
-    marginTop: 4,
+    color: '#B45309',
+  },
+  avaliacaoTextoNovo: {
+    color: '#64748B',
+    fontWeight: '600',
   },
 });
