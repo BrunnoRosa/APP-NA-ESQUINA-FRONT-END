@@ -18,8 +18,9 @@ import { cores } from "../../../theme";
 import { traduzirErro, validarEmail } from "../../../utils/validacoes";
 import { styles } from "./styles";
 
-export default function RecuperarSenha({ navigation }) {
-  const [email, setEmail] = useState("");
+export default function RecuperarSenha({ navigation, route }) {
+  // O Login já manda o e-mail digitado, para a pessoa não precisar digitar de novo
+  const [email, setEmail] = useState(route?.params?.email || "");
   const [loadingReq, setLoadingReq] = useState(false);
   const [erroEmail, setErroEmail] = useState("");
   // Toast central (em vez do Alert do celular / alert do navegador)
@@ -41,12 +42,14 @@ export default function RecuperarSenha({ navigation }) {
         email: email.trim().toLowerCase(),
       });
 
-      // O toast não tem botão "OK" como o Alert: mostra o aviso e já volta para o Login
       exibirAlerta(
-        "Sucesso",
-        "Se o e-mail estiver cadastrado, receberá as instruções para redefinir a sua senha.",
+        "Código enviado",
+        "Se o e-mail estiver cadastrado, enviamos um código de 6 números. Confira também o spam.",
       );
-      navigation.goBack();
+      // Próximo passo: digitar o código e criar a nova senha
+      navigation.navigate("RedefinirSenha", {
+        email: email.trim().toLowerCase(),
+      });
     } catch (error) {
       // 404 = o back-end ainda não tem esta rota (recuperação de senha está pendente no back)
       if (error.response && error.response.status === 404) {
@@ -89,7 +92,7 @@ export default function RecuperarSenha({ navigation }) {
           <View style={styles.cartao}>
             <Text style={styles.titulo}>Recuperar senha</Text>
             <Text style={styles.subtitulo}>
-              Digite o seu e-mail para receber um link de redefinição de senha.
+              Digite o seu e-mail para receber um código de 6 números e criar uma nova senha.
             </Text>
 
             <Text style={styles.rotulo}>Email</Text>
@@ -120,7 +123,7 @@ export default function RecuperarSenha({ navigation }) {
               {loadingReq ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.botaoTexto}>Enviar instruções</Text>
+                <Text style={styles.botaoTexto}>Enviar código</Text>
               )}
             </TouchableOpacity>
 
