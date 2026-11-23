@@ -32,6 +32,7 @@ import Abertura from "./src/pages/auth/Abertura";
 import Cadastro from "./src/pages/auth/Cadastro";
 import Login from "./src/pages/auth/Login";
 import RecuperarSenha from "./src/pages/auth/RecuperarSenha";
+import RedefinirSenha from "./src/pages/auth/RedefinirSenha";
 import VerifiqueEmail from "./src/pages/auth/VerifiqueEmail";
 import PainelAdmin from "./src/pages/admin/PainelAdmin";
 
@@ -165,6 +166,7 @@ function Routes() {
             <Stack.Screen name="Login" component={Login} />
             <Stack.Screen name="Cadastro" component={Cadastro} />
             <Stack.Screen name="RecuperarSenha" component={RecuperarSenha} />
+            <Stack.Screen name="RedefinirSenha" component={RedefinirSenha} />
             <Stack.Screen name="VerifiqueEmail" component={VerifiqueEmail} />
           </>
         ) : user?.perfil === "ADMIN" ? (

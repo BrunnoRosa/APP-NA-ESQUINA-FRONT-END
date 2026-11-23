@@ -193,7 +193,11 @@ export default function Login({ navigation }) {
               </TouchableOpacity>
 
               <TouchableOpacity
-                onPress={() => navigation.navigate("RecuperarSenha")}
+                onPress={() =>
+                  navigation.navigate("RecuperarSenha", {
+                    email: email.trim().toLowerCase(),
+                  })
+                }
               >
                 <Text style={styles.linkVermelho}>Esqueceu a senha?</Text>
               </TouchableOpacity>
