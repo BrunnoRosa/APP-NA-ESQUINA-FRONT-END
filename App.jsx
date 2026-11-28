@@ -27,6 +27,8 @@ import { PedidosPendentesProvider } from "./src/context/PedidosPendentesContext"
 import { ToastProvider } from "./src/context/ToastContext";
 
 // Função de Notificações
+import * as Notifications from "expo-notifications";
+import { irParaPedido, navigationRef } from "./src/services/navegacao";
 import { registrarParaNotificacoesPushAsync } from "./src/services/notifications";
 
 // Componentes Globais
@@ -144,6 +146,18 @@ function Routes() {
     }
   }, [signed, user]);
 
+  // Toque numa notificação push (celular): se ela trouxer o número do pedido, abre o pedido
+  useEffect(() => {
+    if (!signed || !user) return undefined;
+    const assinatura = Notifications.addNotificationResponseReceivedListener(
+      (resposta) => {
+        const dados = resposta?.notification?.request?.content?.data;
+        if (dados?.idPedido) irParaPedido(user.perfil, dados.idPedido);
+      },
+    );
+    return () => assinatura.remove();
+  }, [signed, user]);
+
   const estiloConteudoDesktop =
     signed && width >= 900
       ? { flex: 1, width: "100%", maxWidth: 1600, alignSelf: "center" }
@@ -161,6 +175,7 @@ function Routes() {
     <View style={{ flex: 1 }}>
       <StatusBar style={tema === "escuro" ? "light" : "dark"} />
       <NavigationContainer
+        ref={navigationRef}
         key={versaoVisual}
         theme={tema === "escuro" ? DarkTheme : DefaultTheme}
       >

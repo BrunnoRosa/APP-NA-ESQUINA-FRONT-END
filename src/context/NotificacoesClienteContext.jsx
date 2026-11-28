@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import api from "../services/api";
+import { irParaPedido } from "../services/navegacao";
 import { useAuth } from "./AuthContext";
 import { useToast } from "./ToastContext";
 
@@ -31,6 +32,12 @@ function montarMensagemStatus(pedido) {
 
   // "tipo" define a cor da faixa do toast: sucesso (verde) | erro (vermelho) | aviso (laranja) | info (azul-escuro)
   switch (pedido.status) {
+    case "AGUARDANDO_APROVACAO_CLIENTE":
+      return {
+        tipo: "aviso",
+        titulo: `Pedido #${id} foi alterado`,
+        mensagem: `${loja} ajustou os itens do seu pedido. Revise e aprove para continuar.`,
+      };
     case "EM_SEPARACAO":
       return {
         tipo: "sucesso",
@@ -106,11 +113,19 @@ export function NotificacoesClienteProvider({ children }) {
           if (statusAnterior && statusAnterior !== novoStatus) {
             const { tipo, titulo, mensagem } = montarMensagemStatus(pedido); //se quiser em preparação em laranja trocar "tipo" para "aviso"
 
-            avisoRef.current(titulo, mensagem, tipo);
+            // Tocar no pop-up abre o pedido em "Meus pedidos"
+            avisoRef.current(titulo, mensagem, tipo, {
+              aoClicar: () => irParaPedido("CLIENTE", id),
+              textoAcao:
+                novoStatus === "AGUARDANDO_APROVACAO_CLIENTE"
+                  ? "Toque para revisar o pedido"
+                  : "Toque para ver o pedido",
+            });
 
             setNotificacoes((prev) => [
               {
                 id: `${id}-${novoStatus}-${Date.now()}`,
+                idPedido: id,
                 titulo,
                 mensagem,
                 data: formatarHoraAtual(),

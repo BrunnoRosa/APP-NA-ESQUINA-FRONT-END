@@ -28,6 +28,7 @@ import api from '../../../services/api';
 import { cores } from '../../../theme';
 import { compararListaNosMercadinhos, obterPrecoProduto } from '../../../utils/comparadorLista';
 import { styles } from './styles';
+import ScrollHorizontal from '../../../components/ScrollHorizontal';
 
 export default function ListaCompras({ navigation }) {
   const {
@@ -324,7 +325,7 @@ export default function ListaCompras({ navigation }) {
 
       {/* Seletor Horizontal de Listas */}
       <View style={styles.listasBarContainer}>
-        <ScrollView
+        <ScrollHorizontal
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.listasBarScroll}
@@ -356,7 +357,7 @@ export default function ListaCompras({ navigation }) {
             <Ionicons name="add-circle-outline" size={16} color="#212529" />
             <Text style={styles.novaListaChipTexto}>Nova lista</Text>
           </TouchableOpacity>
-        </ScrollView>
+        </ScrollHorizontal>
       </View>
 
       {/* Folha Branca Principal */}
@@ -453,7 +454,7 @@ export default function ListaCompras({ navigation }) {
                     </View>
                   </View>
 
-                  <ScrollView
+                  <ScrollHorizontal
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     style={{ marginTop: 8 }}
@@ -474,9 +475,9 @@ export default function ListaCompras({ navigation }) {
                         </Text>
                       </TouchableOpacity>
                     ))}
-                  </ScrollView>
+                  </ScrollHorizontal>
 
-                  <ScrollView
+                  <ScrollHorizontal
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     style={{ marginTop: 8 }}
@@ -516,7 +517,7 @@ export default function ListaCompras({ navigation }) {
                         </Text>
                       </TouchableOpacity>
                     ))}
-                  </ScrollView>
+                  </ScrollHorizontal>
                 </View>
               )}
 

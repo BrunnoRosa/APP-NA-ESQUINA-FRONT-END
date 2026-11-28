@@ -18,6 +18,7 @@ import api from '../../../services/api';
 import { cores } from '../../../theme';
 import { estaAberto, formatarHorariosDetalhados } from '../../../utils/mercado';
 import { styles } from './styles';
+import ScrollHorizontal from '../../../components/ScrollHorizontal';
 
 const CRITERIOS_RESUMO = [
   { label: 'Atendimento', chave: 'mediaAtendimento' },
@@ -234,7 +235,7 @@ export default function DetalhesMercadinho({ route, navigation }) {
               {destaques.length > 0 && (
                 <>
                   <Text style={styles.secaoTitulo}>Destaques da loja</Text>
-                  <ScrollView
+                  <ScrollHorizontal
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     style={styles.carrossel}
@@ -246,7 +247,7 @@ export default function DetalhesMercadinho({ route, navigation }) {
                         onAdicionar={() => handleAdicionarProduto(item)}
                       />
                     ))}
-                  </ScrollView>
+                  </ScrollHorizontal>
                 </>
               )}
 

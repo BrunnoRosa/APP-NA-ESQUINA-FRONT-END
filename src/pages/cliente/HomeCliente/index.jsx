@@ -22,6 +22,7 @@ import api from '../../../services/api';
 import { cores } from '../../../theme';
 import { calcularDistanciaKm, ordenarAbertasPrimeiro } from '../../../utils/mercado';
 import { styles } from './styles';
+import ScrollHorizontal from '../../../components/ScrollHorizontal';
 
 const ATALHOS = [
   {
@@ -316,7 +317,7 @@ export default function HomeCliente({ navigation }) {
                   {mercadinhos.length === 0 ? (
                     <Text style={styles.emptyText}>Nenhum mercadinho cadastrado ainda.</Text>
                   ) : (
-                    <ScrollView
+                    <ScrollHorizontal
                       horizontal
                       showsHorizontalScrollIndicator={false}
                       style={{ marginHorizontal: -16 }}
@@ -352,7 +353,7 @@ export default function HomeCliente({ navigation }) {
                           />
                         );
                       })}
-                    </ScrollView>
+                    </ScrollHorizontal>
                   )}
                 </View>
               )}
@@ -373,7 +374,7 @@ export default function HomeCliente({ navigation }) {
                 {produtosExibidos.length === 0 ? (
                   <Text style={styles.emptyText}>Nenhum produto em destaque na sua região.</Text>
                 ) : (
-                  <ScrollView
+                  <ScrollHorizontal
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     style={{ marginHorizontal: -16 }}
@@ -411,7 +412,7 @@ export default function HomeCliente({ navigation }) {
                         }
                       />
                     ))}
-                  </ScrollView>
+                  </ScrollHorizontal>
                 )}
               </View>
             </>
