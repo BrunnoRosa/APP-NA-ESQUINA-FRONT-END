@@ -171,4 +171,39 @@ export const styles = StyleSheet.create({
     color: cores.textoSecundario,
     paddingVertical: 24,
   },
+
+  // Seletor "Produtos | Mercados"
+  seletorModo: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 16,
+    marginTop: 18,
+  },
+  seletorModoBotao: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 9,
+    borderRadius: 20,
+    backgroundColor: cores.fundoCartao,
+  },
+  seletorModoBotaoAtivo: {
+    backgroundColor: cores.primaria,
+  },
+  seletorModoTexto: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: cores.textoSecundario,
+  },
+  seletorModoTextoAtivo: {
+    color: '#FFFFFF',
+  },
+  // Resultado da busca de mercados: cartões em grade que quebra linha
+  listaMercados: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 8,
+  },
 });

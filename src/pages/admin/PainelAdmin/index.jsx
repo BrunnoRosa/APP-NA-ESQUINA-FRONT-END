@@ -17,6 +17,7 @@ import api from '../../../services/api';
 import { cores } from '../../../theme';
 import { mascaraCnpj, mascaraTelefone, traduzirErro } from '../../../utils/validacoes';
 import { styles } from './styles';
+import ScrollHorizontal from '../../../components/ScrollHorizontal';
 
 const FILTROS = [
   { chave: 'TODOS', rotulo: 'Todos' },
@@ -241,7 +242,7 @@ export default function PainelAdmin({ navigation }) {
             </View>
 
             {/* Filtros por perfil */}
-            <ScrollView
+            <ScrollHorizontal
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.filtrosLinha}
@@ -265,7 +266,7 @@ export default function PainelAdmin({ navigation }) {
                   </TouchableOpacity>
                 );
               })}
-            </ScrollView>
+            </ScrollHorizontal>
 
             <Text style={styles.contagemTexto}>
               {usuariosFiltrados.length}{' '}

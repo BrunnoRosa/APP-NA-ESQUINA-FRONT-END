@@ -22,6 +22,7 @@ import api from '../../../services/api';
 import { cores } from '../../../theme';
 import { calcularDistanciaKm, ordenarAbertasPrimeiro } from '../../../utils/mercado';
 import { styles } from './styles';
+import ScrollHorizontal from '../../../components/ScrollHorizontal';
 
 const CATEGORIAS = ['TODAS', 'ALIMENTOS', 'BEBIDAS', 'LIMPEZA', 'HIGIENE', 'HORTIFRUTI', 'PADARIA', 'OUTROS'];
 
@@ -31,6 +32,23 @@ const isPromocaoAtiva = (p) =>
   p?.precoPromocional !== undefined &&
   Number(p.precoPromocional) > 0 &&
   Number(p.precoPromocional) < Number(p.preco);
+
+// Tira acentos e maiúsculas para comparar: "Açaí Bom" -> "acai bom"
+const normalizar = (t) =>
+  String(t ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+
+// Um mercadinho "combina" com o termo se o nome, o bairro, a rua ou a cidade tiverem o texto digitado
+const mercadoCombina = (m, termoNormalizado) => {
+  if (!termoNormalizado) return true;
+  const alvo = normalizar(
+    [m?.nomeFantasia, m?.bairro, m?.rua, m?.cidade, m?.endereco].filter(Boolean).join(' ')
+  );
+  return alvo.includes(termoNormalizado);
+};
 
 export default function BuscarProdutos({ navigation, route }) {
   const [termo, setTermo] = useState('');
@@ -99,7 +117,11 @@ export default function BuscarProdutos({ navigation, route }) {
     }, [userCoords.lat, userCoords.lng])
   );
 
+  const emMercados = modoAba === 'mercados';
+
   const buscar = useCallback(async () => {
+    // Na aba "Mercados" a pesquisa é feita sobre as lojas (já carregadas), não sobre produtos
+    if (emMercados) return;
     try {
       setLoading(true);
       const catParam = categoriaAtiva === 'TODAS' ? '' : categoriaAtiva;
@@ -113,7 +135,7 @@ export default function BuscarProdutos({ navigation, route }) {
     } finally {
       setLoading(false);
     }
-  }, [termo, categoriaAtiva, ordenarPor, userCoords.lat, userCoords.lng]);
+  }, [emMercados, termo, categoriaAtiva, ordenarPor, userCoords.lat, userCoords.lng]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -134,13 +156,28 @@ export default function BuscarProdutos({ navigation, route }) {
     });
   };
 
+  // Troca entre "Produtos" e "Mercados" pelos botões da própria tela
+  const trocarModo = (novo) => {
+    setModoAba(novo);
+    setTermo('');
+    setCategoriaAtiva('TODAS');
+    setApenasPromocoes(false);
+    setMostrarFiltros(novo === 'produtos');
+  };
+
+  const termoNormalizado = normalizar(termo);
+  const lojasFiltradas = emMercados
+    ? ordenarAbertasPrimeiro(lojas.filter((m) => mercadoCombina(m, termoNormalizado)))
+    : [];
+
   const modoBusca =
-    modoAba === 'produtos' ||
+    !emMercados &&
+    (modoAba === 'produtos' ||
     modoAba === 'promocoes' ||
     apenasPromocoes ||
     termo.trim().length > 0 ||
     categoriaAtiva !== 'TODAS' ||
-    mostrarFiltros;
+    mostrarFiltros);
 
   const produtosExibidos = apenasPromocoes
     ? produtos.filter(isPromocaoAtiva)
@@ -156,12 +193,19 @@ export default function BuscarProdutos({ navigation, route }) {
           <View style={styles.campoBusca}>
             <TextInput
               style={styles.inputBusca}
-              placeholder={apenasPromocoes ? 'Pesquisar nas promoções' : 'Pesquisar'}
+              placeholder={
+                emMercados
+                  ? 'Pesquisar mercados'
+                  : apenasPromocoes
+                  ? 'Pesquisar nas promoções'
+                  : 'Pesquisar produtos'
+              }
               placeholderTextColor={cores.textoSecundario}
               value={termo}
               onChangeText={(txt) => {
                 setTermo(txt);
-                if (txt.trim().length > 0 && !apenasPromocoes) setModoAba('produtos');
+                // Sem aba escolhida, digitar pesquisa produtos. Na aba Mercados, continua em mercados.
+                if (txt.trim().length > 0 && !apenasPromocoes && !modoAba) setModoAba('produtos');
               }}
             />
             {termo.length > 0 && (
@@ -169,13 +213,15 @@ export default function BuscarProdutos({ navigation, route }) {
                 <Ionicons name="close-circle" size={18} color={cores.icone} />
               </TouchableOpacity>
             )}
-            <TouchableOpacity
-              style={styles.botaoFiltro}
-              onPress={() => setMostrarFiltros((v) => !v)}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="options-outline" size={18} color="#FFFFFF" />
-            </TouchableOpacity>
+            {!emMercados && (
+              <TouchableOpacity
+                style={styles.botaoFiltro}
+                onPress={() => setMostrarFiltros((v) => !v)}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="options-outline" size={18} color="#FFFFFF" />
+              </TouchableOpacity>
+            )}
           </View>
 
           <Image
@@ -187,9 +233,33 @@ export default function BuscarProdutos({ navigation, route }) {
       </LinearGradient>
 
       <View style={styles.folha}>
-        {mostrarFiltros && (
+        <View style={styles.seletorModo}>
+          {[
+            { chave: 'produtos', rotulo: 'Produtos', icone: 'basket-outline' },
+            { chave: 'mercados', rotulo: 'Mercados', icone: 'storefront-outline' },
+          ].map((op) => {
+            const ativo = op.chave === 'mercados' ? emMercados : !emMercados;
+            return (
+              <TouchableOpacity
+                key={op.chave}
+                style={[styles.seletorModoBotao, ativo && styles.seletorModoBotaoAtivo]}
+                onPress={() => trocarModo(op.chave)}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityState={{ selected: ativo }}
+              >
+                <Ionicons name={op.icone} size={16} color={ativo ? '#FFFFFF' : cores.textoSecundario} />
+                <Text style={[styles.seletorModoTexto, ativo && styles.seletorModoTextoAtivo]}>
+                  {op.rotulo}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {mostrarFiltros && !emMercados && (
           <View style={styles.filtros}>
-            <ScrollView
+            <ScrollHorizontal
               horizontal
               showsHorizontalScrollIndicator={false}
               style={styles.categoriesScroll}
@@ -227,7 +297,7 @@ export default function BuscarProdutos({ navigation, route }) {
                   </Text>
                 </TouchableOpacity>
               ))}
-            </ScrollView>
+            </ScrollHorizontal>
 
             <View style={styles.sortRow}>
               <Text style={styles.resultsCount}>
@@ -242,7 +312,32 @@ export default function BuscarProdutos({ navigation, route }) {
           </View>
         )}
 
-        {modoBusca ? (
+        {emMercados && termoNormalizado.length > 0 ? (
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+          >
+            <Text style={styles.resultsCount}>{lojasFiltradas.length} mercado(s) encontrado(s)</Text>
+            {lojasFiltradas.length === 0 ? (
+              <Text style={styles.emptyText}>Nenhum mercado encontrado para esta busca.</Text>
+            ) : (
+              <View style={styles.listaMercados}>
+                {lojasFiltradas.map((m) => {
+                  const idM = m.idMercadinho || m.id;
+                  return (
+                    <LojaCard
+                      key={String(idM)}
+                      mercadinho={m}
+                      tipo="destaque"
+                      avaliacao={mediasAvaliacoes[String(idM)]}
+                      onPress={() => abrirLoja(m)}
+                    />
+                  );
+                })}
+              </View>
+            )}
+          </ScrollView>
+        ) : modoBusca ? (
           loading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={cores.primaria} />
@@ -305,7 +400,7 @@ export default function BuscarProdutos({ navigation, route }) {
             {lojas.length === 0 ? (
               <Text style={styles.emptyText}>Nenhuma loja cadastrada ainda.</Text>
             ) : (
-              <ScrollView
+              <ScrollHorizontal
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.carrossel}
@@ -322,7 +417,7 @@ export default function BuscarProdutos({ navigation, route }) {
                     />
                   );
                 })}
-              </ScrollView>
+              </ScrollHorizontal>
             )}
 
             <View style={styles.divisor} />
@@ -332,7 +427,7 @@ export default function BuscarProdutos({ navigation, route }) {
             {lojasPerto.length === 0 ? (
               <Text style={styles.emptyText}>Nenhuma loja por perto.</Text>
             ) : (
-              <ScrollView
+              <ScrollHorizontal
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.carrossel}
@@ -355,7 +450,7 @@ export default function BuscarProdutos({ navigation, route }) {
                     />
                   );
                 })}
-              </ScrollView>
+              </ScrollHorizontal>
             )}
           </ScrollView>
         )}

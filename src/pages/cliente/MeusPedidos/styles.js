@@ -62,6 +62,11 @@ export const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 16,
   },
+  // Pedido aberto a partir de um pop-up: borda de destaque por alguns segundos
+  pedidoDestacado: {
+    borderWidth: 2,
+    borderColor: cores.primaria,
+  },
   pedidoHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -380,5 +385,26 @@ export const styles = StyleSheet.create({
     color: '#B45309',
     fontSize: 13,
     fontWeight: 'bold',
+  },
+
+  // Aviso de avaliação pendente (topo da lista)
+  avisoAvaliacao: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#FEF3C7',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+  },
+  avisoAvaliacaoTitulo: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#92400E',
+  },
+  avisoAvaliacaoTexto: {
+    fontSize: 12,
+    color: '#92400E',
+    marginTop: 2,
   },
 });

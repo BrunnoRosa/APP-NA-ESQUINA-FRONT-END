@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useEffect } from "react";
 import { FlatList, Text, TouchableOpacity, View } from "react-native";
 import { useNotificacoesCliente } from "../../../context/NotificacoesClienteContext";
+import { irParaPedido } from "../../../services/navegacao";
 import { cores } from "../../../theme";
 import { styles } from "./styles";
 
@@ -45,7 +46,12 @@ export default function Notificacoes({ navigation }) {
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 16, gap: 12 }}
           renderItem={({ item }) => (
-            <View style={[styles.card, !item.lida && styles.cardNaoLido]}>
+            <TouchableOpacity
+              style={[styles.card, !item.lida && styles.cardNaoLido]}
+              activeOpacity={item.idPedido ? 0.7 : 1}
+              disabled={!item.idPedido}
+              onPress={() => irParaPedido("CLIENTE", item.idPedido)}
+            >
               <View style={styles.iconeContainer}>
                 <Ionicons
                   name="notifications-outline"
@@ -58,7 +64,7 @@ export default function Notificacoes({ navigation }) {
                 <Text style={styles.mensagemCard}>{item.mensagem}</Text>
                 <Text style={styles.dataCard}>{item.data}</Text>
               </View>
-            </View>
+            </TouchableOpacity>
           )}
         />
       )}

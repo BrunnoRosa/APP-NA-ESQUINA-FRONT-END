@@ -16,6 +16,7 @@ import ModalAvaliacao from "../../../components/ModalAvaliacao";
 import SeletorRota from "../../../components/SeletorRota";
 import { useAuth } from "../../../context/AuthContext";
 import { useToast } from "../../../context/ToastContext";
+import { useDestacarPedido } from "../../../hooks/useDestacarPedido";
 import { usePuxarParaAtualizar } from "../../../hooks/usePuxarParaAtualizar";
 import api from "../../../services/api";
 import { cores } from "../../../theme";
@@ -36,7 +37,7 @@ function formatarMoeda(valor) {
   });
 }
 
-export default function MeusPedidos({ navigation }) {
+export default function MeusPedidos({ navigation, route }) {
   const { user } = useAuth();
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,6 +53,9 @@ export default function MeusPedidos({ navigation }) {
   const [pedidoParaAvaliar, setPedidoParaAvaliar] = useState(null);
   const pedidosDispensadosRef = useRef(new Set());
   const statusAnterioresRef = useRef({});
+  // true = ao abrir a tela, lembrar de uma avaliação que ficou pendente (consumido na 1ª carga)
+  const lembrarAvaliacaoRef = useRef(true);
+  const listaRef = useRef(null);
 
   const { exibirAlerta, confirmar } = useToast();
 
@@ -96,7 +100,20 @@ export default function MeusPedidos({ navigation }) {
 
         if (recemConcluido) {
           setPedidoParaAvaliar((atual) => atual || recemConcluido);
+        } else if (lembrarAvaliacaoRef.current) {
+          // Entrou em "Meus pedidos": se ficou alguma avaliação pendente (fechou o pop-up antes),
+          // o pop-up volta. Vale só na abertura da tela, para não reaparecer a cada atualização.
+          const pendentes = listaPedidos.filter(
+            (p) => p.status === "RETIRADA_CONCLUIDO" && !avaliadosSet.has(p.idPedido),
+          );
+          if (pendentes.length > 0) {
+            const maisRecente = pendentes.reduce((a, b) =>
+              Number(b.idPedido) > Number(a.idPedido) ? b : a,
+            );
+            setPedidoParaAvaliar((atual) => atual || maisRecente);
+          }
         }
+        lembrarAvaliacaoRef.current = false;
       } catch (error) {
         console.error("Erro ao carregar pedidos:", error);
       } finally {
@@ -110,6 +127,7 @@ export default function MeusPedidos({ navigation }) {
 
   useFocusEffect(
     useCallback(() => {
+      lembrarAvaliacaoRef.current = true; // a cada vez que a tela abre, confere avaliações pendentes
       carregarPedidos();
 
       const intervalId = setInterval(() => {
@@ -185,6 +203,19 @@ export default function MeusPedidos({ navigation }) {
     );
     setPedidoParaAvaliar(null);
   }
+
+  // Pedidos já retirados que ainda não foram avaliados (mostrados no aviso do topo da lista)
+  const pedidosSemAvaliacao = pedidos.filter(
+    (p) => p.status === "RETIRADA_CONCLUIDO" && !pedidosAvaliados.includes(p.idPedido),
+  );
+
+  // Aberta por um pop-up de pedido: rola até ele e o destaca
+  const { idDestacado, aoFalharRolagem } = useDestacarPedido({
+    route,
+    pedidos,
+    loading,
+    listaRef,
+  });
 
   function podeCancelar(status) {
     return (
@@ -323,7 +354,12 @@ export default function MeusPedidos({ navigation }) {
     const jaAvaliado = pedidosAvaliados.includes(item.idPedido);
 
     return (
-      <View style={styles.pedidoCard}>
+      <View
+        style={[
+          styles.pedidoCard,
+          idDestacado === item.idPedido && styles.pedidoDestacado,
+        ]}
+      >
         <View style={styles.pedidoHeader}>
           <Text style={styles.pedidoNumero}>Pedido #{item.idPedido}</Text>
           <View
@@ -558,6 +594,37 @@ export default function MeusPedidos({ navigation }) {
         ) : (
           <FlatList
             {...pull.props}
+            ref={listaRef}
+            onScrollToIndexFailed={aoFalharRolagem}
+            ListHeaderComponent={
+              pedidosSemAvaliacao.length > 0 ? (
+                <TouchableOpacity
+                  style={styles.avisoAvaliacao}
+                  activeOpacity={0.85}
+                  onPress={() =>
+                    setPedidoParaAvaliar(
+                      pedidosSemAvaliacao.reduce((a, b) =>
+                        Number(b.idPedido) > Number(a.idPedido) ? b : a,
+                      ),
+                    )
+                  }
+                  accessibilityRole="button"
+                >
+                  <Ionicons name="star" size={22} color="#F59E0B" />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.avisoAvaliacaoTitulo}>
+                      {pedidosSemAvaliacao.length === 1
+                        ? "Você tem 1 avaliação pendente"
+                        : `Você tem ${pedidosSemAvaliacao.length} avaliações pendentes`}
+                    </Text>
+                    <Text style={styles.avisoAvaliacaoTexto}>
+                      Conte como foi a sua experiência. Toque para avaliar.
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color="#92400E" />
+                </TouchableOpacity>
+              ) : null
+            }
             data={pedidos}
             keyExtractor={(item) => String(item.idPedido)}
             renderItem={renderPedido}
