@@ -1,6 +1,10 @@
+import { instalarInterceptadorAcessibilidade } from "./src/utils/acessibilidadeGlobal";
+instalarInterceptadorAcessibilidade();
+
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { NavigationContainer } from "@react-navigation/native";
+import { DarkTheme, DefaultTheme, NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import {
   ActivityIndicator,
@@ -10,6 +14,10 @@ import {
 import api from "./src/services/api";
 
 // Contextos
+import {
+  AcessibilidadeProvider,
+  useAcessibilidade,
+} from "./src/context/AcessibilidadeContext";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import { CarrinhoProvider } from "./src/context/CarrinhoContext";
 import { ListaComprasProvider } from "./src/context/ListaComprasContext";
@@ -19,9 +27,12 @@ import { PedidosPendentesProvider } from "./src/context/PedidosPendentesContext"
 import { ToastProvider } from "./src/context/ToastContext";
 
 // Função de Notificações
+import * as Notifications from "expo-notifications";
+import { irParaPedido, navigationRef } from "./src/services/navegacao";
 import { registrarParaNotificacoesPushAsync } from "./src/services/notifications";
 
-// Componente Customizado do TabBar
+// Componentes Globais
+import BotaoAcessibilidade from "./src/components/BotaoAcessibilidade";
 import TabNavigator from "./src/components/Layout/TabNavigator";
 
 // Tela compartilhada
@@ -58,7 +69,6 @@ import GerenciarVitrine from "./src/pages/comerciante/GerenciarVitrine";
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// 1. Navegação por Abas do Cliente
 function ClienteTabs() {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 900;
@@ -66,7 +76,6 @@ function ClienteTabs() {
   return (
     <Tab.Navigator
       tabBar={(props) => <TabNavigator {...props} />}
-      // "history": o botão de voltar volta para a aba de onde o cliente veio (Início, Conta...)
       backBehavior="history"
       screenOptions={{
         headerShown: false,
@@ -83,7 +92,6 @@ function ClienteTabs() {
   );
 }
 
-// 2. Navegação por Abas do Comerciante
 function ComercianteTabs() {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 900;
@@ -105,44 +113,55 @@ function ComercianteTabs() {
       <Tab.Screen name="GerenciarProdutos" component={GerenciarProdutos} />
       <Tab.Screen name="GerenciarPedidos" component={GerenciarPedidos} />
       <Tab.Screen name="GerenciarVitrine" component={GerenciarVitrine} />
-      {/* Conta do comerciante: mesmo padrão da aba Conta do cliente */}
       <Tab.Screen name="Conta" component={ContaComerciante} />
     </Tab.Navigator>
   );
 }
 
-// 3. Estrutura Geral de Rotas
 function Routes() {
   const { signed, user, loading } = useAuth();
   const { width } = useWindowDimensions();
-  
-  useEffect(() => {
-  if (signed && user) {
-    async function configurarNotificacoes() {
-      try {
-        const token = await registrarParaNotificacoesPushAsync();
+  const { tema, versaoVisual } = useAcessibilidade();
 
-        if (token) {
-          console.log(`[Push Token - ${user.perfil}]:`, token);
-          await api.put('/api/usuarios/me/push-token', { token });
-        }
-      } catch (error) {
-        // Se for 409, significa que o token já está registado no backend
-        if (error?.response?.status === 409) {
-          console.log('Push token já cadastrado para este usuário.');
-        } else {
-          console.log('Erro ao registrar push token:', error);
+  useEffect(() => {
+    if (signed && user) {
+      async function configurarNotificacoes() {
+        try {
+          const token = await registrarParaNotificacoesPushAsync();
+
+          if (token) {
+            console.log(`[Push Token - ${user.perfil}]:`, token);
+            await api.put("/api/usuarios/me/push-token", { token });
+          }
+        } catch (error) {
+          if (error?.response?.status === 409) {
+            console.log("Push token já cadastrado para este usuário.");
+          } else {
+            console.log("Erro ao registrar push token:", error);
+          }
         }
       }
+
+      configurarNotificacoes();
     }
+  }, [signed, user]);
 
-    configurarNotificacoes();
-  }
-}, [signed, user]);
+  // Toque numa notificação push (celular): se ela trouxer o número do pedido, abre o pedido
+  useEffect(() => {
+    if (!signed || !user) return undefined;
+    const assinatura = Notifications.addNotificationResponseReceivedListener(
+      (resposta) => {
+        const dados = resposta?.notification?.request?.content?.data;
+        if (dados?.idPedido) irParaPedido(user.perfil, dados.idPedido);
+      },
+    );
+    return () => assinatura.remove();
+  }, [signed, user]);
 
-  const estiloConteudoDesktop = signed && width >= 900
-    ? { flex: 1, width: "100%", maxWidth: 1600, alignSelf: "center" }
-    : undefined;
+  const estiloConteudoDesktop =
+    signed && width >= 900
+      ? { flex: 1, width: "100%", maxWidth: 1600, alignSelf: "center" }
+      : undefined;
 
   if (loading) {
     return (
@@ -153,71 +172,83 @@ function Routes() {
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator
-        screenOptions={{
-          headerShown: false,
-          contentStyle: estiloConteudoDesktop,
-        }}
+    <View style={{ flex: 1 }}>
+      <StatusBar style={tema === "escuro" ? "light" : "dark"} />
+      <NavigationContainer
+        ref={navigationRef}
+        key={versaoVisual}
+        theme={tema === "escuro" ? DarkTheme : DefaultTheme}
       >
-        {!signed ? (
-          <>
-            <Stack.Screen name="Abertura" component={Abertura} />
-            <Stack.Screen name="Login" component={Login} />
-            <Stack.Screen name="Cadastro" component={Cadastro} />
-            <Stack.Screen name="RecuperarSenha" component={RecuperarSenha} />
-            <Stack.Screen name="RedefinirSenha" component={RedefinirSenha} />
-            <Stack.Screen name="VerifiqueEmail" component={VerifiqueEmail} />
-          </>
-        ) : user?.perfil === "ADMIN" ? (
-          <>
-            <Stack.Screen name="PainelAdmin" component={PainelAdmin} />
-            <Stack.Screen name="EditarPerfil" component={EditarPerfil} />
-          </>
-        ) : user?.perfil === "COMERCIANTE" ? (
-          <>
-            <Stack.Screen name="ComercianteTabs" component={ComercianteTabs} />
-            <Stack.Screen
-              name="AtivarProdutoCatalogo"
-              component={AtivarProdutoCatalogo}
-            />
-            <Stack.Screen name="EditarPerfil" component={EditarPerfil} />
-          </>
-        ) : (
-          <>
-            <Stack.Screen name="ClienteTabs" component={ClienteTabs} />
-            <Stack.Screen
-              name="DetalhesMercadinho"
-              component={DetalhesMercadinho}
-            />
-            <Stack.Screen name="Favoritos" component={Favoritos} />
-            <Stack.Screen name="Carrinho" component={Carrinho} />
-            <Stack.Screen name="Notificacoes" component={Notificacoes} />
-            <Stack.Screen name="EditarPerfil" component={EditarPerfil} />
-            <Stack.Screen name="ListaCompras" component={ListaCompras} />
-          </>
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+        <Stack.Navigator
+          screenOptions={{
+            headerShown: false,
+            contentStyle: estiloConteudoDesktop,
+          }}
+        >
+          {!signed ? (
+            <>
+              <Stack.Screen name="Abertura" component={Abertura} />
+              <Stack.Screen name="Login" component={Login} />
+              <Stack.Screen name="Cadastro" component={Cadastro} />
+              <Stack.Screen name="RecuperarSenha" component={RecuperarSenha} />
+              <Stack.Screen name="RedefinirSenha" component={RedefinirSenha} />
+              <Stack.Screen name="VerifiqueEmail" component={VerifiqueEmail} />
+            </>
+          ) : user?.perfil === "ADMIN" ? (
+            <>
+              <Stack.Screen name="PainelAdmin" component={PainelAdmin} />
+              <Stack.Screen name="EditarPerfil" component={EditarPerfil} />
+            </>
+          ) : user?.perfil === "COMERCIANTE" ? (
+            <>
+              <Stack.Screen name="ComercianteTabs" component={ComercianteTabs} />
+              <Stack.Screen
+                name="AtivarProdutoCatalogo"
+                component={AtivarProdutoCatalogo}
+              />
+              <Stack.Screen name="EditarPerfil" component={EditarPerfil} />
+            </>
+          ) : (
+            <>
+              <Stack.Screen name="ClienteTabs" component={ClienteTabs} />
+              <Stack.Screen
+                name="DetalhesMercadinho"
+                component={DetalhesMercadinho}
+              />
+              <Stack.Screen name="Favoritos" component={Favoritos} />
+              <Stack.Screen name="Carrinho" component={Carrinho} />
+              <Stack.Screen name="Notificacoes" component={Notificacoes} />
+              <Stack.Screen name="EditarPerfil" component={EditarPerfil} />
+              <Stack.Screen name="ListaCompras" component={ListaCompras} />
+            </>
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+
+      {/* Botão flutuante visível em todas as telas do app */}
+      <BotaoAcessibilidade />
+    </View>
   );
 }
 
 export default function App() {
   return (
-    <ToastProvider>
-      <AuthProvider>
-        <PedidosPendentesProvider>
-          <NotificacoesClienteProvider>
-            <LocalizacaoProvider>
-              <CarrinhoProvider>
-                <ListaComprasProvider>
-                <Routes />
-                </ListaComprasProvider>
-              </CarrinhoProvider>
-            </LocalizacaoProvider>
-          </NotificacoesClienteProvider>
-        </PedidosPendentesProvider>
-      </AuthProvider>
-    </ToastProvider>
+    <AcessibilidadeProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <PedidosPendentesProvider>
+            <NotificacoesClienteProvider>
+              <LocalizacaoProvider>
+                <CarrinhoProvider>
+                  <ListaComprasProvider>
+                    <Routes />
+                  </ListaComprasProvider>
+                </CarrinhoProvider>
+              </LocalizacaoProvider>
+            </NotificacoesClienteProvider>
+          </PedidosPendentesProvider>
+        </AuthProvider>
+      </ToastProvider>
+    </AcessibilidadeProvider>
   );
 }

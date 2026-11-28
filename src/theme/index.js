@@ -1,26 +1,27 @@
-// Cores do app Na Esquina.
-export const cores = {
-  primaria: "#FF3131", // vermelho da marca
+// Cores do app Na Esquina (Claro e Escuro) + Escalas de Acessibilidade.
+
+export const coresClaro = {
+  primaria: "#FF3131",
   fundo: "#FFFFFF",
   fundoCartaoLogin: "#FFFCF7",
   fundoCartao: "#F0F0F0",
-  fundoCirculo: "#F4F4F4", // círculos das Sessões (medido)
+  fundoCirculo: "#F4F4F4",
   fundoBusca: "#F5F5F5",
   textoTitulo: "#404040",
   textoSecundario: "#5B5B5B",
   textoInativo: "#5B5B5B",
-  textoAtivo: "#000000", // aba ativa (medido)
+  textoAtivo: "#000000",
   textoRotulo: "#6C7278",
-  sucesso: "#1AC500", // selo verde "Aberto até..."
-  degradeTopo: "#FDAC27", // degradê do login
+  sucesso: "#1AC500",
+  degradeTopo: "#FDAC27",
   degradeBase: "#FB8701",
-  fundoBotaoSecundario: "#FFF4EF", // botão "Criar nova conta" (medido)
-  textoLogin: "#232447", // título "Login" (medido)
-  textoCampo: "#1A1C1E", // texto digitado (medido)
-  bordaCampo: "#F3F4F3", // contorno dos campos (medido)
-  icone: "#ACB5BB", // olho e placeholders (medido)
-  fundoSeletor: "#F5F6F9", // fundo do seletor de perfil (medido)
-  textoSeletorInativo: "#7D7D91", // opção não escolhida (medido)
+  fundoBotaoSecundario: "#FFF4EF",
+  textoLogin: "#232447",
+  textoCampo: "#1A1C1E",
+  bordaCampo: "#F3F4F3",
+  icone: "#ACB5BB",
+  fundoSeletor: "#F5F6F9",
+  textoSeletorInativo: "#7D7D91",
   degradeInicioTopo: "#FFEF8D",
   degradeInicioBase: "#FFBD3E",
   textoEndereco: "#5A5749",
@@ -29,5 +30,47 @@ export const cores = {
   textoRaio: "#717171",
   divisor: "#F3F3F3",
   fundoVerMais: "#FFECEC",
-  erro: "#D93025", // mensagens e bordas de campo inválido
+  erro: "#D93025",
 };
+
+export const coresEscuro = {
+  primaria: "#FF4D4D",
+  fundo: "#121212",
+  fundoCartaoLogin: "#1E1E1E",
+  fundoCartao: "#242424",
+  fundoCirculo: "#2C2C2C",
+  fundoBusca: "#2A2A2A",
+  textoTitulo: "#F3F4F6",
+  textoSecundario: "#B8BCC2",
+  textoInativo: "#9CA3AF",
+  textoAtivo: "#FFFFFF",
+  textoRotulo: "#A1A7B0",
+  sucesso: "#22C55E",
+  degradeTopo: "#B4690E",
+  degradeBase: "#8A4B08",
+  fundoBotaoSecundario: "#2E201C",
+  textoLogin: "#F3F4F6",
+  textoCampo: "#F9FAFB",
+  bordaCampo: "#383838",
+  icone: "#9CA3AF",
+  fundoSeletor: "#262626",
+  textoSeletorInativo: "#A1A1AA",
+  degradeInicioTopo: "#785A12",
+  degradeInicioBase: "#573D09",
+  textoEndereco: "#E5E7EB",
+  textoSaudacao: "#F3F4F6",
+  laranjaDistancia: "#FFA033",
+  textoRaio: "#B8BCC2",
+  divisor: "#2E2E2E",
+  fundoVerMais: "#3B1D1D",
+  erro: "#F87171",
+};
+
+// Mantém a exportação padrão para não quebrar imports existentes
+export const cores = { ...coresClaro };
+
+export const NIVEIS_FONTE = [
+  { id: "normal", rotulo: "Normal", fator: 1.0, exemplo: "A" },
+  { id: "grande", rotulo: "Grande", fator: 1.15, exemplo: "A+" },
+  { id: "extra", rotulo: "Extra", fator: 1.3, exemplo: "A++" },
+];

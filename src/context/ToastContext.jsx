@@ -100,12 +100,19 @@ export function ToastProvider({ children }) {
   }, [opacidade, escala, usarNativo]);
 
   const mostrar = useCallback(
-    ({ tipo, titulo, mensagem, duracao }) => {
+    ({ tipo, titulo, mensagem, duracao, aoClicar, textoAcao }) => {
       const tipoFinal = tipo || descobrirTipo(titulo);
       if (timer.current) clearTimeout(timer.current);
 
       contador.current += 1;
-      setToast({ id: contador.current, tipo: tipoFinal, titulo, mensagem });
+      setToast({
+        id: contador.current,
+        tipo: tipoFinal,
+        titulo,
+        mensagem,
+        aoClicar,
+        textoAcao,
+      });
 
       opacidade.setValue(0);
       escala.setValue(0.9);
@@ -122,10 +129,9 @@ export function ToastProvider({ children }) {
         }),
       ]).start();
 
-      timer.current = setTimeout(
-        esconder,
-        duracao || calcularDuracao(tipoFinal, mensagem),
-      );
+      // Pop-up com ação (clicável) fica um pouco mais na tela para dar tempo de tocar
+      const tempoBase = duracao || calcularDuracao(tipoFinal, mensagem);
+      timer.current = setTimeout(esconder, aoClicar ? tempoBase + 3000 : tempoBase);
     },
     [opacidade, escala, esconder, usarNativo],
   );
@@ -224,10 +230,21 @@ export function ToastProvider({ children }) {
 
   useEffect(() => () => timer.current && clearTimeout(timer.current), []);
 
+  // exibirAlerta(titulo, mensagem, tipo, { aoClicar, textoAcao })
+  //  - aoClicar: função chamada quando a pessoa toca no pop-up (ex.: abrir o pedido)
+  //  - textoAcao: legenda embaixo, ex.: "Toque para ver o pedido"
   const exibirAlerta = useCallback(
-    (titulo, mensagem, tipo) => mostrar({ titulo, mensagem, tipo }),
+    (titulo, mensagem, tipo, opcoes) =>
+      mostrar({ titulo, mensagem, tipo, ...(opcoes || {}) }),
     [mostrar],
   );
+
+  // Toque no pop-up: fecha e, se houver ação, executa
+  const aoTocarNoToast = useCallback(() => {
+    const acao = toast?.aoClicar;
+    esconder();
+    if (typeof acao === "function") acao();
+  }, [toast, esconder]);
 
   const valor = useMemo(
     () => ({ mostrar, exibirAlerta, esconder, confirmar }),
@@ -250,9 +267,10 @@ export function ToastProvider({ children }) {
               style={{ opacity: opacidade, transform: [{ scale: escala }] }}
             >
               <Pressable
-                onPress={esconder}
-                accessibilityRole="alert"
+                onPress={aoTocarNoToast}
+                accessibilityRole={toast.aoClicar ? "button" : "alert"}
                 accessibilityLiveRegion="polite"
+                accessibilityHint={toast.textoAcao}
                 style={[styles.cartao, { borderTopColor: estilo.cor }]}
               >
                 <Ionicons name={estilo.icone} size={34} color={estilo.cor} />
@@ -261,6 +279,11 @@ export function ToastProvider({ children }) {
                 )}
                 {!!toast.mensagem && (
                   <Text style={styles.mensagem}>{toast.mensagem}</Text>
+                )}
+                {!!toast.aoClicar && (
+                  <Text style={[styles.acao, { color: estilo.cor }]}>
+                    {toast.textoAcao || "Toque para abrir"}
+                  </Text>
                 )}
               </Pressable>
             </Animated.View>
@@ -380,6 +403,12 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: cores.textoSecundario,
     textAlign: "center",
+  },
+  acao: {
+    fontSize: 13,
+    fontWeight: "700",
+    marginTop: 6,
+    textDecorationLine: "underline",
   },
   fundoDlg: {
     ...StyleSheet.absoluteFillObject,

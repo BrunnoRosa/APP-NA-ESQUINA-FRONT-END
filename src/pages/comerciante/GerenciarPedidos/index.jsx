@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Notifications from "expo-notifications";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -15,6 +15,7 @@ import {
 import { useAuth } from "../../../context/AuthContext";
 import { useToast } from "../../../context/ToastContext";
 import { usePuxarParaAtualizar } from "../../../hooks/usePuxarParaAtualizar";
+import { useDestacarPedido } from "../../../hooks/useDestacarPedido";
 import api from "../../../services/api";
 import { cores } from "../../../theme";
 import { traduzirErro } from "../../../utils/validacoes";
@@ -27,7 +28,7 @@ function formatarMoeda(valor) {
   });
 }
 
-export default function GerenciarPedidos() {
+export default function GerenciarPedidos({ route }) {
   const { user } = useAuth();
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -83,6 +84,15 @@ export default function GerenciarPedidos() {
   );
 
   const pull = usePuxarParaAtualizar(() => carregarPedidos(true));
+
+  // Aberta pelo pop-up "Novo pedido": rola até o pedido e o destaca
+  const listaRef = useRef(null);
+  const { idDestacado, aoFalharRolagem } = useDestacarPedido({
+    route,
+    pedidos,
+    loading,
+    listaRef,
+  });
 
   useFocusEffect(
     useCallback(() => {
@@ -263,7 +273,12 @@ export default function GerenciarPedidos() {
       item.status === "AGUARDANDO_RETIRADA";
 
     return (
-      <View style={styles.pedidoCard}>
+      <View
+        style={[
+          styles.pedidoCard,
+          idDestacado === item.idPedido && styles.pedidoDestacado,
+        ]}
+      >
         <View style={styles.pedidoHeader}>
           <Text style={styles.pedidoNumero}>Pedido #{item.idPedido}</Text>
           <View
@@ -436,6 +451,8 @@ export default function GerenciarPedidos() {
         ) : (
           <FlatList
             {...pull.props}
+            ref={listaRef}
+            onScrollToIndexFailed={aoFalharRolagem}
             data={pedidos}
             keyExtractor={(item) => String(item.idPedido)}
             renderItem={renderPedido}

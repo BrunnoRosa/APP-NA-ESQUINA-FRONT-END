@@ -49,6 +49,11 @@ export const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 16,
   },
+  // Pedido aberto a partir de um pop-up: borda de destaque por alguns segundos
+  pedidoDestacado: {
+    borderWidth: 2,
+    borderColor: cores.primaria,
+  },
   pedidoHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
